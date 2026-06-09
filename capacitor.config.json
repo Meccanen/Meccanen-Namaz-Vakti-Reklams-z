@@ -1,0 +1,7 @@
+{
+  "appId": "com.meccanen.namazvakti",
+  "appName": "Meccanen Namaz Vakti",
+  "webDir": "dist",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": true }
+}

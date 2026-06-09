@@ -1,0 +1,6 @@
+{
+  "name": "Hava Durumu, Takvim ve Saat",
+  "description": "Kullanıcının ayarlardan manuel olarak ülke ve şehir seçebildiği; hava durumunu, miladi ve hicri takvimi ve anlık saati gösteren modern bir web uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
