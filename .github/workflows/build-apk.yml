@@ -1,0 +1,43 @@
+name: Build Android APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v3
+      - name: Bagımlılıkları yükle
+        run: npm install
+      - name: Web build al
+        run: npm run build
+      - name: Capacitor Android ekle
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: APK build et
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: APK kaydet
+        uses: actions/upload-artifact@v4
+        with:
+          name: meccanennamazvakti-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
