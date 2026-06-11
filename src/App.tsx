@@ -18,6 +18,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-amber-500/10 to-amber-500/25 border-amber-500/30 text-amber-300 ring-amber-500/20",
     clockGrad: "from-white to-slate-200", secColor: "text-sky-400",
     blob1: "bg-indigo-500/5", blob2: "bg-sky-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-amber-400", settingsCard: "bg-slate-900/95 border-slate-700",
   },
   alacakaranlik: {
@@ -28,6 +29,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-fuchsia-500/10 to-fuchsia-500/25 border-fuchsia-500/30 text-fuchsia-300 ring-fuchsia-500/20",
     clockGrad: "from-fuchsia-100 to-purple-200", secColor: "text-fuchsia-400",
     blob1: "bg-fuchsia-500/5", blob2: "bg-purple-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-fuchsia-400", settingsCard: "bg-purple-950/95 border-purple-700",
   },
   orman: {
@@ -38,6 +40,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-emerald-500/10 to-emerald-500/25 border-emerald-500/30 text-emerald-300 ring-emerald-500/20",
     clockGrad: "from-emerald-100 to-lime-200", secColor: "text-emerald-400",
     blob1: "bg-emerald-500/5", blob2: "bg-lime-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-lime-400", settingsCard: "bg-emerald-950/95 border-emerald-700",
   },
   altin: {
@@ -48,6 +51,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-amber-500/10 to-amber-500/25 border-amber-500/30 text-amber-300 ring-amber-500/20",
     clockGrad: "from-amber-100 to-orange-200", secColor: "text-amber-400",
     blob1: "bg-amber-500/5", blob2: "bg-orange-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-orange-400", settingsCard: "bg-amber-950/95 border-amber-700",
   },
   ramazan: {
@@ -58,6 +62,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-violet-500/10 to-violet-500/25 border-violet-500/30 text-violet-200 ring-violet-500/20",
     clockGrad: "from-violet-100 to-yellow-200", secColor: "text-violet-300",
     blob1: "bg-violet-500/5", blob2: "bg-yellow-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-yellow-300", settingsCard: "bg-violet-950/95 border-violet-800",
   },
   kabe: {
@@ -68,6 +73,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-yellow-500/10 to-yellow-500/20 border-yellow-500/30 text-yellow-300 ring-yellow-500/20",
     clockGrad: "from-yellow-200 to-white", secColor: "text-yellow-500",
     blob1: "bg-yellow-500/3", blob2: "bg-white/3",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-yellow-400", settingsCard: "bg-neutral-900/95 border-neutral-700",
   },
   turkuaz: {
@@ -78,6 +84,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-cyan-500/10 to-cyan-500/25 border-cyan-500/30 text-cyan-300 ring-cyan-500/20",
     clockGrad: "from-cyan-100 to-teal-200", secColor: "text-cyan-400",
     blob1: "bg-cyan-500/5", blob2: "bg-teal-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-teal-400", settingsCard: "bg-cyan-950/95 border-cyan-800",
   },
   bordo: {
@@ -88,6 +95,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-rose-500/10 to-rose-500/25 border-rose-500/30 text-rose-300 ring-rose-500/20",
     clockGrad: "from-rose-100 to-pink-200", secColor: "text-rose-400",
     blob1: "bg-rose-500/5", blob2: "bg-pink-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-pink-400", settingsCard: "bg-rose-950/95 border-rose-800",
   },
   gunes: {
@@ -98,6 +106,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-orange-500/10 to-orange-500/25 border-orange-500/30 text-orange-300 ring-orange-500/20",
     clockGrad: "from-orange-100 to-amber-200", secColor: "text-orange-400",
     blob1: "bg-orange-500/5", blob2: "bg-amber-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-amber-300", settingsCard: "bg-orange-950/95 border-orange-800",
   },
   safir: {
@@ -108,6 +117,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-blue-500/10 to-blue-500/25 border-blue-500/30 text-blue-300 ring-blue-500/20",
     clockGrad: "from-blue-100 to-indigo-200", secColor: "text-blue-400",
     blob1: "bg-blue-500/5", blob2: "bg-indigo-500/5",
+    textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-indigo-300", settingsCard: "bg-blue-950/95 border-blue-800",
   },
   // ── AÇIK TEMALAR ──
@@ -119,6 +129,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-amber-400/20 to-amber-400/35 border-amber-500/40 text-amber-800 ring-amber-400/30",
     clockGrad: "from-amber-900 to-orange-800", secColor: "text-amber-600",
     blob1: "bg-amber-300/20", blob2: "bg-orange-200/20",
+    textPrimary: "text-amber-950", textSecondary: "text-amber-800", textMuted: "text-amber-600",
     hijriAccent: "text-orange-700", settingsCard: "bg-white/98 border-amber-200",
   },
   gul: {
@@ -129,6 +140,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-rose-400/20 to-rose-400/35 border-rose-500/40 text-rose-700 ring-rose-400/30",
     clockGrad: "from-rose-900 to-pink-800", secColor: "text-rose-500",
     blob1: "bg-rose-300/20", blob2: "bg-pink-200/20",
+    textPrimary: "text-rose-950", textSecondary: "text-rose-700", textMuted: "text-rose-500",
     hijriAccent: "text-rose-700", settingsCard: "bg-white/98 border-rose-200",
   },
   nane: {
@@ -139,6 +151,7 @@ export const THEMES = {
     prayerActive: "bg-gradient-to-b from-green-400/20 to-green-400/35 border-green-500/40 text-green-800 ring-green-400/30",
     clockGrad: "from-green-900 to-emerald-800", secColor: "text-green-600",
     blob1: "bg-green-300/20", blob2: "bg-emerald-200/20",
+    textPrimary: "text-green-950", textSecondary: "text-green-700", textMuted: "text-green-500",
     hijriAccent: "text-emerald-700", settingsCard: "bg-white/98 border-green-200",
   },
 };
@@ -170,83 +183,116 @@ const DEFAULT_LOCATION: Location = {
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const th = THEMES[themeKey];
   const isLight = ["seher","gul","nane"].includes(themeKey);
-  const textMain = isLight ? th.preview[2] : "rgba(255,255,255,0.9)";
-  const textSub  = isLight ? th.preview[1] + "cc" : "rgba(255,255,255,0.45)";
-  const cardBg   = isLight ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.04)";
-  const cardBorder = isLight ? `${th.preview[1]}33` : "rgba(255,255,255,0.07)";
-  const activeBg   = th.preview[1] + "44";
-  const activeBorder = th.preview[1] + "88";
 
+  // Gerçek uygulamayla birebir aynı layout — scale ile küçültülmüş
   const prayers = [
-    { n:"İmsak", t:"04:32" }, { n:"Güneş", t:"06:10" }, { n:"Öğle", t:"13:15" },
-    { n:"İkindi", t:"17:02" }, { n:"Akşam", t:"20:18" }, { n:"Yatsı", t:"22:01" },
+    { name:"İmsak", time:"04:32" }, { name:"Güneş", time:"06:10" }, { name:"Öğle", time:"13:15" },
+    { name:"İkindi", time:"17:02" }, { name:"Akşam", time:"20:18" }, { name:"Yatsı", time:"22:01" },
   ];
-  const activeIdx = 4; // Akşam vakti aktif
+  const activeIdx = 4;
+
+  // Renk yardımcıları — tema değişkenlerini inline style olarak kullan
+  const bg0 = th.preview[0];
+  const acc = th.preview[1];
+  const acc2 = th.preview[2];
+  const txtPrimary = isLight ? "#1a0a00" : "rgba(255,255,255,0.92)";
+  const txtSecondary = isLight ? acc : "rgba(255,255,255,0.55)";
+  const txtMuted = isLight ? acc + "99" : "rgba(255,255,255,0.30)";
+  const cardBg = isLight ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.05)";
+  const cardBorder = isLight ? acc + "30" : "rgba(255,255,255,0.08)";
+  const activeBg = acc + "33";
+  const activeBorder = acc + "77";
+  const divider = isLight ? acc + "25" : "rgba(255,255,255,0.07)";
+  const blob1 = acc + "12";
+  const blob2 = acc2 + "10";
+
+  // Önizleme kartı 320px genişlikte render edilip 0.72 scale ile gösterilecek
+  // Gerçek App: max-w-2xl (672px) → önizleme: 320px → scale: 320/672 ≈ 0.476
+  // Ama modal içinde daha iyi görünüm için 340px → 0.50 scale kullanalım
+  const RENDER_W = 340;
+  const SCALE = 0.50;
+  const DISPLAY_W = RENDER_W * SCALE;
+  const RENDER_H = 420;
+  const DISPLAY_H = RENDER_H * SCALE;
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-xl border"
-      style={{ background: th.preview[0], borderColor: isLight ? th.preview[1]+"33" : "rgba(255,255,255,0.08)" }}>
+    <div style={{ width: DISPLAY_W, height: DISPLAY_H, overflow: "hidden", borderRadius: 14, margin: "0 auto", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+      <div style={{
+        width: RENDER_W, height: RENDER_H,
+        transform: `scale(${SCALE})`,
+        transformOrigin: "top left",
+        background: bg0,
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 28,
+        padding: 16,
+        display: "flex", flexDirection: "column", gap: 10,
+      }}>
+        {/* blob */}
+        <div style={{ position:"absolute", top:"-20%", left:"-10%", width:200, height:200, background:blob1, borderRadius:"50%", filter:"blur(60px)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:"-20%", right:"-10%", width:220, height:220, background:blob2, borderRadius:"50%", filter:"blur(70px)", pointerEvents:"none" }} />
 
-      {/* ── Header ── */}
-      <div className="flex justify-between items-center px-4 pt-3 pb-2"
-        style={{ borderBottom: `1px solid ${isLight ? th.preview[1]+"22" : "rgba(255,255,255,0.06)"}` }}>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-lg flex items-center justify-center"
-            style={{ background: th.preview[1]+"22", border: `1px solid ${th.preview[1]}44` }}>
-            <div className="w-2 h-2 rounded-full" style={{ background: th.preview[1] }} />
-          </div>
-          <div>
-            <div className="text-[9px] font-black" style={{ color: textMain }}>Meccanen Namaz Vakti</div>
-            <div className="text-[7px] font-medium" style={{ color: textSub }}>Reklamsız</div>
-          </div>
-        </div>
-        <div className="px-2 py-0.5 rounded-full text-[7px] font-bold"
-          style={{ background: th.preview[1]+"22", color: th.preview[1] }}>İstanbul</div>
-      </div>
-
-      {/* ── Saat + Takvim ── */}
-      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${isLight ? th.preview[1]+"22" : "rgba(255,255,255,0.06)"}` }}>
-        <div className="flex items-baseline gap-1 mb-1">
-          <span className="text-2xl font-extrabold font-mono" style={{ color: textMain }}>20:18</span>
-          <span className="text-sm font-light" style={{ color: th.preview[1] }}>:45</span>
-        </div>
-        <div className="text-[8px] font-semibold mb-2" style={{ color: textSub }}>Cuma</div>
-        <div className="flex justify-between">
-          <div>
-            <div className="text-[7px] font-black uppercase mb-0.5" style={{ color: th.preview[1] }}>Miladi</div>
-            <div className="text-sm font-black" style={{ color: textMain }}>11</div>
-            <div className="text-[7px]" style={{ color: textSub }}>Haziran 2026</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[7px] font-black uppercase mb-0.5" style={{ color: th.preview[2] }}>Hicri</div>
-            <div className="text-sm font-black" style={{ color: th.preview[2] }}>14</div>
-            <div className="text-[7px]" style={{ color: textSub }}>Zilhicce (1447 AH)</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Namaz Vakitleri ── */}
-      <div className="px-3 py-3">
-        <div className="text-[7px] font-black uppercase tracking-widest mb-2" style={{ color: th.preview[1] }}>
-          ✦ Diyanet Vakitleri
-        </div>
-        <div className="grid grid-cols-6 gap-1">
-          {prayers.map(({ n, t: time }, i) => (
-            <div key={n} className="flex flex-col items-center p-1.5 rounded-xl transition-all"
-              style={{
-                background: i === activeIdx ? activeBg : cardBg,
-                border: `1px solid ${i === activeIdx ? activeBorder : cardBorder}`,
-              }}>
-              <span className="text-[6.5px] font-bold mb-0.5"
-                style={{ color: i === activeIdx ? th.preview[1] : textSub }}>{n}</span>
-              <span className="text-[8px] font-mono font-black"
-                style={{ color: i === activeIdx ? th.preview[1] : textMain }}>{time}</span>
+        {/* ── HEADER ── */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${divider}`, paddingBottom:8, position:"relative", zIndex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ width:22, height:22, borderRadius:8, background:acc+"22", border:`1px solid ${acc}44`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:10, height:10, borderRadius:3, border:`1.5px solid ${acc}`, opacity:0.8 }} />
             </div>
-          ))}
+            <div>
+              <div style={{ fontSize:8, fontWeight:900, color:txtPrimary, lineHeight:1.2 }}>Meccanen Namaz Vakti</div>
+              <div style={{ fontSize:6, color:txtMuted }}>Reklamsız</div>
+            </div>
+          </div>
+          <div style={{ fontSize:7, fontWeight:700, color:acc, background:acc+"18", border:`1px solid ${acc}33`, padding:"2px 6px", borderRadius:20 }}>İstanbul</div>
         </div>
-        {/* Gradient bar */}
-        <div className="h-0.5 rounded-full mt-3"
-          style={{ background: `linear-gradient(90deg, ${th.preview[1]}, ${th.preview[2]})` }} />
+
+        {/* ── SAAT + TAKVİM ── */}
+        <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
+          {/* Saat — ortalanmış, gerçekle aynı */}
+          <div style={{ textAlign:"center", marginBottom:6 }}>
+            <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:3 }}>
+              <span style={{ fontSize:28, fontWeight:800, fontFamily:"monospace", color:txtPrimary, lineHeight:1 }}>20:18</span>
+              <span style={{ fontSize:14, fontWeight:300, color:acc, lineHeight:1 }}>:45</span>
+            </div>
+            <div style={{ fontSize:7, color:txtSecondary, marginTop:2 }}>Cuma</div>
+          </div>
+          {/* Takvim — gerçekle aynı, yan yana */}
+          <div style={{ display:"flex", justifyContent:"space-between", borderTop:`1px solid ${divider}`, paddingTop:7, marginTop:4 }}>
+            <div>
+              <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc2, marginBottom:2 }}>Miladi</div>
+              <div style={{ fontSize:16, fontWeight:900, color:txtPrimary, lineHeight:1 }}>11</div>
+              <div style={{ fontSize:6, color:txtSecondary, marginTop:1 }}>Haziran 2026</div>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc, marginBottom:2 }}>Hicri</div>
+              <div style={{ fontSize:16, fontWeight:900, color:acc, lineHeight:1 }}>14</div>
+              <div style={{ fontSize:6, color:txtSecondary, marginTop:1 }}>Zilhicce (1447 AH)</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── NAMAZ VAKİTLERİ — 3+3 grid, gerçekle aynı ── */}
+        <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
+          <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc, marginBottom:7, display:"flex", alignItems:"center", gap:3 }}>
+            <span style={{ color:"#f59e0b" }}>✦</span> Diyanet Vakitleri
+          </div>
+          {/* 3+3 grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:4 }}>
+            {prayers.map(({ name, time }, i) => (
+              <div key={name} style={{
+                display:"flex", flexDirection:"column", alignItems:"center",
+                padding:"5px 3px", borderRadius:10,
+                background: i === activeIdx ? activeBg : "rgba(0,0,0,0.12)",
+                border: `1.5px solid ${i === activeIdx ? activeBorder : "transparent"}`,
+              }}>
+                <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:0.5, marginBottom:3,
+                  color: i === activeIdx ? acc : txtMuted }}>{name}</div>
+                <div style={{ fontSize:9, fontFamily:"monospace", fontWeight:700,
+                  color: i === activeIdx ? acc : txtSecondary }}>{time}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -276,7 +322,7 @@ function PremiumModal({ onClose, t, previewTheme }: {
           <div className="text-center mb-4">
             <div className="text-3xl mb-2">✨</div>
             <h2 className={`text-lg font-black ${t.accent} mb-0.5`}>Premium Temalar</h2>
-            <p className="text-[11px] text-slate-400">9 özel tema · Tek seferlik satın alma</p>
+            <p className="text-[11px] text-slate-400">12 özel tema · Tek seferlik satın alma</p>
           </div>
 
           {/* Canlı Önizleme */}
@@ -827,7 +873,7 @@ export default function App() {
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
 
   return (
-    <div className={`min-h-screen ${t.bg} text-slate-100 flex flex-col relative overflow-hidden p-4 md:p-8 transition-colors duration-500`}>
+    <div className={`min-h-screen ${t.bg} ${t.textPrimary} flex flex-col relative overflow-hidden p-4 md:p-8 transition-colors duration-500`}>
       <div className={`absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] ${t.blob1} rounded-full blur-[100px] pointer-events-none`} />
       <div className={`absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[40rem] h-[40rem] ${t.blob2} rounded-full blur-[120px] pointer-events-none`} />
 
@@ -853,7 +899,7 @@ export default function App() {
               <Compass className={`w-7 h-7 ${t.accent}`} />
             </button>
             <div>
-              <h1 className="text-lg font-black tracking-tight text-slate-100">Meccanen Namaz Vakti</h1>
+              <h1 className={`text-lg font-black tracking-tight ${t.textPrimary}`}>Meccanen Namaz Vakti</h1>
               <p className="text-[10px] text-slate-500 font-medium">
                 Reklamsız {isPremium && <span className="text-amber-500 ml-1">· ✨ Premium</span>}
               </p>
@@ -878,14 +924,14 @@ export default function App() {
             </span>
             <span className={`text-3xl font-light ${t.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
           </div>
-          <p className="text-center text-sm font-semibold text-slate-400 mb-4">{localTime.weekday}</p>
+          <p className={`text-center text-sm font-semibold ${t.textSecondary} mb-4`}>{localTime.weekday}</p>
           <div className={`border-t ${t.header} pt-4 flex justify-between items-start gap-4`}>
             <div>
               <div className={`text-[9px] font-black uppercase tracking-widest ${t.accent2} mb-1 flex items-center gap-1`}>
                 <Calendar className="w-3 h-3" />Miladi
               </div>
-              <div className="text-2xl font-black text-slate-100">{localTime.gregDay}</div>
-              <div className="text-xs text-slate-400 font-semibold mt-0.5">{localTime.gregMonthYear}</div>
+              <div className={`text-2xl font-black ${t.textPrimary}`}>{localTime.gregDay}</div>
+              <div className={`text-xs ${t.textSecondary} font-semibold mt-0.5`}>{localTime.gregMonthYear}</div>
             </div>
             <div className="text-right">
               <div className={`text-[9px] font-black uppercase tracking-widest ${t.hijriAccent} mb-1 flex items-center justify-end gap-1`}>
@@ -904,14 +950,14 @@ export default function App() {
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               {currentMethod.label} Vakitleri
             </div>
-            <span className="text-[9px] text-slate-600 font-mono">{location.name}, {location.country}</span>
+            <span className={`text-[9px] ${t.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
                 className={`flex flex-col items-center py-3 px-2 rounded-2xl border-2 transition-all ${activePrayerIndex === idx ? `${t.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-[9px] font-black uppercase tracking-wider mb-2 ${activePrayerIndex === idx ? "" : "text-slate-500"}`}>{item.name}</div>
-                <div className={`text-sm font-mono font-bold ${activePrayerIndex === idx ? "" : "text-slate-300"}`}>{item.time}</div>
+                <div className={`text-[9px] font-black uppercase tracking-wider mb-2 ${activePrayerIndex === idx ? "" : t.textMuted}`}>{item.name}</div>
+                <div className={`text-sm font-mono font-bold ${activePrayerIndex === idx ? "" : t.textSecondary}`}>{item.time}</div>
               </div>
             ))}
           </div>
@@ -940,7 +986,7 @@ export default function App() {
             </div>
             <div className="ml-auto text-right">
               <div className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Koordinat</div>
-              <div className="text-xs font-mono text-slate-400">{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
+              <div className={`text-xs font-mono ${t.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
               <div className="text-[10px] text-slate-600">{location.timezone}</div>
             </div>
           </div>
