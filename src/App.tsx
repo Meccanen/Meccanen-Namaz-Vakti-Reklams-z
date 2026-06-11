@@ -772,12 +772,14 @@ function SettingsPanel({
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
-                      <div className="text-xs font-bold text-slate-100">{m.label}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{m.description}</div>
+                      <div className={`text-xs font-bold ${t.textPrimary}`}>{m.label}</div>
+                      <div className={`text-[10px] ${t.textMuted} mt-0.5`}>{m.description}</div>
                     </div>
-                    {prayerMethod === m.id && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
+                    {prayerMethod === m.id && <Check className={`w-4 h-4 ${t.accent} shrink-0 ml-2`} />}
                   </button>
                 ))}
+              </div>
+            )}
 
             {/* ── BİLDİRİM ── */}
             {tab === "bildirim" && (
