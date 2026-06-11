@@ -382,6 +382,8 @@ function SettingsPanel({
   isPremium, setIsPremium,
   onClose, t,
   logoTapCount, setLogoTapCount,
+  notificationSettings, setNotificationSettings,
+  prayerTimes,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
