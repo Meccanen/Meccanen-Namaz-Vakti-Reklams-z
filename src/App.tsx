@@ -2,15 +2,17 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   MapPin, Calendar, Clock, Compass, Sparkles, Search,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star
+  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee
 } from "lucide-react";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
-const THEMES = {
+export const THEMES = {
+  // ── ÜCRETSİZ TEMA ──
   gece: {
     label: "Gece Mavisi", preview: ["#020617","#0ea5e9","#818cf8"],
+    free: true,
     bg: "bg-[#020617]", card: "bg-slate-900/40 border-slate-800/80",
     cardHover: "hover:border-slate-700/60", header: "border-slate-800/80",
     accent: "text-sky-400", accent2: "text-indigo-400", accent3: "text-amber-300",
@@ -21,8 +23,10 @@ const THEMES = {
     hijriAccent: "text-amber-400", insightCard: "bg-[#090e1a]/85 border-[#1e1e38]/50",
     settingsCard: "bg-slate-900/95 border-slate-700",
   },
+  // ── PREMİUM TEMALAR ──
   alacakaranlik: {
     label: "Alacakaranlık", preview: ["#1a0a2e","#e879f9","#f59e0b"],
+    free: false,
     bg: "bg-[#1a0a2e]", card: "bg-purple-950/30 border-purple-900/30",
     cardHover: "hover:border-purple-700/40", header: "border-purple-900/40",
     accent: "text-fuchsia-400", accent2: "text-purple-400", accent3: "text-amber-300",
@@ -35,6 +39,7 @@ const THEMES = {
   },
   orman: {
     label: "Orman Yeşili", preview: ["#051a0f","#34d399","#a3e635"],
+    free: false,
     bg: "bg-[#051a0f]", card: "bg-emerald-950/30 border-emerald-900/30",
     cardHover: "hover:border-emerald-700/40", header: "border-emerald-900/40",
     accent: "text-emerald-400", accent2: "text-lime-400", accent3: "text-amber-300",
@@ -47,6 +52,7 @@ const THEMES = {
   },
   altin: {
     label: "Altın Çöl", preview: ["#160d00","#f59e0b","#fb923c"],
+    free: false,
     bg: "bg-[#160d00]", card: "bg-amber-950/30 border-amber-900/30",
     cardHover: "hover:border-amber-700/40", header: "border-amber-900/40",
     accent: "text-amber-400", accent2: "text-orange-400", accent3: "text-yellow-300",
@@ -57,9 +63,95 @@ const THEMES = {
     hijriAccent: "text-orange-400", insightCard: "bg-amber-950/50 border-amber-900/30",
     settingsCard: "bg-amber-950/95 border-amber-700",
   },
+  ramazan: {
+    label: "Ramazan", preview: ["#0d0a1a","#c084fc","#fde68a"],
+    free: false,
+    bg: "bg-[#0d0a1a]", card: "bg-violet-950/30 border-violet-900/30",
+    cardHover: "hover:border-violet-700/40", header: "border-violet-900/40",
+    accent: "text-violet-300", accent2: "text-yellow-300", accent3: "text-rose-300",
+    prayerActive: "bg-gradient-to-b from-violet-500/10 to-violet-500/25 border-violet-500/30 text-violet-200 ring-violet-500/20",
+    clockGrad: "from-violet-100 to-yellow-200", secColor: "text-violet-300",
+    blob1: "bg-violet-500/5", blob2: "bg-yellow-500/5",
+    hijriCard: "bg-gradient-to-br from-[#1e0a3e] to-[#0d0a1a]",
+    hijriAccent: "text-yellow-300", insightCard: "bg-violet-950/50 border-violet-900/30",
+    settingsCard: "bg-violet-950/95 border-violet-800",
+  },
+  kabe: {
+    label: "Kâbe", preview: ["#0a0a0a","#d4af37","#ffffff"],
+    free: false,
+    bg: "bg-[#0a0a0a]", card: "bg-neutral-900/60 border-neutral-800/60",
+    cardHover: "hover:border-neutral-700/50", header: "border-neutral-800/60",
+    accent: "text-yellow-500", accent2: "text-yellow-300", accent3: "text-white",
+    prayerActive: "bg-gradient-to-b from-yellow-500/10 to-yellow-500/20 border-yellow-500/30 text-yellow-300 ring-yellow-500/20",
+    clockGrad: "from-yellow-200 to-white", secColor: "text-yellow-500",
+    blob1: "bg-yellow-500/3", blob2: "bg-white/3",
+    hijriCard: "bg-gradient-to-br from-[#1a1400] to-[#0a0a0a]",
+    hijriAccent: "text-yellow-400", insightCard: "bg-neutral-900/70 border-neutral-800/50",
+    settingsCard: "bg-neutral-900/95 border-neutral-700",
+  },
+  turkuaz: {
+    label: "Turkuaz Deniz", preview: ["#010f14","#06b6d4","#67e8f9"],
+    free: false,
+    bg: "bg-[#010f14]", card: "bg-cyan-950/30 border-cyan-900/30",
+    cardHover: "hover:border-cyan-700/40", header: "border-cyan-900/40",
+    accent: "text-cyan-400", accent2: "text-teal-400", accent3: "text-sky-200",
+    prayerActive: "bg-gradient-to-b from-cyan-500/10 to-cyan-500/25 border-cyan-500/30 text-cyan-300 ring-cyan-500/20",
+    clockGrad: "from-cyan-100 to-teal-200", secColor: "text-cyan-400",
+    blob1: "bg-cyan-500/5", blob2: "bg-teal-500/5",
+    hijriCard: "bg-gradient-to-br from-[#012e3a] to-[#010f14]",
+    hijriAccent: "text-teal-400", insightCard: "bg-cyan-950/50 border-cyan-900/30",
+    settingsCard: "bg-cyan-950/95 border-cyan-800",
+  },
+  bordo: {
+    label: "Bordo Kadife", preview: ["#1a0008","#f43f5e","#fda4af"],
+    free: false,
+    bg: "bg-[#1a0008]", card: "bg-rose-950/30 border-rose-900/30",
+    cardHover: "hover:border-rose-700/40", header: "border-rose-900/40",
+    accent: "text-rose-400", accent2: "text-pink-400", accent3: "text-orange-300",
+    prayerActive: "bg-gradient-to-b from-rose-500/10 to-rose-500/25 border-rose-500/30 text-rose-300 ring-rose-500/20",
+    clockGrad: "from-rose-100 to-pink-200", secColor: "text-rose-400",
+    blob1: "bg-rose-500/5", blob2: "bg-pink-500/5",
+    hijriCard: "bg-gradient-to-br from-[#2e0012] to-[#1a0008]",
+    hijriAccent: "text-pink-400", insightCard: "bg-rose-950/50 border-rose-900/30",
+    settingsCard: "bg-rose-950/95 border-rose-800",
+  },
+  gunes: {
+    label: "Gün Batımı", preview: ["#1a0d00","#f97316","#fbbf24"],
+    free: false,
+    bg: "bg-[#1a0d00]", card: "bg-orange-950/30 border-orange-900/30",
+    cardHover: "hover:border-orange-700/40", header: "border-orange-900/40",
+    accent: "text-orange-400", accent2: "text-amber-300", accent3: "text-yellow-200",
+    prayerActive: "bg-gradient-to-b from-orange-500/10 to-orange-500/25 border-orange-500/30 text-orange-300 ring-orange-500/20",
+    clockGrad: "from-orange-100 to-amber-200", secColor: "text-orange-400",
+    blob1: "bg-orange-500/5", blob2: "bg-amber-500/5",
+    hijriCard: "bg-gradient-to-br from-[#2e1800] to-[#1a0d00]",
+    hijriAccent: "text-amber-300", insightCard: "bg-orange-950/50 border-orange-900/30",
+    settingsCard: "bg-orange-950/95 border-orange-800",
+  },
+  safir: {
+    label: "Safir Gece", preview: ["#00051a","#3b82f6","#a5b4fc"],
+    free: false,
+    bg: "bg-[#00051a]", card: "bg-blue-950/30 border-blue-900/30",
+    cardHover: "hover:border-blue-700/40", header: "border-blue-900/40",
+    accent: "text-blue-400", accent2: "text-indigo-300", accent3: "text-sky-200",
+    prayerActive: "bg-gradient-to-b from-blue-500/10 to-blue-500/25 border-blue-500/30 text-blue-300 ring-blue-500/20",
+    clockGrad: "from-blue-100 to-indigo-200", secColor: "text-blue-400",
+    blob1: "bg-blue-500/5", blob2: "bg-indigo-500/5",
+    hijriCard: "bg-gradient-to-br from-[#00103a] to-[#00051a]",
+    hijriAccent: "text-indigo-300", insightCard: "bg-blue-950/50 border-blue-900/30",
+    settingsCard: "bg-blue-950/95 border-blue-800",
+  },
 };
-type ThemeKey = keyof typeof THEMES;
+export type ThemeKey = keyof typeof THEMES;
 
+// ─── PREMIUM ──────────────────────────────────────────────────────────────────
+// Gerçek ödeme entegrasyonu sonraki sürümde (Google Play Billing)
+// Şimdilik localStorage tabanlı simülasyon
+function getIsPremium(): boolean {
+  return localStorage.getItem("mnv_premium") === "true";
+}
+
+// ─── DEFAULT LOCATION ─────────────────────────────────────────────────────────
 const DEFAULT_LOCATION: Location = {
   name: "İstanbul", country: "Türkiye",
   latitude: 41.0082, longitude: 28.9784,
@@ -81,20 +173,70 @@ function guessTimezone(lng: number): string {
   return MAP[String(offset)] || "Europe/London";
 }
 
-// ─── TURKEY PROVINCES ─────────────────────────────────────────────────────────
 import { TURKEY_PROVINCES } from "./utils/weatherHelper";
+
+// ─── PREMIUM MODAL ────────────────────────────────────────────────────────────
+function PremiumModal({ onClose, t }: { onClose: () => void; t: typeof THEMES[ThemeKey] }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div
+        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl p-6 ${t.settingsCard}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer">
+          <X className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-3">✨</div>
+          <h2 className={`text-xl font-black ${t.accent} mb-1`}>Premium Temalar</h2>
+          <p className="text-xs text-slate-400">Tüm 9 premium temayı tek seferlik satın alımla aç</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
+            .filter(([, th]) => !th.free)
+            .map(([key, th]) => (
+              <div key={key} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex gap-0.5">
+                  {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />)}
+                </div>
+                <span className="text-[9px] text-slate-300 font-semibold text-center leading-tight">{th.label}</span>
+              </div>
+            ))}
+        </div>
+
+        <div className="space-y-2">
+          <button
+            className={`w-full py-3 rounded-2xl font-black text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 transition-all cursor-pointer`}
+            onClick={() => {
+              // TODO: Google Play Billing entegrasyonu
+              alert("Google Play Billing yakında eklenecek!\n\nTest için: Ayarlar > Premium Aktif Et");
+            }}
+          >
+            ₺79 · Tek Seferlik Satın Al
+          </button>
+          <p className="text-center text-[10px] text-slate-600">Reklam yok · Abonelik yok · Tek ödeme</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── SETTINGS PANEL ───────────────────────────────────────────────────────────
 function SettingsPanel({
   theme, setTheme, location, setLocation,
   savedLocations, setSavedLocations,
   prayerMethod, setPrayerMethod,
+  isPremium, setIsPremium,
   onClose, t
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
   savedLocations: Location[]; setSavedLocations: (locs: Location[]) => void;
   prayerMethod: number; setPrayerMethod: (m: number) => void;
+  isPremium: boolean; setIsPremium: (v: boolean) => void;
   onClose: () => void; t: typeof THEMES[ThemeKey];
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metod">("genel");
@@ -103,6 +245,8 @@ function SettingsPanel({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  const [lockedThemePreview, setLockedThemePreview] = useState<ThemeKey | null>(null);
 
   const notify = (msg: string) => {
     setNotification(msg);
@@ -130,7 +274,10 @@ function SettingsPanel({
   };
 
   const addAndSelectCity = (loc: Location) => {
-    const exists = savedLocations.some(l => l.latitude.toFixed(2) === loc.latitude.toFixed(2) && l.longitude.toFixed(2) === loc.longitude.toFixed(2));
+    const exists = savedLocations.some(l =>
+      l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
+      l.longitude.toFixed(2) === loc.longitude.toFixed(2)
+    );
     const newList = exists ? savedLocations : [...savedLocations, loc];
     setSavedLocations(newList);
     setLocation(loc);
@@ -157,6 +304,17 @@ function SettingsPanel({
     addAndSelectCity({ name: p.name, country: "Türkiye", latitude: p.latitude, longitude: p.longitude, timezone: "Europe/Istanbul", admin1: "Türkiye" });
   };
 
+  const handleThemeClick = (key: ThemeKey) => {
+    const th = THEMES[key];
+    if (!th.free && !isPremium) {
+      setLockedThemePreview(key);
+      setPremiumModalOpen(true);
+      return;
+    }
+    setTheme(key);
+    notify(`🎨 ${th.label} teması seçildi`);
+  };
+
   const tabs = [
     { key: "genel", label: "Genel" },
     { key: "konum", label: "Konum" },
@@ -164,182 +322,265 @@ function SettingsPanel({
   ] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col ${t.settingsCard}`}
-        onClick={e => e.stopPropagation()}>
+    <>
+      {premiumModalOpen && (
+        <PremiumModal onClose={() => { setPremiumModalOpen(false); setLockedThemePreview(null); }} t={t} />
+      )}
 
-        {/* Panel header */}
-        <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
-          <div className="flex items-center gap-2">
-            <Settings className={`w-5 h-5 ${t.accent}`} />
-            <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 px-6 pb-3 shrink-0">
-          {tabs.map(tb => (
-            <button key={tb.key} onClick={() => setTab(tb.key)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${tab === tb.key ? `bg-white/15 ${t.accent}` : 'text-slate-500 hover:bg-white/5'}`}>
-              {tb.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-5">
-
-          {/* GENEL: Tema */}
-          {tab === "genel" && (
-            <div className="space-y-3">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5" />Tema Seçimi
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {(Object.keys(THEMES) as ThemeKey[]).map(key => {
-                  const th = THEMES[key];
-                  return (
-                    <button key={key} onClick={() => setTheme(key)}
-                      className={`relative flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${theme === key ? 'border-white/30 bg-white/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
-                      <div className="flex gap-1 shrink-0">
-                        {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />)}
-                      </div>
-                      <span className="text-xs font-bold text-slate-200">{th.label}</span>
-                      {theme === key && <Check className="w-4 h-4 text-white absolute right-3 top-1/2 -translate-y-1/2" />}
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col ${t.settingsCard}`}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Panel header */}
+          <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <Settings className={`w-5 h-5 ${t.accent}`} />
+              <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
             </div>
-          )}
-
-          {/* KONUM */}
-          {tab === "konum" && (
-            <div className="space-y-4">
-
-              {/* Kayıtlı konumlar */}
-              {savedLocations.length > 0 && (
-                <div>
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
-                    <Star className="w-3.5 h-3.5" />Kayıtlı Konumlar
-                  </h3>
-                  <div className="space-y-1.5">
-                    {savedLocations.map((loc, idx) => {
-                      const isActive = location.latitude.toFixed(3) === loc.latitude.toFixed(3);
-                      return (
-                        <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all ${isActive ? `bg-white/10 border-white/20` : `bg-black/20 border-white/5`}`}>
-                          <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              {isActive && <div className={`w-2 h-2 rounded-full ${t.accent.replace('text-','bg-')} shrink-0`} />}
-                              <span className={`text-sm font-bold ${isActive ? t.accent : 'text-slate-200'}`}>{loc.name}</span>
-                              <span className="text-xs text-slate-500">{loc.country}</span>
-                            </div>
-                            <div className="text-[10px] text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
-                          </button>
-                          <button onClick={() => deleteSaved(idx)}
-                            className="p-1.5 text-slate-600 hover:text-red-400 transition-all cursor-pointer shrink-0">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="flex items-center gap-2">
+              {/* Premium badge veya "Premium Ol" butonu */}
+              {isPremium ? (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400">
+                  ✨ Premium
+                </span>
+              ) : (
+                <button
+                  onClick={() => setPremiumModalOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400 hover:opacity-80 transition-all cursor-pointer"
+                >
+                  ✨ Premium Al
+                </button>
               )}
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+          </div>
 
-              {/* Yeni konum ara */}
-              <div>
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
-                  <Search className="w-3.5 h-3.5" />Yeni Konum Ekle
+          {/* Tabs */}
+          <div className="flex gap-1 px-6 pb-3 shrink-0">
+            {tabs.map(tb => (
+              <button key={tb.key} onClick={() => setTab(tb.key)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${tab === tb.key ? `bg-white/15 ${t.accent}` : 'text-slate-500 hover:bg-white/5'}`}>
+                {tb.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-5">
+
+            {/* GENEL: Tema */}
+            {tab === "genel" && (
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5" />Tema Seçimi
                 </h3>
-                <div className="relative mb-2">
-                  <input type="text" value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && performSearch()}
-                    placeholder="Şehir arayın (Paris, Mekke, Konya…)"
-                    className="w-full bg-black/30 border border-white/10 focus:border-white/30 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none" />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <button onClick={performSearch} disabled={isSearching}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80`}>
-                    {isSearching ? "…" : "ARA"}
-                  </button>
-                </div>
-                {searchResults.length > 0 && (
-                  <div className="bg-black/40 border border-white/10 rounded-2xl p-2 max-h-44 overflow-y-auto space-y-1 mb-2">
-                    {searchResults.map((r, i) => (
-                      <button key={i} onClick={() => addAndSelectCity(r)}
-                        className="w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-xs text-slate-300 flex justify-between items-center transition-all cursor-pointer">
-                        <div>
-                          <span className="font-bold text-slate-100">{r.name}</span>
-                          {r.admin1 && <span className="text-slate-500 ml-1.5 text-[10px]">({r.admin1})</span>}
+
+                {/* Ücretsiz tema */}
+                <div>
+                  <div className="text-[9px] text-slate-500 uppercase tracking-widest font-black mb-2">Ücretsiz</div>
+                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
+                    .filter(([, th]) => th.free)
+                    .map(([key, th]) => (
+                      <button key={key} onClick={() => handleThemeClick(key)}
+                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${theme === key ? 'border-white/30 bg-white/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
+                        <div className="flex gap-1 shrink-0">
+                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />)}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${t.accent} bg-white/5 border border-white/10`}>{r.country}</span>
-                          <Plus className="w-3.5 h-3.5 text-slate-500" />
-                        </div>
+                        <span className="text-xs font-bold text-slate-200">{th.label}</span>
+                        {theme === key && <Check className="w-4 h-4 text-white absolute right-3 top-1/2 -translate-y-1/2" />}
                       </button>
                     ))}
+                </div>
+
+                {/* Premium temalar */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[9px] text-amber-500/80 uppercase tracking-widest font-black flex items-center gap-1">
+                      <Lock className="w-3 h-3" />Premium (9 Tema)
+                    </div>
+                    {!isPremium && (
+                      <button onClick={() => setPremiumModalOpen(true)}
+                        className="text-[9px] text-amber-400 font-bold hover:opacity-70 transition-all cursor-pointer">
+                        ₺79 →
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
+                      .filter(([, th]) => !th.free)
+                      .map(([key, th]) => {
+                        const locked = !isPremium;
+                        const isActive = theme === key;
+                        return (
+                          <button key={key} onClick={() => handleThemeClick(key)}
+                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
+                              ${isActive ? 'border-white/30 bg-white/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}
+                              ${locked ? 'opacity-70' : ''}`}>
+                            <div className="flex gap-0.5 shrink-0">
+                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />)}
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
+                            {locked && (
+                              <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
+                            )}
+                            {!locked && isActive && (
+                              <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* Test: premium toggle (geliştirici modu) */}
+                {process.env.NODE_ENV === "development" && (
+                  <div className="pt-2 border-t border-white/5">
+                    <button
+                      onClick={() => {
+                        const next = !isPremium;
+                        setIsPremium(next);
+                        localStorage.setItem("mnv_premium", String(next));
+                        notify(next ? "✨ Premium aktif (test)" : "Premium devre dışı (test)");
+                      }}
+                      className="text-[10px] text-slate-600 hover:text-slate-400 transition-all cursor-pointer"
+                    >
+                      [Dev] Premium: {isPremium ? "Aktif" : "Pasif"} — Geçiş yap
+                    </button>
                   </div>
                 )}
-                {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
+              </div>
+            )}
 
-                {/* 81 il */}
+            {/* KONUM */}
+            {tab === "konum" && (
+              <div className="space-y-4">
+                {savedLocations.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
+                      <Star className="w-3.5 h-3.5" />Kayıtlı Konumlar
+                    </h3>
+                    <div className="space-y-1.5">
+                      {savedLocations.map((loc, idx) => {
+                        const isActive = location.latitude.toFixed(3) === loc.latitude.toFixed(3);
+                        return (
+                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all ${isActive ? `bg-white/10 border-white/20` : `bg-black/20 border-white/5`}`}>
+                            <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                {isActive && <div className={`w-2 h-2 rounded-full ${t.accent.replace('text-','bg-')} shrink-0`} />}
+                                <span className={`text-sm font-bold ${isActive ? t.accent : 'text-slate-200'}`}>{loc.name}</span>
+                                <span className="text-xs text-slate-500">{loc.country}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
+                            </button>
+                            <button onClick={() => deleteSaved(idx)} className="p-1.5 text-slate-600 hover:text-red-400 transition-all cursor-pointer shrink-0">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1 mb-1.5">
-                    <Map className="w-3 h-3" />Türkiye 81 İl
-                  </label>
-                  <div className="relative">
-                    <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none">
-                      <option value="">— Seçiniz —</option>
-                      {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                    </select>
-                    <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
+                    <Search className="w-3.5 h-3.5" />Yeni Konum Ekle
+                  </h3>
+                  <div className="relative mb-2">
+                    <input type="text" value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && performSearch()}
+                      placeholder="Şehir arayın (Paris, Mekke, Konya…)"
+                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <button onClick={performSearch} disabled={isSearching}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
+                      {isSearching ? "…" : "ARA"}
+                    </button>
+                  </div>
+                  {searchResults.length > 0 && (
+                    <div className="bg-black/40 border border-white/10 rounded-2xl p-2 max-h-44 overflow-y-auto space-y-1 mb-2">
+                      {searchResults.map((r, i) => (
+                        <button key={i} onClick={() => addAndSelectCity(r)}
+                          className="w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-xs text-slate-300 flex justify-between items-center transition-all cursor-pointer">
+                          <div>
+                            <span className="font-bold text-slate-100">{r.name}</span>
+                            {r.admin1 && <span className="text-slate-500 ml-1.5 text-[10px]">({r.admin1})</span>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${t.accent} bg-white/5 border border-white/10`}>{r.country}</span>
+                            <Plus className="w-3.5 h-3.5 text-slate-500" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
+
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                      <Map className="w-3 h-3" />Türkiye 81 İl
+                    </label>
+                    <div className="relative">
+                      <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none">
+                        <option value="">— Seçiniz —</option>
+                        {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                      </select>
+                      <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* METOD */}
-          {tab === "metod" && (
-            <div className="space-y-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-3">
-                <Sparkles className="w-3.5 h-3.5" />Namaz Vakti Hesaplama Metodu
-              </h3>
-              {PRAYER_METHODS.map(m => (
-                <button key={m.id} onClick={() => setPrayerMethod(m.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer text-left ${prayerMethod === m.id ? 'border-white/30 bg-white/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
-                  <div>
-                    <div className="text-xs font-bold text-slate-100">{m.label}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">{m.description}</div>
-                  </div>
-                  {prayerMethod === m.id && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
-                </button>
-              ))}
-            </div>
-          )}
+            {/* METOD */}
+            {tab === "metod" && (
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-3">
+                  <Sparkles className="w-3.5 h-3.5" />Namaz Vakti Hesaplama Metodu
+                </h3>
+                {PRAYER_METHODS.map(m => (
+                  <button key={m.id} onClick={() => setPrayerMethod(m.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer text-left ${prayerMethod === m.id ? 'border-white/30 bg-white/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
+                    <div>
+                      <div className="text-xs font-bold text-slate-100">{m.label}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{m.description}</div>
+                    </div>
+                    {prayerMethod === m.id && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
+                  </button>
+                ))}
+              </div>
+            )}
 
-        </div>
-
-        {notification && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 px-4 py-2 rounded-full text-xs font-semibold text-slate-100 shadow-xl whitespace-nowrap">
-            {notification}
           </div>
-        )}
+
+          {notification && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 px-4 py-2 rounded-full text-xs font-semibold text-slate-100 shadow-xl whitespace-nowrap">
+              {notification}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [themeKey, setThemeKey] = useState<ThemeKey>(() =>
-    (localStorage.getItem("mnv_theme") as ThemeKey) || "gece"
-  );
+  const [themeKey, setThemeKey] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem("mnv_theme") as ThemeKey;
+    if (saved && THEMES[saved]) {
+      const isPrem = getIsPremium();
+      if (!THEMES[saved].free && !isPrem) return "gece";
+      return saved;
+    }
+    return "gece";
+  });
+  const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [location, setLocation] = useState<Location>(() => {
     try { const s = localStorage.getItem("mnv_location"); return s ? JSON.parse(s) : DEFAULT_LOCATION; }
@@ -360,14 +601,25 @@ export default function App() {
 
   const t = THEMES[themeKey];
 
-  const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
-  const setLocationAndSave = (loc: Location) => { setLocation(loc); localStorage.setItem("mnv_location", JSON.stringify(loc)); };
-  const setSavedLocations = (locs: Location[]) => { setSavedLocationsState(locs); localStorage.setItem("mnv_saved_locations", JSON.stringify(locs)); };
-  const setPrayerMethod = (m: number) => { setPrayerMethodState(m); localStorage.setItem("mnv_prayer_method", String(m)); };
+  const setTheme = (key: ThemeKey) => {
+    setThemeKey(key);
+    localStorage.setItem("mnv_theme", key);
+  };
+  const setLocationAndSave = (loc: Location) => {
+    setLocation(loc);
+    localStorage.setItem("mnv_location", JSON.stringify(loc));
+  };
+  const setSavedLocations = (locs: Location[]) => {
+    setSavedLocationsState(locs);
+    localStorage.setItem("mnv_saved_locations", JSON.stringify(locs));
+  };
+  const setPrayerMethod = (m: number) => {
+    setPrayerMethodState(m);
+    localStorage.setItem("mnv_prayer_method", String(m));
+  };
 
-  useEffect(() => { const t = setInterval(() => setDate(new Date()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const i = setInterval(() => setDate(new Date()), 1000); return () => clearInterval(i); }, []);
 
-  // Namaz vakitlerini çek
   const lastFetchKey = useRef("");
   const loadPrayerTimes = async (loc: Location, method: number, dt: Date, force = false) => {
     const key = `${loc.latitude.toFixed(2)}_${loc.longitude.toFixed(2)}_${dt.getDate()}_${dt.getMonth()}_${dt.getFullYear()}_${method}`;
@@ -385,7 +637,6 @@ export default function App() {
   useEffect(() => { loadPrayerTimes(location, prayerMethod, date); }, [location.latitude, location.longitude, date.getDate(), date.getMonth(), prayerMethod]);
   const handleRefresh = () => { lastFetchKey.current = ""; loadPrayerTimes(location, prayerMethod, date, true); };
 
-  // Saat
   const localTime = useMemo(() => {
     const tz = location.timezone || "Europe/Istanbul";
     let hour="--", min="--", sec="--", weekday="—", gregDay="--", gregMonthYear="— —";
@@ -408,7 +659,6 @@ export default function App() {
     return {hour,min,sec,weekday,gregDay,gregMonthYear,hijriDay,hijriMonth,hijriYear,isNight};
   }, [date, location.timezone]);
 
-  // Aktif namaz vakti
   const activePrayerIndex = useMemo(() => {
     let h=0, m=0;
     try {
@@ -434,6 +684,7 @@ export default function App() {
           location={location} setLocation={setLocationAndSave}
           savedLocations={savedLocations} setSavedLocations={setSavedLocations}
           prayerMethod={prayerMethod} setPrayerMethod={setPrayerMethod}
+          isPremium={isPremium} setIsPremium={setIsPremium}
           onClose={() => setSettingsOpen(false)} t={t}
         />
       )}
@@ -449,7 +700,9 @@ export default function App() {
             </button>
             <div>
               <h1 className="text-lg font-black tracking-tight text-slate-100">Meccanen Namaz Vakti</h1>
-              <p className="text-[10px] text-slate-500 font-medium">Reklamsız</p>
+              <p className="text-[10px] text-slate-500 font-medium">
+                Reklamsız {isPremium && <span className="text-amber-500 ml-1">· ✨ Premium</span>}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -465,7 +718,6 @@ export default function App() {
 
         {/* ── SAAT + TAKVİM ── */}
         <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-6 transition-all`}>
-          {/* Saat */}
           <div className="flex items-baseline justify-center font-mono select-none mb-1">
             <span className={`text-6xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${t.clockGrad}`}>
               {localTime.hour}:{localTime.min}
@@ -474,7 +726,6 @@ export default function App() {
           </div>
           <p className="text-center text-sm font-semibold text-slate-400 mb-4">{localTime.weekday}</p>
 
-          {/* Takvim: Miladi + Hicri yan yana */}
           <div className={`border-t ${t.header} pt-4 flex justify-between items-start gap-4`}>
             <div>
               <div className={`text-[9px] font-black uppercase tracking-widest ${t.accent2} mb-1 flex items-center gap-1`}>
@@ -521,10 +772,10 @@ export default function App() {
         {/* ── KONUM BİLGİSİ ── */}
         <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-5 transition-all`}>
           <div className="flex justify-between items-center">
-            <div className={`text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5`}>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Globe className={`w-3.5 h-3.5 ${t.accent}`} />Konum
             </div>
-            <button onClick={() => { setSettingsOpen(true); }}
+            <button onClick={() => setSettingsOpen(true)}
               className={`text-[10px] font-bold ${t.accent} cursor-pointer hover:opacity-70 transition-all`}>
               Değiştir →
             </button>
