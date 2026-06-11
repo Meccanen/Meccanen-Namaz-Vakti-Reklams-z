@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  MapPin, Calendar, Clock, Compass, Sparkles, Search,
+  MapPin, Calendar, Compass, Sparkles, Search,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee
+  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff
 } from "lucide-react";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
 import { TURKEY_PROVINCES } from "./utils/weatherHelper";
+import {
+  NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS,
+  requestNotificationPermission, checkNotificationPermission,
+  schedulePrayerNotifications, cancelAllNotifications,
+  saveNotificationSettings, loadNotificationSettings,
+  PRAYER_LABELS,
+} from "./utils/notificationHelper";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 export const THEMES = {
@@ -383,8 +390,11 @@ function SettingsPanel({
   isPremium: boolean; setIsPremium: (v: boolean) => void;
   onClose: () => void; t: typeof THEMES[ThemeKey];
   logoTapCount: number; setLogoTapCount: (n: number) => void;
+  notificationSettings: NotificationSettings;
+  setNotificationSettings: (s: NotificationSettings) => void;
+  prayerTimes: { key: string; name: string; time: string }[];
 }) {
-  const [tab, setTab] = useState<"genel"|"konum"|"metod">("genel");
+  const [tab, setTab] = useState<"genel"|"konum"|"metod"|"bildirim">("genel");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -481,7 +491,9 @@ function SettingsPanel({
     { key: "genel" as const, label: "Genel" },
     { key: "konum" as const, label: "Konum" },
     { key: "metod" as const, label: "Metod" },
+    { key: "bildirim" as const, label: "Bildirim" },
   ];
+  type TabKey = "genel" | "konum" | "metod" | "bildirim";
 
   return (
     <>
@@ -766,6 +778,124 @@ function SettingsPanel({
                     {prayerMethod === m.id && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
                   </button>
                 ))}
+
+            {/* ── BİLDİRİM ── */}
+            {tab === "bildirim" && (
+              <div className="space-y-4">
+                <h3 className={`text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5`}>
+                  <Bell className="w-3.5 h-3.5" />Namaz Hatırlatıcı
+                </h3>
+
+                {/* Global açma/kapama */}
+                <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5"}`}>
+                  <div className="flex items-center gap-3">
+                    {notificationSettings.enabled
+                      ? <Bell className="w-5 h-5 text-amber-400" />
+                      : <BellOff className="w-5 h-5 text-slate-500" />
+                    }
+                    <div>
+                      <div className={`text-sm font-black ${notificationSettings.enabled ? "text-amber-400" : "text-slate-300"}`}>
+                        {notificationSettings.enabled ? "Bildirimler Açık" : "Bildirimler Kapalı"}
+                      </div>
+                      <div className="text-[10px] text-slate-500">Namaz vakti yaklaşınca uyar</div>
+                    </div>
+                  </div>
+                  {/* Toggle switch */}
+                  <button
+                    onClick={async () => {
+                      const next = !notificationSettings.enabled;
+                      if (next) {
+                        const granted = await requestNotificationPermission();
+                        if (!granted) {
+                          notify("⚠️ Bildirim izni verilmedi");
+                          return;
+                        }
+                      } else {
+                        await cancelAllNotifications();
+                      }
+                      const updated = { ...notificationSettings, enabled: next };
+                      setNotificationSettings(updated);
+                      saveNotificationSettings(updated);
+                      if (next) {
+                        await schedulePrayerNotifications(prayerTimes, updated, "");
+                        notify("🔔 Bildirimler aktif!");
+                      } else {
+                        notify("🔕 Bildirimler kapatıldı");
+                      }
+                    }}
+                    className={`relative w-12 h-6 rounded-full transition-all cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.enabled ? "left-6" : "left-0.5"}`} />
+                  </button>
+                </div>
+
+                {/* Kaç dakika önce */}
+                {notificationSettings.enabled && (
+                  <>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                        Ne kadar önce?
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {[5, 10, 15, 20, 30].map(min => (
+                          <button
+                            key={min}
+                            onClick={async () => {
+                              const updated = { ...notificationSettings, minutesBefore: min };
+                              setNotificationSettings(updated);
+                              saveNotificationSettings(updated);
+                              await schedulePrayerNotifications(prayerTimes, updated, "");
+                              notify(`⏰ ${min} dakika önce bildirim`);
+                            }}
+                            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer border-2 ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}
+                          >
+                            {min} dk
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Vakit seçimi */}
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                        Hangi vakitler?
+                      </div>
+                      <div className="space-y-2">
+                        {(Object.entries(notificationSettings.prayers) as [keyof typeof notificationSettings.prayers, boolean][]).map(([key, isOn]) => (
+                          <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${isOn ? "bg-amber-400" : "bg-slate-600"}`} />
+                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>
+                                {PRAYER_LABELS[key]}
+                              </span>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                const updated = {
+                                  ...notificationSettings,
+                                  prayers: { ...notificationSettings.prayers, [key]: !isOn }
+                                };
+                                setNotificationSettings(updated);
+                                saveNotificationSettings(updated);
+                                await schedulePrayerNotifications(prayerTimes, updated, "");
+                              }}
+                              className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}
+                            >
+                              <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Bilgi notu */}
+                <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-[10px] text-blue-300 leading-relaxed">
+                    💡 Bildirimler her gün namaz vakitleri yüklendiğinde otomatik olarak güncellenir.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -792,6 +922,7 @@ export default function App() {
     return "gece";
   });
   const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
+  const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [logoTapCount, setLogoTapCount] = useState(0);
   const [location, setLocation] = useState<Location>(() => {
@@ -814,6 +945,10 @@ export default function App() {
   const t = THEMES[themeKey];
 
   const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
+  const setNotificationSettings = (s: NotificationSettings) => {
+    setNotificationSettingsState(s);
+    saveNotificationSettings(s);
+  };
   const setLocationAndSave = (loc: Location) => { setLocation(loc); localStorage.setItem("mnv_location", JSON.stringify(loc)); };
   const setSavedLocations = (locs: Location[]) => { setSavedLocationsState(locs); localStorage.setItem("mnv_saved_locations", JSON.stringify(locs)); };
   const setPrayerMethod = (m: number) => { setPrayerMethodState(m); localStorage.setItem("mnv_prayer_method", String(m)); };
@@ -832,6 +967,14 @@ export default function App() {
     } catch {
       setPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul"));
     } finally { setPrayerLoading(false); }
+  };
+
+  // Namaz vakitleri değişince bildirimleri yeniden planla
+  useEffect(() => {
+    if (prayerTimes.length > 0 && notificationSettings.enabled) {
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name);
+    }
+  }, [prayerTimes, notificationSettings.enabled]);
   };
 
   useEffect(() => { loadPrayerTimes(location, prayerMethod, date); }, [location.latitude, location.longitude, date.getDate(), date.getMonth(), prayerMethod]);
@@ -885,6 +1028,9 @@ export default function App() {
           prayerMethod={prayerMethod} setPrayerMethod={setPrayerMethod}
           isPremium={isPremium} setIsPremium={setIsPremium}
           logoTapCount={logoTapCount} setLogoTapCount={setLogoTapCount}
+          notificationSettings={notificationSettings}
+          setNotificationSettings={setNotificationSettings}
+          prayerTimes={prayerTimes}
           onClose={() => setSettingsOpen(false)} t={t}
         />
       )}
@@ -900,8 +1046,10 @@ export default function App() {
             </button>
             <div>
               <h1 className={`text-lg font-black tracking-tight ${t.textPrimary}`}>Meccanen Namaz Vakti</h1>
-              <p className="text-[10px] text-slate-500 font-medium">
-                Reklamsız {isPremium && <span className="text-amber-500 ml-1">· ✨ Premium</span>}
+              <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
+                Reklamsız
+                {isPremium && <span className="text-amber-500">· ✨ Premium</span>}
+                {notificationSettings.enabled && <Bell className="w-3 h-3 text-amber-400" />}
               </p>
             </div>
           </div>
