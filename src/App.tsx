@@ -110,6 +110,37 @@ export const THEMES = {
     blob1: "bg-blue-500/5", blob2: "bg-indigo-500/5",
     hijriAccent: "text-indigo-300", settingsCard: "bg-blue-950/95 border-blue-800",
   },
+  // ── AÇIK TEMALAR ──
+  seher: {
+    label: "Beyaz Seher", preview: ["#fefce8","#d97706","#92400e"], free: false,
+    bg: "bg-[#fefce8]", card: "bg-white/70 border-amber-200/80",
+    cardHover: "hover:border-amber-300/60", header: "border-amber-200/60",
+    accent: "text-amber-700", accent2: "text-orange-600", accent3: "text-amber-900",
+    prayerActive: "bg-gradient-to-b from-amber-400/20 to-amber-400/35 border-amber-500/40 text-amber-800 ring-amber-400/30",
+    clockGrad: "from-amber-900 to-orange-800", secColor: "text-amber-600",
+    blob1: "bg-amber-300/20", blob2: "bg-orange-200/20",
+    hijriAccent: "text-orange-700", settingsCard: "bg-white/98 border-amber-200",
+  },
+  gul: {
+    label: "Gül Bahçesi", preview: ["#fff1f2","#e11d48","#9f1239"], free: false,
+    bg: "bg-[#fff1f2]", card: "bg-white/70 border-rose-200/80",
+    cardHover: "hover:border-rose-300/60", header: "border-rose-200/60",
+    accent: "text-rose-600", accent2: "text-pink-600", accent3: "text-rose-800",
+    prayerActive: "bg-gradient-to-b from-rose-400/20 to-rose-400/35 border-rose-500/40 text-rose-700 ring-rose-400/30",
+    clockGrad: "from-rose-900 to-pink-800", secColor: "text-rose-500",
+    blob1: "bg-rose-300/20", blob2: "bg-pink-200/20",
+    hijriAccent: "text-rose-700", settingsCard: "bg-white/98 border-rose-200",
+  },
+  nane: {
+    label: "Nane Yeşili", preview: ["#f0fdf4","#16a34a","#14532d"], free: false,
+    bg: "bg-[#f0fdf4]", card: "bg-white/70 border-green-200/80",
+    cardHover: "hover:border-green-300/60", header: "border-green-200/60",
+    accent: "text-green-700", accent2: "text-emerald-600", accent3: "text-green-900",
+    prayerActive: "bg-gradient-to-b from-green-400/20 to-green-400/35 border-green-500/40 text-green-800 ring-green-400/30",
+    clockGrad: "from-green-900 to-emerald-800", secColor: "text-green-600",
+    blob1: "bg-green-300/20", blob2: "bg-emerald-200/20",
+    hijriAccent: "text-emerald-700", settingsCard: "bg-white/98 border-green-200",
+  },
 };
 export type ThemeKey = keyof typeof THEMES;
 
@@ -138,29 +169,84 @@ const DEFAULT_LOCATION: Location = {
 // ─── TEMA ÖNİZLEME KARTI ─────────────────────────────────────────────────────
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const th = THEMES[themeKey];
+  const isLight = ["seher","gul","nane"].includes(themeKey);
+  const textMain = isLight ? th.preview[2] : "rgba(255,255,255,0.9)";
+  const textSub  = isLight ? th.preview[1] + "cc" : "rgba(255,255,255,0.45)";
+  const cardBg   = isLight ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.04)";
+  const cardBorder = isLight ? `${th.preview[1]}33` : "rgba(255,255,255,0.07)";
+  const activeBg   = th.preview[1] + "44";
+  const activeBorder = th.preview[1] + "88";
+
+  const prayers = [
+    { n:"İmsak", t:"04:32" }, { n:"Güneş", t:"06:10" }, { n:"Öğle", t:"13:15" },
+    { n:"İkindi", t:"17:02" }, { n:"Akşam", t:"20:18" }, { n:"Yatsı", t:"22:01" },
+  ];
+  const activeIdx = 4; // Akşam vakti aktif
+
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/10 shadow-xl"
-      style={{ background: th.preview[0], minHeight: 120 }}>
-      <div className="p-3 flex flex-col gap-2">
-        {/* Sahte saat */}
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: th.preview[1] }} />
-          <span className="text-[10px] font-black font-mono" style={{ color: th.preview[2] }}>05:00</span>
+    <div className="rounded-2xl overflow-hidden shadow-xl border"
+      style={{ background: th.preview[0], borderColor: isLight ? th.preview[1]+"33" : "rgba(255,255,255,0.08)" }}>
+
+      {/* ── Header ── */}
+      <div className="flex justify-between items-center px-4 pt-3 pb-2"
+        style={{ borderBottom: `1px solid ${isLight ? th.preview[1]+"22" : "rgba(255,255,255,0.06)"}` }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-lg flex items-center justify-center"
+            style={{ background: th.preview[1]+"22", border: `1px solid ${th.preview[1]}44` }}>
+            <div className="w-2 h-2 rounded-full" style={{ background: th.preview[1] }} />
+          </div>
+          <div>
+            <div className="text-[9px] font-black" style={{ color: textMain }}>Meccanen Namaz Vakti</div>
+            <div className="text-[7px] font-medium" style={{ color: textSub }}>Reklamsız</div>
+          </div>
         </div>
-        {/* Sahte namaz vakitleri */}
+        <div className="px-2 py-0.5 rounded-full text-[7px] font-bold"
+          style={{ background: th.preview[1]+"22", color: th.preview[1] }}>İstanbul</div>
+      </div>
+
+      {/* ── Saat + Takvim ── */}
+      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${isLight ? th.preview[1]+"22" : "rgba(255,255,255,0.06)"}` }}>
+        <div className="flex items-baseline gap-1 mb-1">
+          <span className="text-2xl font-extrabold font-mono" style={{ color: textMain }}>20:18</span>
+          <span className="text-sm font-light" style={{ color: th.preview[1] }}>:45</span>
+        </div>
+        <div className="text-[8px] font-semibold mb-2" style={{ color: textSub }}>Cuma</div>
+        <div className="flex justify-between">
+          <div>
+            <div className="text-[7px] font-black uppercase mb-0.5" style={{ color: th.preview[1] }}>Miladi</div>
+            <div className="text-sm font-black" style={{ color: textMain }}>11</div>
+            <div className="text-[7px]" style={{ color: textSub }}>Haziran 2026</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[7px] font-black uppercase mb-0.5" style={{ color: th.preview[2] }}>Hicri</div>
+            <div className="text-sm font-black" style={{ color: th.preview[2] }}>14</div>
+            <div className="text-[7px]" style={{ color: textSub }}>Zilhicce (1447 AH)</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Namaz Vakitleri ── */}
+      <div className="px-3 py-3">
+        <div className="text-[7px] font-black uppercase tracking-widest mb-2" style={{ color: th.preview[1] }}>
+          ✦ Diyanet Vakitleri
+        </div>
         <div className="grid grid-cols-6 gap-1">
-          {["İmsak","Güneş","Öğle","İkindi","Akşam","Yatsı"].map((n, i) => (
-            <div key={n} className="flex flex-col items-center p-1 rounded-lg"
-              style={{ background: i === 4 ? th.preview[1] + "33" : "rgba(255,255,255,0.04)", border: i === 4 ? `1px solid ${th.preview[1]}55` : "1px solid rgba(255,255,255,0.05)" }}>
-              <span className="text-[7px] font-bold" style={{ color: i === 4 ? th.preview[1] : th.preview[2] + "99" }}>{n}</span>
-              <span className="text-[8px] font-mono font-black" style={{ color: i === 4 ? th.preview[1] : "rgba(255,255,255,0.6)" }}>
-                {["04:32","06:10","13:15","17:02","20:18","22:01"][i]}
-              </span>
+          {prayers.map(({ n, t: time }, i) => (
+            <div key={n} className="flex flex-col items-center p-1.5 rounded-xl transition-all"
+              style={{
+                background: i === activeIdx ? activeBg : cardBg,
+                border: `1px solid ${i === activeIdx ? activeBorder : cardBorder}`,
+              }}>
+              <span className="text-[6.5px] font-bold mb-0.5"
+                style={{ color: i === activeIdx ? th.preview[1] : textSub }}>{n}</span>
+              <span className="text-[8px] font-mono font-black"
+                style={{ color: i === activeIdx ? th.preview[1] : textMain }}>{time}</span>
             </div>
           ))}
         </div>
-        {/* Sahte accent çizgisi */}
-        <div className="h-0.5 rounded-full mt-1" style={{ background: `linear-gradient(90deg, ${th.preview[1]}, ${th.preview[2]})` }} />
+        {/* Gradient bar */}
+        <div className="h-0.5 rounded-full mt-3"
+          style={{ background: `linear-gradient(90deg, ${th.preview[1]}, ${th.preview[2]})` }} />
       </div>
     </div>
   );
@@ -437,7 +523,7 @@ function SettingsPanel({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-[9px] text-amber-500/80 uppercase tracking-widest font-black flex items-center gap-1">
-                      <Lock className="w-3 h-3" />Premium (9 Tema)
+                      <Lock className="w-3 h-3" />Premium (12 Tema)
                     </div>
                     {!isPremium && (
                       <button onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
@@ -446,9 +532,11 @@ function SettingsPanel({
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Koyu temalar */}
+                  <div className="text-[8px] text-slate-600 uppercase tracking-widest font-black mb-1.5">🌙 Koyu</div>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
-                      .filter(([, th]) => !th.free)
+                      .filter(([k, th]) => !th.free && !["seher","gul","nane"].includes(k))
                       .map(([key, th]) => {
                         const locked = !isPremium;
                         const isActive = theme === key;
@@ -459,6 +547,31 @@ function SettingsPanel({
                               ${locked ? "opacity-70" : ""}`}>
                             <div className="flex gap-0.5 shrink-0">
                               {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />)}
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
+                            {locked
+                              ? <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
+                              : isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
+                            }
+                          </button>
+                        );
+                      })}
+                  </div>
+                  {/* Açık temalar */}
+                  <div className="text-[8px] text-slate-600 uppercase tracking-widest font-black mb-1.5">☀️ Açık</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
+                      .filter(([k, th]) => !th.free && ["seher","gul","nane"].includes(k))
+                      .map(([key, th]) => {
+                        const locked = !isPremium;
+                        const isActive = theme === key;
+                        return (
+                          <button key={key} onClick={() => handleThemeClick(key)}
+                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
+                              ${isActive ? "border-amber-400/40 bg-amber-50/20" : "border-slate-300/20 bg-white/5 hover:bg-white/10"}
+                              ${locked ? "opacity-70" : ""}`}>
+                            <div className="flex gap-0.5 shrink-0">
+                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: c }} />)}
                             </div>
                             <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
                             {locked
