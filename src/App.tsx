@@ -977,7 +977,6 @@ export default function App() {
       schedulePrayerNotifications(prayerTimes, notificationSettings, location.name);
     }
   }, [prayerTimes, notificationSettings.enabled]);
-  };
 
   useEffect(() => { loadPrayerTimes(location, prayerMethod, date); }, [location.latitude, location.longitude, date.getDate(), date.getMonth(), prayerMethod]);
   const handleRefresh = () => { lastFetchKey.current = ""; loadPrayerTimes(location, prayerMethod, date, true); };
