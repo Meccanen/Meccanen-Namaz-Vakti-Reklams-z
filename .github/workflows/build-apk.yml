@@ -74,13 +74,14 @@ jobs:
           ./gradlew assembleDebug
 
       - name: Release AAB build et
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        working-directory: android
+        # Hata veren kısmı düzelttik: Secret'ı env içinden kontrol ediyoruz
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        working-directory: android
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > app/meccanen.keystore
           ./gradlew bundleRelease \
@@ -97,7 +98,10 @@ jobs:
           retention-days: 30
 
       - name: Release AAB kaydet
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        # Hata veren kısmı düzelttik
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: meccanen-release-aab
