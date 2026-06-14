@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # Hata veren cache satırını kaldırdık
 
       - name: Java kur
         uses: actions/setup-java@v4
@@ -44,6 +43,9 @@ jobs:
 
       - name: Ikonları oluştur
         run: |
+          # Python için gerekli Pillow kütüphanesini yüklüyoruz
+          pip install Pillow
+          
           cat > /tmp/make_icons.py << 'PYEOF'
           from PIL import Image
           import os
