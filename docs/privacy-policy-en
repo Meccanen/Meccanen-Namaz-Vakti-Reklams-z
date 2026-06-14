@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Meccanen Prayer Times</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+        h1, h2 { color: #111; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>Privacy Policy</h1>
+    <p><strong>Last updated:</strong> June 2026</p>
+
+    <p>🔒 <strong>In Short:</strong> Meccanen Prayer Times application does not collect, sell, or share your personal data with third parties. All data is stored exclusively on your device.</p>
+
+    <h2>1. Collected Information</h2>
+    <p>Meccanen Prayer Times stores the following information only on your device (<code>localStorage</code>):</p>
+    <ul>
+        <li>Selected city/location info (latitude, longitude, time zone)</li>
+        <li>Prayer time calculation method preference</li>
+        <li>Theme and appearance preferences</li>
+        <li>Notification preferences</li>
+        <li>Premium subscription status</li>
+    </ul>
+    <p>This information is never sent to any server and is used solely for the proper functioning of the application.</p>
+
+    <h2>2. External Services Used</h2>
+    <p>The application uses the following third-party APIs to calculate prayer times:</p>
+    <ul>
+        <li><strong>AlAdhan API</strong> (aladhan.com) — For prayer time calculations. Only latitude, longitude, and date information are sent to this service. It contains no personal data.</li>
+        <li><strong>Open-Meteo Geocoding API</strong> — For city search. Only the search query text is sent to this service.</li>
+    </ul>
+
+    <h2>3. Location Information</h2>
+    <p>The application does not automatically access GPS or device location. Location information is obtained only through the city or region manually entered/selected by the user. This data is stored on your device and is not shared with third parties.</p>
+
+    <h2>4. Notifications</h2>
+    <p>If you enable prayer time notifications, the application uses Android system notifications. Notification permission is used exclusively for prayer time reminders. No marketing or promotional notifications will be sent.</p>
+
+    <h2>5. Premium Purchases</h2>
+    <p>Premium features are purchased through Google Play. Your payment information is processed securely by Google Play. The application cannot access any of your payment or card details.</p>
+
+    <h2>6. Advertisements (AD-FREE)</h2>
+    <p>Meccanen Prayer Times application does not contain any advertisements. No ad networks or tracking SDKs are used.</p>
+
+    <h2>7. Children's Privacy</h2>
+    <p>The application does not knowingly collect data from children under the age of 13. Parents or legal guardians can contact us if they have any concerns.</p>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>This privacy policy may be updated from time to time. Important changes will be published on this page. The update date is indicated at the top of the page.</p>
+
+    <h2>9. Contact</h2>
+    <p>If you have any questions about this privacy policy, you can reach us via:</p>
+    <ul>
+        <li>Email: <a href="mailto:meccanen@meccanen.xyz">meccanen@meccanen.xyz</a></li>
+        <li>Ko-fi: <a href="https://ko-fi.com/meccanen" target="_blank">ko-fi.com/meccanen</a></li>
+        <li>PayPal: <a href="https://paypal.me/meccanen" target="_blank">paypal.me/meccanen</a></li>
+    </ul>
+
+    <hr>
+    <p>© 2026 Meccanen · All rights reserved.</p>
+
+</body>
+</html>
