@@ -517,7 +517,7 @@ function SettingsPanel({
             <div className="flex items-center gap-2">
               {/* GİZLİ TOGGLE: Logo'ya 5x tıklama ⚠️ PROD'A ÇIKARKEN KALDIR */}
               <button onClick={handleLogoTap} className="cursor-pointer select-none">
-                <img src="/meccanen-logo.png" alt="Meccanen" className="w-8 h-6 object-contain opacity-80" />
+                <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
               </button>
               <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
               {logoTapCount > 0 && logoTapCount < 5 && (
@@ -1044,17 +1044,16 @@ export default function App() {
         <header className={`flex justify-between items-center border-b ${t.header} pb-4`}>
           <div className="flex items-center gap-3">
             <button onClick={() => setSettingsOpen(true)}
-              className="p-1.5 bg-white/5 border border-white/10 rounded-xl hover:border-white/25 hover:scale-105 transition-all cursor-pointer">
+              className="cursor-pointer select-none hover:scale-105 transition-all">
               <img
                 src="/meccanen-logo.png"
                 alt="Meccanen"
-                className="w-10 h-8 object-contain"
+                className="h-8 w-auto object-contain"
               />
             </button>
+            <div className="w-px h-8 bg-white/10" />
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className={`text-base font-black tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
-              </div>
+              <h1 className={`text-sm font-black tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
               <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
                 Reklamsız
                 {isPremium && <span className="text-amber-500">· ✨ Premium</span>}
