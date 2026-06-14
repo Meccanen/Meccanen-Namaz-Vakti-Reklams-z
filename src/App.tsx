@@ -441,22 +441,21 @@ function SettingsPanel({
   };
 
   const addAndSelectCity = (loc: Location) => {
-    // Ücretsiz kullanıcı: max 1 konum
-    if (!isPremium && savedLocations.length >= 1) {
-      const exists = savedLocations.some(l =>
-        l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
-        l.longitude.toFixed(2) === loc.longitude.toFixed(2)
-      );
-      if (!exists) {
-        setPremiumPreviewTheme(undefined);
-        setPremiumModalOpen(true);
-        return;
-      }
-    }
+    // Konum limiti: ücretsiz max 1, premium max 9
+    const maxLocs = isPremium ? 9 : 1;
     const exists = savedLocations.some(l =>
       l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
       l.longitude.toFixed(2) === loc.longitude.toFixed(2)
     );
+    if (!exists && savedLocations.length >= maxLocs) {
+      if (!isPremium) {
+        setPremiumPreviewTheme(undefined);
+        setPremiumModalOpen(true);
+      } else {
+        notify("⚠️ Maksimum 9 konum kaydedilebilir");
+      }
+      return;
+    }
     const newList = exists ? savedLocations : [...savedLocations, loc];
     setSavedLocations(newList);
     setLocation(loc);
@@ -668,7 +667,7 @@ function SettingsPanel({
                   <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
                     <Lock className="w-4 h-4 text-amber-500 shrink-0" />
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-amber-400">Ücretsiz: 1 konum</div>
+                      <div className="text-xs font-bold text-amber-400">Ücretsiz: 1 konum · Premium: 9 konum</div>
                       <div className="text-[10px] text-slate-500">Sınırsız konum için Premium Al</div>
                     </div>
                     <button onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
@@ -681,7 +680,7 @@ function SettingsPanel({
                 {savedLocations.length > 0 && (
                   <div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
-                      <Star className="w-3.5 h-3.5" />Kayıtlı Konumlar ({savedLocations.length}{!isPremium ? "/1" : ""})
+                      <Star className="w-3.5 h-3.5" />Kayıtlı Konumlar ({savedLocations.length}/{isPremium ? 9 : 1})
                     </h3>
                     <div className="space-y-1.5">
                       {savedLocations.map((loc, idx) => {
@@ -1062,9 +1061,27 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent}`}>
-              <MapPin className="w-3.5 h-3.5" />{location.name}
-            </span>
+            {savedLocations.length > 1 ? (
+              <button
+                onClick={() => {
+                  const idx = savedLocations.findIndex(l =>
+                    l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
+                    l.longitude.toFixed(3) === location.longitude.toFixed(3)
+                  );
+                  const next = savedLocations[(idx + 1) % savedLocations.length];
+                  setLocationAndSave(next);
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent} hover:bg-white/10 transition-all cursor-pointer active:scale-95`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {location.name}
+                <ChevronsDown className="w-3 h-3 rotate-[-90deg]" />
+              </button>
+            ) : (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent}`}>
+                <MapPin className="w-3.5 h-3.5" />{location.name}
+              </span>
+            )}
             <button onClick={handleRefresh}
               className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${t.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${t.accent}` : ""}`} />
