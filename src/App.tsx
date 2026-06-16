@@ -381,7 +381,6 @@ function SettingsPanel({
   prayerMethod, setPrayerMethod,
   isPremium, setIsPremium,
   onClose, t,
-  logoTapCount, setLogoTapCount,
   notificationSettings, setNotificationSettings,
   prayerTimes,
 }: {
@@ -391,7 +390,6 @@ function SettingsPanel({
   prayerMethod: number; setPrayerMethod: (m: number) => void;
   isPremium: boolean; setIsPremium: (v: boolean) => void;
   onClose: () => void; t: typeof THEMES[ThemeKey];
-  logoTapCount: number; setLogoTapCount: (n: number) => void;
   notificationSettings: NotificationSettings;
   setNotificationSettings: (s: NotificationSettings) => void;
   prayerTimes: { key: string; name: string; time: string }[];
@@ -407,18 +405,7 @@ function SettingsPanel({
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
-  // 5x logo tıklama — gizli premium toggle
-  const handleLogoTap = () => {
-    const next = logoTapCount + 1;
-    setLogoTapCount(next);
-    if (next >= 5) {
-      setLogoTapCount(0);
-      const newVal = !isPremium;
-      setIsPremium(newVal);
-      localStorage.setItem("mnv_premium", String(newVal));
-      notify(newVal ? "✨ Premium aktif (test modu)" : "🔒 Premium devre dışı (test modu)");
-    }
-  };
+
 
   const performSearch = async () => {
     const q = searchQuery.trim();
@@ -514,14 +501,11 @@ function SettingsPanel({
           {/* Panel header — logo 5x tıklama */}
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              {/* GİZLİ TOGGLE: Logo'ya 5x tıklama ⚠️ PROD'A ÇIKARKEN KALDIR */}
-              <button onClick={handleLogoTap} className="cursor-pointer select-none">
+              <div className="cursor-default select-none">
                 <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
-              </button>
+              </div>
               <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
-              {logoTapCount > 0 && logoTapCount < 5 && (
-                <span className="text-[9px] text-slate-600">{5 - logoTapCount} kez daha</span>
-              )}
+
             </div>
             <div className="flex items-center gap-2">
               {isPremium ? (
@@ -927,7 +911,6 @@ export default function App() {
   const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [logoTapCount, setLogoTapCount] = useState(0);
   const [location, setLocation] = useState<Location>(() => {
     try { const s = localStorage.getItem("mnv_location"); return s ? JSON.parse(s) : DEFAULT_LOCATION; }
     catch { return DEFAULT_LOCATION; }
@@ -1029,7 +1012,6 @@ export default function App() {
           savedLocations={savedLocations} setSavedLocations={setSavedLocations}
           prayerMethod={prayerMethod} setPrayerMethod={setPrayerMethod}
           isPremium={isPremium} setIsPremium={setIsPremium}
-          logoTapCount={logoTapCount} setLogoTapCount={setLogoTapCount}
           notificationSettings={notificationSettings}
           setNotificationSettings={setNotificationSettings}
           prayerTimes={prayerTimes}
