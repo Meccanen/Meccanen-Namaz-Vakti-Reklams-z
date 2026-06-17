@@ -1,76 +1,67 @@
 name: Build Android APK & AAB
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Kodu indir
         uses: actions/checkout@v4
-
       - name: Node.js kur
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Java kur
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
       - name: Android SDK kur
-        uses: android-actions/setup-android@v4
-
+        uses: android-actions/setup-android@v3
       - name: Bagımlılıkları yükle
         run: npm install
-
       - name: Web build al
         run: npm run build
-
       - name: Capacitor Android ekle
         run: |
           npx cap add android
           npx cap sync android
-
-      - name: Sürüm Kodu ve SDK Hedefini Güncelle (Kalıcı ve Güvenli Yöntem)
+      - name: Android SDK 35'e güncelle (Play Store zorunluluğu)
         run: |
-          # variables.gradle dosyasını tam sistemin istediği formatta bulutta sıfırdan oluşturuyoruz
-          cat > android/variables.gradle << 'EOF'
+          cat > android/variables.gradle << 'GRADLEEOF'
           ext {
-              minSdkVersion = 24
+              minSdkVersion = 23
               compileSdkVersion = 35
               targetSdkVersion = 35
               androidxActivityVersion = '1.8.0'
-              androidxFragmentVersion = '1.6.2'
               androidxAppCompatVersion = '1.6.1'
               androidxCoordinatorLayoutVersion = '1.2.0'
               androidxCoreVersion = '1.12.0'
-              androidxSplashScreenVersion = '1.0.1'
-              androidxTransitionVersion = '1.4.1'
-              androidxLocalBroadcastManagerVersion = '1.1.0'
-              firebaseMessagingVersion = '23.3.1'
-              playServicesLocationVersion = '21.0.1'
-              gsonVersion = '2.10.1'
+              androidxFragmentVersion = '1.6.2'
+              coreSplashScreenVersion = '1.0.1'
+              androidxWebkitVersion = '1.9.0'
+              junitVersion = '4.13.2'
+              androidxJunitVersion = '1.1.5'
+              androidxEspressoCoreVersion = '3.5.1'
+              cordovaAndroidVersion = '10.1.1'
           }
-          EOF
-          
-          # build.gradle içindeki sürüm kodunu (versionCode) 2 ve versionName'i 2.1.0 yapıyoruz
-          sed -i 's/versionCode 1/versionCode 2/g' android/app/build.gradle
-          sed -i 's/versionName "1.0"/versionName "2.1.0"/g' android/app/build.gradle
+          GRADLEEOF
+          cat android/variables.gradle
+      - name: Version Code'u otomatik artır
+        run: |
+          # GitHub Actions çalışma numarasını versionCode olarak kullan — her seferinde benzersiz ve artan
+          NEW_VERSION_CODE=${{ github.run_number }}
+          sed -i "s/versionCode .*/versionCode $NEW_VERSION_CODE/" android/app/build.gradle
+          sed -i "s/versionName .*/versionName \"1.0.$NEW_VERSION_CODE\"/" android/app/build.gradle
+          echo "Yeni versionCode: $NEW_VERSION_CODE"
+          grep "versionCode\|versionName" android/app/build.gradle
       - name: Ikonları oluştur
         run: |
-          # Python için gerekli Pillow kütüphanesini yüklüyoruz
           pip install Pillow
-          
           cat > /tmp/make_icons.py << 'PYEOF'
           from PIL import Image
           import os
@@ -93,13 +84,11 @@ jobs:
               make_icon(s, f'{base}/mipmap-{d}/ic_launcher_round.png')
           PYEOF
           python3 /tmp/make_icons.py
-
       - name: Debug APK build et
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
-
       - name: Release AAB build et
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -115,14 +104,12 @@ jobs:
             -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD
-
       - name: Debug APK kaydet
         uses: actions/upload-artifact@v4
         with:
           name: meccanen-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-
       - name: Release AAB kaydet
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
