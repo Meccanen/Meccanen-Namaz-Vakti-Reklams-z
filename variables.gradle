@@ -1,0 +1,6 @@
+// android/app/variables.gradle (yukarıdaki gibi)
+ext {
+    minSdkVersion    = 24
+    compileSdkVersion= 35
+    targetSdkVersion = 35
+}
