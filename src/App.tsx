@@ -383,6 +383,7 @@ function SettingsPanel({
   onClose, t,
   notificationSettings, setNotificationSettings,
   prayerTimes,
+  logoTapCount, setLogoTapCount,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
@@ -393,6 +394,7 @@ function SettingsPanel({
   notificationSettings: NotificationSettings;
   setNotificationSettings: (s: NotificationSettings) => void;
   prayerTimes: { key: string; name: string; time: string }[];
+  logoTapCount: number; setLogoTapCount: (n: number) => void;
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metod"|"bildirim">("genel");
   const [searchQuery, setSearchQuery] = useState("");
@@ -404,6 +406,19 @@ function SettingsPanel({
   const [premiumPreviewTheme, setPremiumPreviewTheme] = useState<ThemeKey | undefined>();
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
+
+  // 5x logo tıklama — gizli premium test toggle ⚠️ PROD'A ÇIKARKEN KALDIR
+  const handleLogoTap = () => {
+    const next = logoTapCount + 1;
+    setLogoTapCount(next);
+    if (next >= 5) {
+      setLogoTapCount(0);
+      const newVal = !isPremium;
+      setIsPremium(newVal);
+      localStorage.setItem("mnv_premium", String(newVal));
+      notify(newVal ? "✨ Premium aktif (test modu)" : "🔒 Premium devre dışı (test modu)");
+    }
+  };
 
 
 
@@ -501,10 +516,14 @@ function SettingsPanel({
           {/* Panel header — logo 5x tıklama */}
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <div className="cursor-default select-none">
+              {/* GİZLİ TOGGLE: Logo'ya 5x tıklama ⚠️ PROD'A ÇIKARKEN KALDIR */}
+              <button onClick={handleLogoTap} className="cursor-pointer select-none">
                 <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
-              </div>
+              </button>
               <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
+              {logoTapCount > 0 && logoTapCount < 5 && (
+                <span className="text-[9px] text-slate-600">{5 - logoTapCount} kez daha</span>
+              )}
 
             </div>
             <div className="flex items-center gap-2">
@@ -909,6 +928,7 @@ export default function App() {
     return "gece";
   });
   const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
+  const [logoTapCount, setLogoTapCount] = useState(0);
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [location, setLocation] = useState<Location>(() => {
@@ -1015,6 +1035,7 @@ export default function App() {
           notificationSettings={notificationSettings}
           setNotificationSettings={setNotificationSettings}
           prayerTimes={prayerTimes}
+          logoTapCount={logoTapCount} setLogoTapCount={setLogoTapCount}
           onClose={() => setSettingsOpen(false)} t={t}
         />
       )}
