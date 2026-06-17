@@ -41,6 +41,18 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Sürüm Kodu ve SDK Hedefini Güncelle (Otomatik Sürüm Yönetimi)
+        run: |
+          # SDK hedeflerini 35 yapıyoruz
+          sed -i 's/compileSdkVersion.*/compileSdkVersion 35/g' android/app/build.gradle
+          sed -i 's/targetSdkVersion.*/targetSdkVersion 35/g' android/app/build.gradle
+          
+          # GitHub'ın kendi sayaç numarasını (her derlemede artan benzersiz sayıyı) versionCode yapıyoruz!
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/g" android/app/build.gradle
+          
+          # package.json dosyasındaki versiyon metnini okuyup versionName yapıyoruz!
+          VERSION_NAME=$(node -p "require('./package.json').version")
+          sed -i "s/versionName \"1.0\"/versionName \"$VERSION_NAME\"/g" android/app/build.gradle
       - name: Ikonları oluştur
         run: |
           # Python için gerekli Pillow kütüphanesini yüklüyoruz
