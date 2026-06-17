@@ -1,5 +1,5 @@
 {
-  "appId": "meccanen.namaz.vakti.v2",
+  "appId": "meccanen.namaz.vakti.v1",
   "appName": "Meccanen Namaz Vakti",
   "webDir": "dist",
   "server": { "androidScheme": "https" },
