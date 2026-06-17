@@ -41,18 +41,31 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Sürüm Kodu ve SDK Hedefini Güncelle (Otomatik Sürüm Yönetimi)
+      - name: Sürüm Kodu ve SDK Hedefini Güncelle (Kalıcı ve Güvenli Yöntem)
         run: |
-          # SDK hedeflerini 35 yapıyoruz
-          sed -i 's/compileSdkVersion.*/compileSdkVersion 35/g' android/app/build.gradle
-          sed -i 's/targetSdkVersion.*/targetSdkVersion 35/g' android/app/build.gradle
+          # variables.gradle dosyasını tam sistemin istediği formatta bulutta sıfırdan oluşturuyoruz
+          cat > android/variables.gradle << 'EOF'
+          ext {
+              minSdkVersion = 24
+              compileSdkVersion = 35
+              targetSdkVersion = 35
+              androidxActivityVersion = '1.8.0'
+              androidxFragmentVersion = '1.6.2'
+              androidxAppCompatVersion = '1.6.1'
+              androidxCoordinatorLayoutVersion = '1.2.0'
+              androidxCoreVersion = '1.12.0'
+              androidxSplashScreenVersion = '1.0.1'
+              androidxTransitionVersion = '1.4.1'
+              androidxLocalBroadcastManagerVersion = '1.1.0'
+              firebaseMessagingVersion = '23.3.1'
+              playServicesLocationVersion = '21.0.1'
+              gsonVersion = '2.10.1'
+          }
+          EOF
           
-          # GitHub'ın kendi sayaç numarasını (her derlemede artan benzersiz sayıyı) versionCode yapıyoruz!
-          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/g" android/app/build.gradle
-          
-          # package.json dosyasındaki versiyon metnini okuyup versionName yapıyoruz!
-          VERSION_NAME=$(node -p "require('./package.json').version")
-          sed -i "s/versionName \"1.0\"/versionName \"$VERSION_NAME\"/g" android/app/build.gradle
+          # build.gradle içindeki sürüm kodunu (versionCode) 2 ve versionName'i 2.1.0 yapıyoruz
+          sed -i 's/versionCode 1/versionCode 2/g' android/app/build.gradle
+          sed -i 's/versionName "1.0"/versionName "2.1.0"/g' android/app/build.gradle
       - name: Ikonları oluştur
         run: |
           # Python için gerekli Pillow kütüphanesini yüklüyoruz
