@@ -3,4 +3,8 @@ ext {
     minSdkVersion    = 24
     compileSdkVersion= 35
     targetSdkVersion = 35
+
+    // Google Play'in istediği o sihirli sürüm artışları tam olarak burası:
+    versionCode = 2
+    versionName = "2.2.0"
 }
