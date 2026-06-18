@@ -555,7 +555,7 @@ function SettingsPanel({
             ))}
           </div>
 
-          <div className="overflow-y-auto h-80 px-6 pb-6">
+          <div className="overflow-y-auto h-96 px-6 pb-6">
 
             {/* ── GENEL: Tema ── */}
             {tab === "genel" && (
