@@ -396,7 +396,7 @@ function SettingsPanel({
   prayerTimes: { key: string; name: string; time: string }[];
   logoTapCount: number; setLogoTapCount: (n: number) => void;
 }) {
-  const [tab, setTab] = useState<"genel"|"konum"|"metod"|"bildirim">("genel");
+  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -493,10 +493,10 @@ function SettingsPanel({
   const tabs = [
     { key: "genel" as const, label: "Genel" },
     { key: "konum" as const, label: "Konum" },
-    { key: "metod" as const, label: "Metod" },
+    { key: "metot" as const, label: "Metot" },
     { key: "bildirim" as const, label: "Bildirim" },
   ];
-  type TabKey = "genel" | "konum" | "metod" | "bildirim";
+  type TabKey = "genel" | "konum" | "metot" | "bildirim";
 
   return (
     <>
@@ -557,7 +557,7 @@ function SettingsPanel({
 
             {/* ── GENEL: Tema ── */}
             {tab === "genel" && (
-              <div className="space-y-4">
+              <div className="space-y-4 min-h-[300px]">
                 <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5" />Tema Seçimi
                 </h3>
@@ -662,7 +662,7 @@ function SettingsPanel({
 
             {/* ── KONUM ── */}
             {tab === "konum" && (
-              <div className="space-y-4">
+              <div className="space-y-4 min-h-[300px]">
                 {/* Konum limiti uyarısı */}
                 {!isPremium && (
                   <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
@@ -765,8 +765,8 @@ function SettingsPanel({
             )}
 
             {/* ── METOD ── */}
-            {tab === "metod" && (
-              <div className="space-y-2">
+            {tab === "metot" && (
+              <div className="space-y-2 min-h-[300px]">
                 <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
                   <Sparkles className="w-3.5 h-3.5" />Hesaplama Metodu
                 </h3>
@@ -785,7 +785,7 @@ function SettingsPanel({
 
             {/* ── BİLDİRİM ── */}
             {tab === "bildirim" && (
-              <div className="space-y-4">
+              <div className="space-y-4 min-h-[300px]">
                 <h3 className={`text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5`}>
                   <Bell className="w-3.5 h-3.5" />Namaz Hatırlatıcı
                 </h3>
