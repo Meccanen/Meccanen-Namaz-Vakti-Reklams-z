@@ -4,6 +4,8 @@ import {
   RefreshCw, ChevronsDown, Globe, Map,
   X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff
 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
 import { TURKEY_PROVINCES } from "./utils/weatherHelper";
@@ -281,7 +283,7 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
         {/* ── NAMAZ VAKİTLERİ — 3+3 grid, gerçekle aynı ── */}
         <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
           <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc, marginBottom:7, display:"flex", alignItems:"center", gap:3 }}>
-            <span style={{ color:"#f59e0b" }}>✦</span> Diyanet Vakitleri
+            <span style={{ color:"#f59e0b", fontWeight:900 }}>★</span> Diyanet Vakitleri
           </div>
           {/* 3+3 grid */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:4 }}>
@@ -553,11 +555,11 @@ function SettingsPanel({
             ))}
           </div>
 
-          <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-5">
+          <div className="overflow-y-auto h-80 px-6 pb-6">
 
             {/* ── GENEL: Tema ── */}
             {tab === "genel" && (
-              <div className="space-y-4 min-h-[300px]">
+              <div className="space-y-4">
                 <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5" />Tema Seçimi
                 </h3>
@@ -593,7 +595,7 @@ function SettingsPanel({
                     )}
                   </div>
                   {/* Koyu temalar */}
-                  <div className="text-[9px] text-slate-600 uppercase tracking-wide font-semibold mb-1.5">🌙 Koyu</div>
+                  <div className="text-[9px] text-slate-600 uppercase tracking-wide font-semibold mb-1.5 flex items-center gap-1"><FontAwesomeIcon icon={faMoon} className="w-3 h-3" />Koyu</div>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
                       .filter(([k, th]) => !th.free && !["seher","gul","nane"].includes(k))
@@ -618,7 +620,7 @@ function SettingsPanel({
                       })}
                   </div>
                   {/* Açık temalar */}
-                  <div className="text-[9px] text-slate-600 uppercase tracking-wide font-semibold mb-1.5">☀️ Açık</div>
+                  <div className="text-[9px] text-slate-600 uppercase tracking-wide font-semibold mb-1.5 flex items-center gap-1"><FontAwesomeIcon icon={faSun} className="w-3 h-3" />Açık</div>
                   <div className="grid grid-cols-2 gap-2">
                     {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
                       .filter(([k, th]) => !th.free && ["seher","gul","nane"].includes(k))
@@ -662,7 +664,7 @@ function SettingsPanel({
 
             {/* ── KONUM ── */}
             {tab === "konum" && (
-              <div className="space-y-4 min-h-[300px]">
+              <div className="space-y-4">
                 {/* Konum limiti uyarısı */}
                 {!isPremium && (
                   <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
@@ -766,7 +768,7 @@ function SettingsPanel({
 
             {/* ── METOD ── */}
             {tab === "metot" && (
-              <div className="space-y-2 min-h-[300px]">
+              <div className="space-y-2">
                 <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
                   <Sparkles className="w-3.5 h-3.5" />Hesaplama Metodu
                 </h3>
@@ -785,7 +787,7 @@ function SettingsPanel({
 
             {/* ── BİLDİRİM ── */}
             {tab === "bildirim" && (
-              <div className="space-y-4 min-h-[300px]">
+              <div className="space-y-4">
                 <h3 className={`text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5`}>
                   <Bell className="w-3.5 h-3.5" />Namaz Hatırlatıcı
                 </h3>
@@ -1051,7 +1053,6 @@ export default function App() {
             <div>
               <h1 className={`text-sm sm:text-base font-bold tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
                 Reklamsız
                 {isPremium && <span className="text-amber-500">· Premium</span>}
                 {notificationSettings.enabled && <Bell className="w-3 h-3 text-amber-400" />}
