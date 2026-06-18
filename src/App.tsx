@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
-  MapPin, Calendar, Sparkles, Search,
+  MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff
+  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff, Moon, Navigation
 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
 import { TURKEY_PROVINCES } from "./utils/weatherHelper";
@@ -14,8 +16,11 @@ import {
   saveNotificationSettings, loadNotificationSettings,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
+import { t, detectLanguage, LangCode } from "./utils/i18n";
+import { calcQiblaDirection, requestCompassPermission, getCompassHeading } from "./utils/qiblaHelper";
+import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
+import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
 
-// ─── THEMES ───────────────────────────────────────────────────────────────────
 export const THEMES = {
   gece: {
     label: "Gece Mavisi", preview: ["#020617","#0ea5e9","#818cf8"], free: true,
@@ -127,7 +132,6 @@ export const THEMES = {
     textPrimary: "text-slate-100", textSecondary: "text-slate-400", textMuted: "text-slate-500",
     hijriAccent: "text-indigo-300", settingsCard: "bg-blue-950/95 border-blue-800",
   },
-  // ── AÇIK TEMALAR ──
   seher: {
     label: "Beyaz Seher", preview: ["#fefce8","#d97706","#92400e"], free: false,
     bg: "bg-[#fefce8]", card: "bg-white/70 border-amber-200/80",
@@ -164,8 +168,20 @@ export const THEMES = {
 };
 export type ThemeKey = keyof typeof THEMES;
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
 function getIsPremium(): boolean { return localStorage.getItem("mnv_premium") === "true"; }
+
+function getPremiumTier(): string {
+  return localStorage.getItem("mnv_premium_tier") || "none";
+}
+
+function setPremiumTier(tier: string) {
+  localStorage.setItem("mnv_premium_tier", tier);
+  if (tier !== "none") {
+    localStorage.setItem("mnv_premium", "true");
+  } else {
+    localStorage.removeItem("mnv_premium");
+  }
+}
 
 function guessTimezone(lng: number): string {
   const offset = Math.round(lng / 15);
@@ -186,19 +202,20 @@ const DEFAULT_LOCATION: Location = {
   timezone: "Europe/Istanbul", admin1: "Marmara"
 };
 
-// ─── TEMA ÖNİZLEME KARTI ─────────────────────────────────────────────────────
+  const MOON_PHASE_ICONS: Record<MoonPhase, React.ReactNode> = {
+  newMoon: <FontAwesomeIcon icon={faMoonSolid} />, waxingCrescent: <FontAwesomeIcon icon={faMoonSolid} />, firstQuarter: <FontAwesomeIcon icon={faMoonSolid} />,
+  waxingGibbous: <FontAwesomeIcon icon={faMoonSolid} />, fullMoon: <FontAwesomeIcon icon={faMoonSolid} />, waningGibbous: <FontAwesomeIcon icon={faMoonSolid} />,
+  thirdQuarter: <FontAwesomeIcon icon={faMoonSolid} />, waningCrescent: <FontAwesomeIcon icon={faMoonSolid} />,
+};
+
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const th = THEMES[themeKey];
   const isLight = ["seher","gul","nane"].includes(themeKey);
-
-  // Gerçek uygulamayla birebir aynı layout — scale ile küçültülmüş
   const prayers = [
     { name:"İmsak", time:"04:32" }, { name:"Güneş", time:"06:10" }, { name:"Öğle", time:"13:15" },
     { name:"İkindi", time:"17:02" }, { name:"Akşam", time:"20:18" }, { name:"Yatsı", time:"22:01" },
   ];
   const activeIdx = 4;
-
-  // Renk yardımcıları — tema değişkenlerini inline style olarak kullan
   const bg0 = th.preview[0];
   const acc = th.preview[1];
   const acc2 = th.preview[2];
@@ -212,10 +229,6 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const divider = isLight ? acc + "25" : "rgba(255,255,255,0.07)";
   const blob1 = acc + "12";
   const blob2 = acc2 + "10";
-
-  // Önizleme kartı 320px genişlikte render edilip 0.72 scale ile gösterilecek
-  // Gerçek App: max-w-2xl (672px) → önizleme: 320px → scale: 320/672 ≈ 0.476
-  // Ama modal içinde daha iyi görünüm için 340px → 0.50 scale kullanalım
   const RENDER_W = 340;
   const SCALE = 0.50;
   const DISPLAY_W = RENDER_W * SCALE;
@@ -226,20 +239,12 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
     <div style={{ width: DISPLAY_W, height: DISPLAY_H, overflow: "hidden", borderRadius: 14, margin: "0 auto", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
       <div style={{
         width: RENDER_W, height: RENDER_H,
-        transform: `scale(${SCALE})`,
-        transformOrigin: "top left",
-        background: bg0,
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 28,
-        padding: 16,
-        display: "flex", flexDirection: "column", gap: 10,
+        transform: `scale(${SCALE})`, transformOrigin: "top left",
+        background: bg0, position: "relative", overflow: "hidden",
+        borderRadius: 28, padding: 16, display: "flex", flexDirection: "column", gap: 10,
       }}>
-        {/* blob */}
         <div style={{ position:"absolute", top:"-20%", left:"-10%", width:200, height:200, background:blob1, borderRadius:"50%", filter:"blur(60px)", pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:"-20%", right:"-10%", width:220, height:220, background:blob2, borderRadius:"50%", filter:"blur(70px)", pointerEvents:"none" }} />
-
-        {/* ── HEADER ── */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${divider}`, paddingBottom:8, position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
             <div style={{ width:22, height:22, borderRadius:8, background:acc+"22", border:`1px solid ${acc}44`, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -252,10 +257,7 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
           </div>
           <div style={{ fontSize:7, fontWeight:700, color:acc, background:acc+"18", border:`1px solid ${acc}33`, padding:"2px 6px", borderRadius:20 }}>İstanbul</div>
         </div>
-
-        {/* ── SAAT + TAKVİM ── */}
         <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
-          {/* Saat — ortalanmış, gerçekle aynı */}
           <div style={{ textAlign:"center", marginBottom:6 }}>
             <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:3 }}>
               <span style={{ fontSize:28, fontWeight:800, fontFamily:"monospace", color:txtPrimary, lineHeight:1 }}>20:18</span>
@@ -263,7 +265,6 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
             </div>
             <div style={{ fontSize:7, color:txtSecondary, marginTop:2 }}>Cuma</div>
           </div>
-          {/* Takvim — gerçekle aynı, yan yana */}
           <div style={{ display:"flex", justifyContent:"space-between", borderTop:`1px solid ${divider}`, paddingTop:7, marginTop:4 }}>
             <div>
               <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc2, marginBottom:2 }}>Miladi</div>
@@ -277,13 +278,10 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
             </div>
           </div>
         </div>
-
-        {/* ── NAMAZ VAKİTLERİ — 3+3 grid, gerçekle aynı ── */}
         <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
           <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc, marginBottom:7, display:"flex", alignItems:"center", gap:3 }}>
-            <span style={{ color:"#f59e0b" }}>✦</span> Diyanet Vakitleri
+            <FontAwesomeIcon icon={faStar} style={{ color:"#f59e0b" }} /> Diyanet Vakitleri
           </div>
-          {/* 3+3 grid */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:4 }}>
             {prayers.map(({ name, time }, i) => (
               <div key={name} style={{
@@ -305,49 +303,55 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   );
 }
 
-// ─── PREMIUM MODAL ────────────────────────────────────────────────────────────
-function PremiumModal({ onClose, t, previewTheme }: {
+function PremiumModal({ onClose, t: theme, lang }: {
   onClose: () => void;
   t: typeof THEMES[ThemeKey];
-  previewTheme?: ThemeKey;
+  lang: LangCode;
 }) {
-  const [activePreview, setActivePreview] = useState<ThemeKey>(previewTheme || "alacakaranlik");
+  const [activePreview, setActivePreview] = useState<ThemeKey>("alacakaranlik");
   const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
+  const currentTier = getPremiumTier();
+
+  const handlePurchase = async (tier: string) => {
+    if (typeof window !== "undefined" && (window as any).Capacitor?.isNative) {
+      // TODO: Google Play Billing integration
+      // await InAppPurchase.purchase(tier === "gold" ? "gold_sku" : "silver_sku");
+      setPremiumTier(tier);
+      onClose();
+    } else {
+      alert(t("comingSoon", lang));
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
       <div
-        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl flex flex-col max-h-[88vh] overflow-hidden ${t.settingsCard}`}
+        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl flex flex-col max-h-[88vh] overflow-hidden glass-strong ${theme.settingsCard}`}
         onClick={e => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer z-10">
           <X className="w-4 h-4 text-slate-400" />
         </button>
-
         <div className="p-6 pb-4 shrink-0">
           <div className="text-center mb-4">
-            <div className="text-3xl mb-2">✨</div>
-            <h2 className={`text-lg font-black ${t.accent} mb-0.5`}>Premium Temalar</h2>
-            <p className="text-[11px] text-slate-400">12 özel tema · Tek seferlik satın alma</p>
+            <div className="text-xl mb-2"><FontAwesomeIcon icon={faStar} /></div>
+            <h2 className={`text-lg font-bold ${theme.accent} mb-0.5`}>{t("premium", lang)}</h2>
+            <p className="text-[11px] text-slate-400">{t("oneTime", lang)}</p>
           </div>
-
-          {/* Canlı Önizleme */}
           <div className="mb-3">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest font-black mb-2 text-center">
-              Önizleme: {THEMES[activePreview].label}
+            <div className="text-[9px] text-slate-500 uppercase tracking-wide font-bold mb-2 text-center">
+              {t("themeSelection", lang)}: {THEMES[activePreview].label}
             </div>
             <ThemePreviewCard themeKey={activePreview} />
           </div>
         </div>
-
-        {/* Tema seçici scroll */}
         <div className="overflow-y-auto flex-1 px-6 pb-4">
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {premiumThemes.map(([key, th]) => (
+            {premiumThemes.slice(0, 12).map(([key, th]) => (
               <button key={key}
                 onClick={() => setActivePreview(key)}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all cursor-pointer
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border transition-all duration-200 cursor-pointer
                   ${activePreview === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                 <div className="flex gap-0.5">
                   {th.preview.map((c, i) => <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: c }} />)}
@@ -358,32 +362,86 @@ function PremiumModal({ onClose, t, previewTheme }: {
             ))}
           </div>
 
-          <button
-            className="w-full py-3 rounded-2xl font-black text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 transition-all cursor-pointer mb-2"
-            onClick={() => {
-              // TODO: Google Play Billing entegrasyonu
-              alert("Google Play Billing yakında eklenecek!");
-            }}
-          >
-            ₺79 · Tek Seferlik Satın Al
-          </button>
-          <p className="text-center text-[10px] text-slate-600">Reklam yok · Abonelik yok · Tek ödeme</p>
+          <div className="space-y-2 mb-3">
+            <button
+              onClick={() => handlePurchase("silver")}
+              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${currentTier === "silver" ? "border-amber-400/50 bg-amber-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-500 flex items-center justify-center text-xs font-bold text-slate-900">S</div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-slate-100">{t("silver", lang)}</div>
+                  <div className="text-[10px] text-slate-400">{t("silverDesc", lang)}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-amber-400">{t("silverPurchase", lang)}</div>
+                <div className="text-[9px] text-slate-500">{t("oneTime", lang)}</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handlePurchase("gold")}
+              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${currentTier === "gold" ? "border-amber-400/50 bg-amber-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-amber-900">G</div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-slate-100">{t("gold", lang)}</div>
+                  <div className="text-[10px] text-slate-400">{t("goldDesc", lang)}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-amber-400">{t("goldPurchase", lang)}</div>
+                <div className="text-[9px] text-slate-500">{t("oneTime", lang)}</div>
+              </div>
+            </button>
+          </div>
+
+          <p className="text-center text-[10px] text-slate-600">{t("noAds", lang)} · {t("noSubscription", lang)} · {t("singlePayment", lang)}</p>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── SETTINGS PANEL ───────────────────────────────────────────────────────────
+function LocationPermissionPrompt({ onAllow, onDeny, lang }: {
+  onAllow: () => void;
+  onDeny: () => void;
+  lang: LangCode;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={onDeny}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div className="relative w-full max-w-sm rounded-[28px] border border-white/10 bg-slate-900/98 p-6 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+        <Navigation className="w-10 h-10 text-sky-400 mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-slate-100 mb-2">{t("locationPermission", lang)}</h3>
+        <p className="text-sm text-slate-400 mb-5 leading-relaxed">{t("locationPermissionDesc", lang)}</p>
+        <div className="flex gap-3">
+          <button onClick={onDeny}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 font-semibold text-sm hover:bg-white/5 transition-all cursor-pointer">
+            {t("deny", lang)}
+          </button>
+          <button onClick={onAllow}
+            className="flex-1 py-2.5 rounded-xl bg-sky-500 text-white font-semibold text-sm hover:bg-sky-400 transition-all cursor-pointer">
+            {t("allow", lang)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsPanel({
   theme, setTheme, location, setLocation,
   savedLocations, setSavedLocations,
   prayerMethod, setPrayerMethod,
   isPremium, setIsPremium,
-  onClose, t,
+  onClose, t: th,
   notificationSettings, setNotificationSettings,
   prayerTimes,
   logoTapCount, setLogoTapCount,
+  lang, setLang,
+  onFindLocation,
+  isDetectingLocation,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
@@ -395,19 +453,21 @@ function SettingsPanel({
   setNotificationSettings: (s: NotificationSettings) => void;
   prayerTimes: { key: string; name: string; time: string }[];
   logoTapCount: number; setLogoTapCount: (n: number) => void;
+  lang: LangCode; setLang: (l: LangCode) => void;
+  onFindLocation: () => void;
+  isDetectingLocation: boolean;
 }) {
-  const [tab, setTab] = useState<"genel"|"konum"|"metod"|"bildirim">("genel");
+  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
-  const [premiumPreviewTheme, setPremiumPreviewTheme] = useState<ThemeKey | undefined>();
+  const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
-  // 5x logo tıklama — gizli premium test toggle ⚠️ PROD'A ÇIKARKEN KALDIR
   const handleLogoTap = () => {
     const next = logoTapCount + 1;
     setLogoTapCount(next);
@@ -416,11 +476,11 @@ function SettingsPanel({
       const newVal = !isPremium;
       setIsPremium(newVal);
       localStorage.setItem("mnv_premium", String(newVal));
-      notify(newVal ? "✨ Premium aktif (test modu)" : "🔒 Premium devre dışı (test modu)");
+      if (!newVal) localStorage.removeItem("mnv_premium_tier");
+      else localStorage.setItem("mnv_premium_tier", "test");
+      notify(newVal ? t("premiumTestOn", lang) : t("premiumTestOff", lang));
     }
   };
-
-
 
   const performSearch = async () => {
     const q = searchQuery.trim();
@@ -431,41 +491,36 @@ function SettingsPanel({
       const data = await res.json();
       if (data.results?.length) {
         setSearchResults(data.results.map((r: any) => ({
-          name: r.name, country: r.country || "Bilinmiyor",
+          name: r.name, country: r.country || t("unknown", lang),
           latitude: r.latitude, longitude: r.longitude,
           timezone: r.timezone && r.timezone !== "GMT" && r.timezone !== "UTC"
             ? r.timezone : guessTimezone(r.longitude),
           admin1: r.admin1 || ""
         })));
-      } else setSearchError("Şehir bulunamadı.");
-    } catch { setSearchError("Arama yapılamadı."); }
+      } else setSearchError(t("noResults", lang));
+    } catch { setSearchError(t("searchError", lang)); }
     finally { setIsSearching(false); }
   };
 
   const addAndSelectCity = (loc: Location) => {
-    // Konum limiti: ücretsiz max 1, premium max 9
     const maxLocs = isPremium ? 9 : 1;
     const exists = savedLocations.some(l =>
       l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
       l.longitude.toFixed(2) === loc.longitude.toFixed(2)
     );
     if (!exists && savedLocations.length >= maxLocs) {
-      if (!isPremium) {
-        setPremiumPreviewTheme(undefined);
-        setPremiumModalOpen(true);
-      } else {
-        notify("⚠️ Maksimum 9 konum kaydedilebilir");
-      }
+      if (!isPremium) { setPremiumModalOpen(true); }
+      else { notify(t("maxLocations", lang, { n: "9" })); }
       return;
     }
     const newList = exists ? savedLocations : [...savedLocations, loc];
     setSavedLocations(newList);
     setLocation(loc);
     setSearchResults([]); setSearchQuery("");
-    notify(`📍 ${loc.name}, ${loc.country} seçildi`);
+    notify(t("citySelected", lang, { city: loc.name, country: loc.country }));
   };
 
-  const selectSaved = (loc: Location) => { setLocation(loc); notify(`📍 ${loc.name}, ${loc.country} seçildi`); };
+  const selectSaved = (loc: Location) => { setLocation(loc); notify(t("citySelected", lang, { city: loc.name, country: loc.country })); };
 
   const deleteSaved = (idx: number) => {
     const next = savedLocations.filter((_, i) => i !== idx);
@@ -481,62 +536,61 @@ function SettingsPanel({
 
   const handleThemeClick = (key: ThemeKey) => {
     const th = THEMES[key];
-    if (!th.free && !isPremium) {
-      setPremiumPreviewTheme(key);
-      setPremiumModalOpen(true);
-      return;
-    }
+    if (!th.free && !isPremium) { setPremiumModalOpen(true); return; }
     setTheme(key);
-    notify(`🎨 ${th.label} teması seçildi`);
+    notify(th.label);
   };
 
-  const tabs = [
-    { key: "genel" as const, label: "Genel" },
-    { key: "konum" as const, label: "Konum" },
-    { key: "metod" as const, label: "Metod" },
-    { key: "bildirim" as const, label: "Bildirim" },
+  const LANGUAGES: { code: LangCode; label: string }[] = [
+    { code: "tr", label: "Türkçe" },
+    { code: "en", label: "English" },
+    { code: "ar", label: "العربية" },
   ];
-  type TabKey = "genel" | "konum" | "metod" | "bildirim";
+
+  const tabs = [
+    { key: "genel" as const, label: t("general", lang) },
+    { key: "konum" as const, label: t("location", lang) },
+    { key: "metot" as const, label: t("prayerMethod", lang) },
+    { key: "bildirim" as const, label: t("notifications", lang) },
+  ];
+  type TabKey = "genel" | "konum" | "metot" | "bildirim";
 
   return (
     <>
       {premiumModalOpen && (
         <PremiumModal
-          onClose={() => { setPremiumModalOpen(false); setPremiumPreviewTheme(undefined); }}
-          t={t} previewTheme={premiumPreviewTheme}
+          onClose={() => setPremiumModalOpen(false)}
+          t={th} lang={lang}
         />
       )}
 
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <div
-          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col ${t.settingsCard}`}
+          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col glass-strong ${th.settingsCard}`}
           onClick={e => e.stopPropagation()}
         >
-          {/* Panel header — logo 5x tıklama */}
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              {/* GİZLİ TOGGLE: Logo'ya 5x tıklama ⚠️ PROD'A ÇIKARKEN KALDIR */}
-              <button onClick={handleLogoTap} className="cursor-pointer select-none">
-                <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
+              <button onClick={handleLogoTap} className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
+                <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-6 w-auto object-contain opacity-80" />
               </button>
-              <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
+              <h2 className={`text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
               {logoTapCount > 0 && logoTapCount < 5 && (
-                <span className="text-[9px] text-slate-600">{5 - logoTapCount} kez daha</span>
+                <span className="text-[9px] text-slate-600">{t("tapMore", lang, { n: String(5 - logoTapCount) })}</span>
               )}
-
             </div>
             <div className="flex items-center gap-2">
               {isPremium ? (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400">
-                  ✨ Premium
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-400">
+                  {t("premium", lang)}
                 </span>
               ) : (
                 <button
-                  onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400 hover:opacity-80 transition-all cursor-pointer"
+                  onClick={() => setPremiumModalOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-400 hover:opacity-80 transition-all cursor-pointer"
                 >
-                  ✨ Premium Al
+                  {t("buyPremium", lang)}
                 </button>
               )}
               <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
@@ -545,35 +599,31 @@ function SettingsPanel({
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-1 px-6 pb-3 shrink-0">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${tab === tb.key ? `bg-white/15 ${t.accent}` : "text-slate-500 hover:bg-white/5"}`}>
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
                 {tb.label}
               </button>
             ))}
           </div>
 
-          <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-5">
+          <div className="overflow-y-auto h-96 px-6 pb-6">
 
-            {/* ── GENEL: Tema ── */}
             {tab === "genel" && (
               <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5" />Tema Seçimi
+                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5" />{t("themeSelection", lang)}
                 </h3>
-
-                {/* Ücretsiz tema */}
                 <div>
-                  <div className="text-[9px] text-slate-500 uppercase tracking-widest font-black mb-2">Ücretsiz</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-2">{t("free", lang)}</div>
                   {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
                     .filter(([, th]) => th.free)
                     .map(([key, th]) => (
                       <button key={key} onClick={() => handleThemeClick(key)}
-                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${theme === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200 cursor-pointer ${theme === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                         <div className="flex gap-1 shrink-0">
-                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />)}
+                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
                         <span className="text-xs font-bold text-slate-200">{th.label}</span>
                         {theme === key && <Check className="w-4 h-4 text-white absolute right-3 top-1/2 -translate-y-1/2" />}
@@ -581,119 +631,103 @@ function SettingsPanel({
                     ))}
                 </div>
 
-                {/* Premium temalar */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-[9px] text-amber-500/80 uppercase tracking-widest font-black flex items-center gap-1">
-                      <Lock className="w-3 h-3" />Premium (12 Tema)
-                    </div>
-                    {!isPremium && (
-                      <button onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
-                        className="text-[9px] text-amber-400 font-bold hover:opacity-70 transition-all cursor-pointer">
-                        ₺79 →
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[10px] text-amber-500/80 uppercase tracking-wide font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3" />{t("premium", lang)} ({premiumThemes.length} {t("themes", lang) || "Theme"})
+                  </div>
+                  {!isPremium && (
+                    <button onClick={() => setPremiumModalOpen(true)}
+                      className="text-[9px] text-amber-400 font-bold hover:opacity-70 transition-all cursor-pointer">
+                      {t("buyPremium", lang)} →
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {premiumThemes.map(([key, th]) => {
+                    const locked = !isPremium;
+                    const isActive = theme === key;
+                    return (
+                      <button key={key} onClick={() => handleThemeClick(key)}
+                        className={`relative flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden
+                          ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}
+                          ${locked ? "opacity-60" : ""}`}>
+                        <div className="flex gap-0.5 shrink-0">
+                          {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
+                        {locked
+                          ? <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
+                          : isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
+                        }
                       </button>
-                    )}
-                  </div>
-                  {/* Koyu temalar */}
-                  <div className="text-[8px] text-slate-600 uppercase tracking-widest font-black mb-1.5">🌙 Koyu</div>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
-                      .filter(([k, th]) => !th.free && !["seher","gul","nane"].includes(k))
-                      .map(([key, th]) => {
-                        const locked = !isPremium;
-                        const isActive = theme === key;
-                        return (
-                          <button key={key} onClick={() => handleThemeClick(key)}
-                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
-                              ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}
-                              ${locked ? "opacity-70" : ""}`}>
-                            <div className="flex gap-0.5 shrink-0">
-                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />)}
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
-                            {locked
-                              ? <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
-                              : isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
-                            }
-                          </button>
-                        );
-                      })}
-                  </div>
-                  {/* Açık temalar */}
-                  <div className="text-[8px] text-slate-600 uppercase tracking-widest font-black mb-1.5">☀️ Açık</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
-                      .filter(([k, th]) => !th.free && ["seher","gul","nane"].includes(k))
-                      .map(([key, th]) => {
-                        const locked = !isPremium;
-                        const isActive = theme === key;
-                        return (
-                          <button key={key} onClick={() => handleThemeClick(key)}
-                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
-                              ${isActive ? "border-amber-400/40 bg-amber-50/20" : "border-slate-300/20 bg-white/5 hover:bg-white/10"}
-                              ${locked ? "opacity-70" : ""}`}>
-                            <div className="flex gap-0.5 shrink-0">
-                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: c }} />)}
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
-                            {locked
-                              ? <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
-                              : isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
-                            }
-                          </button>
-                        );
-                      })}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* Ko-fi bağış */}
-                <div className={`border-t ${t.header} pt-4`}>
+                <div className={`border-t ${th.header} pt-4 space-y-3`}>
+                  <div>
+                    <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                      <Globe className="w-3.5 h-3.5" />{t("language", lang)}
+                    </h3>
+                    <div className="flex gap-2">
+                      {LANGUAGES.map(l => (
+                        <button key={l.code} onClick={() => setLang(l.code)}
+                          className={`flex-1 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-white/30 bg-white/10 text-slate-100" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                          {l.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <a
                     href="https://ko-fi.com/meccanen"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
                   >
                     <Coffee className="w-4 h-4" />
-                    Bana bir kahve ısmarla ☕
+                    Ko-fi
                   </a>
-                  <p className="text-center text-[10px] text-slate-600 mt-1.5">Ko-fi üzerinden destek olabilirsin</p>
                 </div>
               </div>
             )}
 
-            {/* ── KONUM ── */}
             {tab === "konum" && (
               <div className="space-y-4">
-                {/* Konum limiti uyarısı */}
                 {!isPremium && (
                   <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
                     <Lock className="w-4 h-4 text-amber-500 shrink-0" />
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-amber-400">Ücretsiz: 1 konum · Premium: 9 konum</div>
-                      <div className="text-[10px] text-slate-500">Sınırsız konum için Premium Al</div>
+                      <div className="text-xs font-bold text-amber-400">1 {t("location", lang)} · 9 {t("premium", lang)}</div>
+                      <div className="text-[10px] text-slate-500">{t("location", lang)} {t("premium", lang)}</div>
                     </div>
-                    <button onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
-                      className="text-[10px] text-amber-400 font-black hover:opacity-70 cursor-pointer">
-                      ₺79 →
+                    <button onClick={() => setPremiumModalOpen(true)}
+                      className="text-[10px] text-amber-400 font-bold hover:opacity-70 cursor-pointer">
+                      {t("buyPremium", lang)} →
                     </button>
                   </div>
                 )}
 
+                <button onClick={onFindLocation} disabled={isDetectingLocation}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer">
+                  <Navigation className={`w-4 h-4 ${isDetectingLocation ? "animate-spin" : ""}`} />
+                  {isDetectingLocation ? t("detecting", lang) : t("findMyLocation", lang)}
+                </button>
+
                 {savedLocations.length > 0 && (
                   <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
-                      <Star className="w-3.5 h-3.5" />Kayıtlı Konumlar ({savedLocations.length}/{isPremium ? 9 : 1})
+                    <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{isPremium ? 9 : 1})
                     </h3>
                     <div className="space-y-1.5">
                       {savedLocations.map((loc, idx) => {
                         const isActive = location.latitude.toFixed(3) === loc.latitude.toFixed(3);
                         return (
-                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all ${isActive ? "bg-white/10 border-white/20" : "bg-black/20 border-white/5"}`}>
+                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all duration-200 ${isActive ? "bg-white/10 border-white/20" : "bg-black/20 border-white/5"}`}>
                             <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
                               <div className="flex items-center gap-2">
-                                {isActive && <div className={`w-2 h-2 rounded-full ${t.accent.replace("text-","bg-")} shrink-0`} />}
-                                <span className={`text-sm font-bold ${isActive ? t.accent : "text-slate-200"}`}>{loc.name}</span>
+                                {isActive && <div className={`w-2 h-2 rounded-full ${th.accent.replace("text-","bg-")} shrink-0`} />}
+                                <span className={`text-sm font-bold ${isActive ? th.accent : "text-slate-200"}`}>{loc.name}</span>
                                 <span className="text-xs text-slate-500">{loc.country}</span>
                               </div>
                               <div className="text-[10px] text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
@@ -709,22 +743,19 @@ function SettingsPanel({
                 )}
 
                 <div>
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2">
-                    <Search className="w-3.5 h-3.5" />
-                    {!isPremium && savedLocations.length >= 1 ? (
-                      <span className="flex items-center gap-1">Yeni Konum <Lock className="w-3 h-3 text-amber-500" /></span>
-                    ) : "Yeni Konum Ekle"}
+                  <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                    <Search className="w-3.5 h-3.5" />{t("searchCity", lang)}
                   </h3>
                   <div className="relative mb-2">
                     <input type="text" value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && performSearch()}
-                      placeholder="Şehir arayın (Paris, Mekke, Konya…)"
-                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none" />
+                      placeholder={t("searchCity", lang)}
+                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all duration-200" />
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <button onClick={performSearch} disabled={isSearching}
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
-                      {isSearching ? "…" : "ARA"}
+                      {isSearching ? t("updating", lang) : t("search", lang)}
                     </button>
                   </div>
                   {searchResults.length > 0 && (
@@ -737,7 +768,7 @@ function SettingsPanel({
                             {r.admin1 && <span className="text-slate-500 ml-1.5 text-[10px]">({r.admin1})</span>}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${t.accent} bg-white/5 border border-white/10`}>{r.country}</span>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
                             {!isPremium && savedLocations.length >= 1
                               ? <Lock className="w-3.5 h-3.5 text-amber-500" />
                               : <Plus className="w-3.5 h-3.5 text-slate-500" />
@@ -748,15 +779,14 @@ function SettingsPanel({
                     </div>
                   )}
                   {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
-
                   <div>
-                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1 mb-1.5">
-                      <Map className="w-3 h-3" />Türkiye 81 İl
+                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                      <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none">
-                        <option value="">— Seçiniz —</option>
+                        <option value="">{t("select", lang)}</option>
                         {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                       </select>
                       <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
@@ -766,127 +796,94 @@ function SettingsPanel({
               </div>
             )}
 
-            {/* ── METOD ── */}
-            {tab === "metod" && (
+            {tab === "metot" && (
               <div className="space-y-2">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-3">
-                  <Sparkles className="w-3.5 h-3.5" />Hesaplama Metodu
+                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+                  <Sparkles className="w-3.5 h-3.5" />{t("prayerMethod", lang)}
                 </h3>
                 {PRAYER_METHODS.map(m => (
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                    className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
-                      <div className={`text-xs font-bold ${t.textPrimary}`}>{m.label}</div>
-                      <div className={`text-[10px] ${t.textMuted} mt-0.5`}>{m.description}</div>
+                      <div className={`text-xs font-bold ${th.textPrimary}`}>{m.label}</div>
+                      <div className={`text-[10px] ${th.textMuted} mt-0.5`}>{m.description}</div>
                     </div>
-                    {prayerMethod === m.id && <Check className={`w-4 h-4 ${t.accent} shrink-0 ml-2`} />}
+                    {prayerMethod === m.id && <Check className={`w-4 h-4 ${th.accent} shrink-0 ml-2`} />}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* ── BİLDİRİM ── */}
             {tab === "bildirim" && (
               <div className="space-y-4">
-                <h3 className={`text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5`}>
-                  <Bell className="w-3.5 h-3.5" />Namaz Hatırlatıcı
+                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5" />{t("notificationHeader", lang)}
                 </h3>
-
-                {/* Global açma/kapama */}
-                <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5"}`}>
+                <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                   <div className="flex items-center gap-3">
-                    {notificationSettings.enabled
-                      ? <Bell className="w-5 h-5 text-amber-400" />
-                      : <BellOff className="w-5 h-5 text-slate-500" />
-                    }
+                    {notificationSettings.enabled ? <Bell className="w-5 h-5 text-amber-400" /> : <BellOff className="w-5 h-5 text-slate-500" />}
                     <div>
-                      <div className={`text-sm font-black ${notificationSettings.enabled ? "text-amber-400" : "text-slate-300"}`}>
-                        {notificationSettings.enabled ? "Bildirimler Açık" : "Bildirimler Kapalı"}
+                      <div className={`text-sm font-bold ${notificationSettings.enabled ? "text-amber-400" : "text-slate-300"}`}>
+                        {notificationSettings.enabled ? t("notificationsOn", lang) : t("notificationsOff", lang)}
                       </div>
-                      <div className="text-[10px] text-slate-500">Namaz vakti yaklaşınca uyar</div>
+                      <div className="text-[10px] text-slate-500">{t("notificationHeader", lang)}</div>
                     </div>
                   </div>
-                  {/* Toggle switch */}
                   <button
                     onClick={async () => {
                       const next = !notificationSettings.enabled;
                       if (next) {
                         const granted = await requestNotificationPermission();
-                        if (!granted) {
-                          notify("⚠️ Bildirim izni verilmedi");
-                          return;
-                        }
-                      } else {
-                        await cancelAllNotifications();
-                      }
+                        if (!granted) { notify(t("notifyPermissionDenied", lang)); return; }
+                      } else { await cancelAllNotifications(); }
                       const updated = { ...notificationSettings, enabled: next };
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
                         await schedulePrayerNotifications(prayerTimes, updated, "");
-                        notify("🔔 Bildirimler aktif!");
-                      } else {
-                        notify("🔕 Bildirimler kapatıldı");
-                      }
+                        notify(t("notifyActive", lang));
+                      } else { notify(t("notifyOff", lang)); }
                     }}
-                    className={`relative w-12 h-6 rounded-full transition-all cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}
-                  >
+                    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.enabled ? "left-6" : "left-0.5"}`} />
                   </button>
                 </div>
 
-                {/* Kaç dakika önce */}
                 {notificationSettings.enabled && (
                   <>
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                        Ne kadar önce?
-                      </div>
+                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("minutesBefore", lang)}</div>
                       <div className="flex gap-2 flex-wrap">
                         {[5, 10, 15, 20, 30].map(min => (
-                          <button
-                            key={min}
-                            onClick={async () => {
-                              const updated = { ...notificationSettings, minutesBefore: min };
-                              setNotificationSettings(updated);
-                              saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "");
-                              notify(`⏰ ${min} dakika önce bildirim`);
-                            }}
-                            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer border-2 ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}
-                          >
-                            {min} dk
+                          <button key={min} onClick={async () => {
+                            const updated = { ...notificationSettings, minutesBefore: min };
+                            setNotificationSettings(updated);
+                            saveNotificationSettings(updated);
+                            await schedulePrayerNotifications(prayerTimes, updated, "");
+                            notify(t("notifyMinutes", lang, { min: String(min) }));
+                          }}
+                            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                            {t("minutes", lang, { min: String(min) })}
                           </button>
                         ))}
                       </div>
                     </div>
-
-                    {/* Vakit seçimi */}
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                        Hangi vakitler?
-                      </div>
+                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
                       <div className="space-y-2">
                         {(Object.entries(notificationSettings.prayers) as [keyof typeof notificationSettings.prayers, boolean][]).map(([key, isOn]) => (
                           <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${isOn ? "bg-amber-400" : "bg-slate-600"}`} />
-                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>
-                                {PRAYER_LABELS[key]}
-                              </span>
+                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>{PRAYER_LABELS[key]}</span>
                             </div>
-                            <button
-                              onClick={async () => {
-                                const updated = {
-                                  ...notificationSettings,
-                                  prayers: { ...notificationSettings.prayers, [key]: !isOn }
-                                };
-                                setNotificationSettings(updated);
-                                saveNotificationSettings(updated);
-                                await schedulePrayerNotifications(prayerTimes, updated, "");
-                              }}
-                              className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}
-                            >
+                            <button onClick={async () => {
+                              const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
+                              setNotificationSettings(updated);
+                              saveNotificationSettings(updated);
+                              await schedulePrayerNotifications(prayerTimes, updated, "");
+                            }}
+                              className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                               <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
                             </button>
                           </div>
@@ -896,11 +893,8 @@ function SettingsPanel({
                   </>
                 )}
 
-                {/* Bilgi notu */}
                 <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-[10px] text-blue-300 leading-relaxed">
-                    💡 Bildirimler her gün namaz vakitleri yüklendiğinde otomatik olarak güncellenir.
-                  </p>
+                  <p className="text-[10px] text-blue-300 leading-relaxed">{t("infoNote", lang)}</p>
                 </div>
               </div>
             )}
@@ -917,7 +911,6 @@ function SettingsPanel({
   );
 }
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [themeKey, setThemeKey] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem("mnv_theme") as ThemeKey;
@@ -927,6 +920,10 @@ export default function App() {
     }
     return "gece";
   });
+  const [lang, setLangState] = useState<LangCode>(() => {
+    return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
+  });
+  const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
   const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
   const [logoTapCount, setLogoTapCount] = useState(0);
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
@@ -947,14 +944,20 @@ export default function App() {
     getPrayerTimesFallback(DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude, new Date(), DEFAULT_LOCATION.timezone!)
   );
   const [prayerLoading, setPrayerLoading] = useState(false);
+  const [nextPrayerStr, setNextPrayerStr] = useState("");
+  const [compassHeading, setCompassHeading] = useState<number | null>(null);
+  const [qiblaDir, setQiblaDir] = useState(0);
+  const [compassListening, setCompassListening] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(
+    () => !localStorage.getItem("mnv_location_prompted")
+  );
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
-  const t = THEMES[themeKey];
+  const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
+  const tTheme = THEMES[themeKey];
 
   const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
-  const setNotificationSettings = (s: NotificationSettings) => {
-    setNotificationSettingsState(s);
-    saveNotificationSettings(s);
-  };
+  const setNotificationSettings = (s: NotificationSettings) => { setNotificationSettingsState(s); saveNotificationSettings(s); };
   const setLocationAndSave = (loc: Location) => { setLocation(loc); localStorage.setItem("mnv_location", JSON.stringify(loc)); };
   const setSavedLocations = (locs: Location[]) => { setSavedLocationsState(locs); localStorage.setItem("mnv_saved_locations", JSON.stringify(locs)); };
   const setPrayerMethod = (m: number) => { setPrayerMethodState(m); localStorage.setItem("mnv_prayer_method", String(m)); };
@@ -975,7 +978,6 @@ export default function App() {
     } finally { setPrayerLoading(false); }
   };
 
-  // Namaz vakitleri değişince bildirimleri yeniden planla
   useEffect(() => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
       schedulePrayerNotifications(prayerTimes, notificationSettings, location.name);
@@ -984,6 +986,99 @@ export default function App() {
 
   useEffect(() => { loadPrayerTimes(location, prayerMethod, date); }, [location.latitude, location.longitude, date.getDate(), date.getMonth(), prayerMethod]);
   const handleRefresh = () => { lastFetchKey.current = ""; loadPrayerTimes(location, prayerMethod, date, true); };
+
+  useEffect(() => {
+    setQiblaDir(calcQiblaDirection(location.latitude, location.longitude));
+  }, [location.latitude, location.longitude]);
+
+  useEffect(() => {
+    if (!compassListening) return;
+    const handler = (e: DeviceOrientationEvent) => {
+      const h = getCompassHeading(e);
+      if (h !== null) setCompassHeading(h);
+    };
+    window.addEventListener("deviceorientation", handler);
+    requestCompassPermission();
+    return () => window.removeEventListener("deviceorientation", handler);
+  }, [compassListening]);
+
+  useEffect(() => {
+    if (!prayerTimes.length) { setNextPrayerStr(""); return; }
+    let h=0, m=0;
+    try {
+      const tp=new Intl.DateTimeFormat("en-US",{timeZone:location.timezone||"Europe/Istanbul",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(date);
+      h=parseInt(tp.find(p=>p.type==="hour")?.value||"0");
+      m=parseInt(tp.find(p=>p.type==="minute")?.value||"0");
+    } catch {}
+    const nowStr=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    let nextIdx = -1;
+    for (let i = 0; i < prayerTimes.length; i++) {
+      if (nowStr < prayerTimes[i].time) { nextIdx = i; break; }
+    }
+    if (nextIdx === -1) {
+      const [hStr, mStr] = prayerTimes[0].time.split(":").map(Number);
+      const tomorrow = new Date(date);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(hStr, mStr, 0, 0);
+      const diff = tomorrow.getTime() - date.getTime();
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setNextPrayerStr(`${prayerTimes[0].name}: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`);
+    } else {
+      const [hStr, mStr] = prayerTimes[nextIdx].time.split(":").map(Number);
+      const target = new Date(date);
+      target.setHours(hStr, mStr, 0, 0);
+      const diff = target.getTime() - date.getTime();
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setNextPrayerStr(`${prayerTimes[nextIdx].name}: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`);
+    }
+  }, [prayerTimes, date, location.timezone]);
+
+  const handleFindLocation = async () => {
+    setShowLocationPrompt(true);
+  };
+
+  const handleLocationAllowed = async () => {
+    setShowLocationPrompt(false);
+    localStorage.setItem("mnv_location_prompted", "true");
+    setIsDetectingLocation(true);
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) { setIsDetectingLocation(false); return; }
+    try {
+      const coords = await getCurrentPosition();
+      const res = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${coords.latitude.toFixed(2)},${coords.longitude.toFixed(2)}&count=1&language=${lang}`
+      );
+      const data = await res.json();
+      let name = `${coords.latitude.toFixed(2)}°N ${coords.longitude.toFixed(2)}°E`;
+      let country = "";
+      if (data.results?.length) {
+        name = data.results[0].name;
+        country = data.results[0].country || "";
+      }
+      const newLoc: Location = {
+        name, country: country || t("unknown", lang),
+        latitude: coords.latitude, longitude: coords.longitude,
+        timezone: guessTimezone(coords.longitude),
+      };
+      setLocationAndSave(newLoc);
+      const exists = savedLocations.some(l =>
+        l.latitude.toFixed(2) === newLoc.latitude.toFixed(2)
+      );
+      if (!exists) setSavedLocations([...savedLocations, newLoc]);
+    } catch {
+      // location error
+    }
+    setIsDetectingLocation(false);
+  };
+
+  const handleLocationDenied = () => {
+    setShowLocationPrompt(false);
+    localStorage.setItem("mnv_location_prompted", "true");
+  };
 
   const localTime = useMemo(() => {
     const tz = location.timezone || "Europe/Istanbul";
@@ -1021,9 +1116,14 @@ export default function App() {
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
 
   return (
-    <div className={`min-h-screen ${t.bg} ${t.textPrimary} flex flex-col relative overflow-hidden p-4 md:p-8 transition-colors duration-500`}>
-      <div className={`absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] ${t.blob1} rounded-full blur-[100px] pointer-events-none`} />
-      <div className={`absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[40rem] h-[40rem] ${t.blob2} rounded-full blur-[120px] pointer-events-none`} />
+    <div className={`min-h-screen ${tTheme.bg} ${tTheme.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
+      {showLocationPrompt && (
+        <LocationPermissionPrompt
+          onAllow={handleLocationAllowed}
+          onDeny={handleLocationDenied}
+          lang={lang}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsPanel
@@ -1036,141 +1136,182 @@ export default function App() {
           setNotificationSettings={setNotificationSettings}
           prayerTimes={prayerTimes}
           logoTapCount={logoTapCount} setLogoTapCount={setLogoTapCount}
-          onClose={() => setSettingsOpen(false)} t={t}
+          onClose={() => setSettingsOpen(false)} t={tTheme}
+          lang={lang} setLang={setLang}
+          onFindLocation={handleFindLocation}
+          isDetectingLocation={isDetectingLocation}
         />
       )}
 
-      <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 relative z-10">
+      <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-5 relative z-10 animate-fadeIn">
 
-        {/* HEADER */}
-        <header className={`flex justify-between items-center border-b ${t.header} pb-4`}>
+        <header className="flex justify-between items-center pb-3">
           <div className="flex items-center gap-3">
             <button onClick={() => setSettingsOpen(true)}
-              className="cursor-pointer select-none hover:scale-105 transition-all">
-              <img
-                src="/meccanen-logo.png"
-                alt="Meccanen"
-                className="h-8 w-auto object-contain"
-              />
+              className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
+              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-8 sm:h-9 w-auto object-contain opacity-90" />
             </button>
-            <div className="w-px h-8 bg-white/10" />
+            <div className="w-px h-7 bg-white/8" />
             <div>
-              <h1 className={`text-sm font-black tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
-              <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
-                Reklamsız
-                {isPremium && <span className="text-amber-500">· ✨ Premium</span>}
+              <h1 className={`text-sm sm:text-base font-bold tracking-tight ${tTheme.textPrimary}`}>{t("appName", lang)}</h1>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                {t("adFree", lang)}
+                {isPremium && <span className="text-amber-500">· {t("premium", lang)}</span>}
                 {notificationSettings.enabled && <Bell className="w-3 h-3 text-amber-400" />}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {savedLocations.length > 1 ? (
-              <button
-                onClick={() => {
-                  const idx = savedLocations.findIndex(l =>
-                    l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
-                    l.longitude.toFixed(3) === location.longitude.toFixed(3)
-                  );
-                  const next = savedLocations[(idx + 1) % savedLocations.length];
-                  setLocationAndSave(next);
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent} hover:bg-white/10 transition-all cursor-pointer active:scale-95`}
-              >
-                <MapPin className="w-3.5 h-3.5" />
-                {location.name}
-                <ChevronsDown className="w-3 h-3 rotate-[-90deg]" />
+              <button onClick={() => {
+                const idx = savedLocations.findIndex(l =>
+                  l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
+                  l.longitude.toFixed(3) === location.longitude.toFixed(3)
+                );
+                const next = savedLocations[(idx + 1) % savedLocations.length];
+                setLocationAndSave(next);
+              }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent} hover:bg-white/10 transition-all cursor-pointer`}>
+                <MapPin className="w-3.5 h-3.5" />{location.name}<ChevronsDown className="w-3 h-3 -rotate-90" />
               </button>
             ) : (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent}`}>
                 <MapPin className="w-3.5 h-3.5" />{location.name}
               </span>
             )}
             <button onClick={handleRefresh}
-              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${t.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-              <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${t.accent}` : ""}`} />
+              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
+              <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${tTheme.accent}` : ""}`} />
+            </button>
+            <button onClick={() => setSettingsOpen(true)}
+              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer hidden sm:block`}>
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        {/* SAAT + TAKVİM */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-6 transition-all`}>
+        <section className={`${tTheme.card} border rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-2xl`}>
           <div className="flex items-baseline justify-center font-mono select-none mb-1">
-            <span className={`text-6xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${t.clockGrad}`}>
+            <span className={`text-6xl sm:text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${tTheme.clockGrad} tracking-tight`}>
               {localTime.hour}:{localTime.min}
             </span>
-            <span className={`text-3xl font-light ${t.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
+            <span className={`text-2xl sm:text-3xl font-light ${tTheme.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
           </div>
-          <p className={`text-center text-sm font-semibold ${t.textSecondary} mb-4`}>{localTime.weekday}</p>
-          <div className={`border-t ${t.header} pt-4 flex justify-between items-start gap-4`}>
+          <p className={`text-center text-sm sm:text-base font-medium ${tTheme.textSecondary} mb-5`}>{localTime.weekday}</p>
+          <div className={`border-t pt-5 flex justify-between items-start gap-4 ${tTheme.header}`}>
             <div>
-              <div className={`text-[9px] font-black uppercase tracking-widest ${t.accent2} mb-1 flex items-center gap-1`}>
-                <Calendar className="w-3 h-3" />Miladi
+              <div className={`text-[10px] sm:text-[11px] font-semibold tracking-wide ${tTheme.accent2} mb-1.5 flex items-center gap-1.5`}>
+                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />{t("gregorian", lang)}
               </div>
-              <div className={`text-2xl font-black ${t.textPrimary}`}>{localTime.gregDay}</div>
-              <div className={`text-xs ${t.textSecondary} font-semibold mt-0.5`}>{localTime.gregMonthYear}</div>
+              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.textPrimary}`}>{localTime.gregDay}</div>
+              <div className={`text-xs sm:text-sm ${tTheme.textSecondary} mt-0.5`}>{localTime.gregMonthYear}</div>
             </div>
             <div className="text-right">
-              <div className={`text-[9px] font-black uppercase tracking-widest ${t.hijriAccent} mb-1 flex items-center justify-end gap-1`}>
-                <Sparkles className="w-3 h-3" />Hicri
+              <div className={`text-[10px] sm:text-[11px] font-semibold tracking-wide ${tTheme.hijriAccent} mb-1.5 flex items-center justify-end gap-1.5`}>
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />{t("hijri", lang)}
               </div>
-              <div className={`text-2xl font-black ${t.hijriAccent}`}>{localTime.hijriDay}</div>
-              <div className={`text-xs font-semibold mt-0.5 ${t.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
+              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.hijriAccent}`}>{localTime.hijriDay}</div>
+              <div className={`text-xs sm:text-sm mt-0.5 ${tTheme.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
             </div>
           </div>
         </section>
 
-        {/* NAMAZ VAKİTLERİ */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-6 transition-all`}>
-          <div className="flex justify-between items-center mb-4">
-            <div className={`text-[10px] font-black uppercase tracking-widest ${t.accent} flex items-center gap-1.5`}>
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-              {currentMethod.label} Vakitleri
+        <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
+          <div className="flex justify-between items-center mb-5">
+            <div className={`text-[11px] sm:text-[12px] font-semibold tracking-wide ${tTheme.accent} flex items-center gap-1.5`}>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />{currentMethod.label}
             </div>
-            <span className={`text-[9px] ${t.textMuted} font-mono`}>{location.name}, {location.country}</span>
+            <span className={`text-[9px] sm:text-[10px] ${tTheme.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+
+          {nextPrayerStr && (
+            <div className={`mb-4 p-3 rounded-xl border ${tTheme.prayerActive} flex items-center justify-center gap-2`}>
+              <span className="text-[10px] font-semibold uppercase tracking-wide">{t("nextPrayer", lang)} {t("in", lang)}</span>
+              <span className="text-sm font-mono font-bold">{nextPrayerStr.split(": ")[1] || nextPrayerStr}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-6">
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
-                className={`flex flex-col items-center py-3 px-2 rounded-2xl border-2 transition-all ${activePrayerIndex === idx ? `${t.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-[9px] font-black uppercase tracking-wider mb-2 ${activePrayerIndex === idx ? "" : t.textMuted}`}>{item.name}</div>
-                <div className={`text-sm font-mono font-bold ${activePrayerIndex === idx ? "" : t.textSecondary}`}>{item.time}</div>
+                className={`flex flex-col items-center py-3 sm:py-4 px-2 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
+                <div className={`text-[10px] sm:text-[11px] font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{item.name}</div>
+                <div className={`text-sm sm:text-base font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
               </div>
             ))}
           </div>
           {prayerLoading && (
-            <div className="flex items-center justify-center gap-2 mt-3 text-xs text-slate-500">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />Güncelleniyor…
+            <div className="flex items-center justify-center gap-2 mt-4 text-xs text-slate-500">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />{t("updating", lang)}
             </div>
           )}
         </section>
 
-        {/* KONUM */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-5 transition-all`}>
+        <section className={`${tTheme.card} border rounded-xl p-5 sm:p-6 transition-all duration-300 shadow-md`}>
           <div className="flex justify-between items-center">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-              <Globe className={`w-3.5 h-3.5 ${t.accent}`} />Konum
+            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5">
+              <Globe className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("location", lang)}
             </div>
             <button onClick={() => setSettingsOpen(true)}
-              className={`text-[10px] font-bold ${t.accent} cursor-pointer hover:opacity-70 transition-all`}>
-              Değiştir →
+              className={`text-[11px] sm:text-[12px] font-medium ${tTheme.accent} cursor-pointer hover:opacity-80 transition-all`}>
+              {t("change", lang)} →
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-3">
             <div>
-              <div className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Şehir</div>
-              <div className={`text-base font-black ${t.accent}`}>{location.name}, {location.country}</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 tracking-wide font-medium">{t("city", lang)}</div>
+              <div className={`text-base sm:text-lg font-bold ${tTheme.accent}`}>{location.name}, {location.country}</div>
             </div>
             <div className="ml-auto text-right">
-              <div className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Koordinat</div>
-              <div className={`text-xs font-mono ${t.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
-              <div className="text-[10px] text-slate-600">{location.timezone}</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 tracking-wide font-medium">{t("coordinates", lang)}</div>
+              <div className={`text-xs sm:text-sm font-mono ${tTheme.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-600">{location.timezone}</div>
             </div>
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className={`text-center pt-4 pb-2 text-[10px] text-slate-600 border-t ${t.header}`}>
-          © {date.getFullYear()} Meccanen Namaz Vakti · AlAdhan API · Reklamsız
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
+            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+              <Compass className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("qibla", lang)}
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28">
+                <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
+                  <div className="text-[9px] text-slate-500">{t("qibla", lang)}</div>
+                </div>
+                <div
+                  className="absolute top-1/2 left-1/2 w-0.5 h-12 sm:h-14 bg-amber-500 origin-bottom transition-transform duration-300"
+                  style={{
+                    transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
+                  }}
+                />
+                <div className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <button
+                onClick={() => setCompassListening(!compassListening)}
+                className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
+                {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
+              </button>
+            </div>
+          </section>
+
+          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
+            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+              <Moon className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("moonPhase", lang)}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">{MOON_PHASE_ICONS[moonPhase.phase]}</div>
+              <div>
+                <div className="text-base font-bold text-slate-100">{t(moonPhase.phase, lang)}</div>
+                <div className="text-xs text-slate-400">{t(moonPhase.phase, lang)} · %{moonPhase.illumination} {t("moonPhase", lang)}</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>
+          &copy; {date.getFullYear()} {t("appName", lang)}
         </footer>
 
       </div>
