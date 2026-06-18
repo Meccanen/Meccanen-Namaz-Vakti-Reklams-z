@@ -315,13 +315,13 @@ function PremiumModal({ onClose, t, previewTheme }: {
   const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
       <div
-        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl flex flex-col max-h-[88vh] overflow-hidden ${t.settingsCard}`}
+        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl flex flex-col max-h-[88vh] overflow-hidden glass-strong ${t.settingsCard}`}
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer z-10">
+        <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer z-10 active:scale-90">
           <X className="w-4 h-4 text-slate-400" />
         </button>
 
@@ -347,8 +347,8 @@ function PremiumModal({ onClose, t, previewTheme }: {
             {premiumThemes.map(([key, th]) => (
               <button key={key}
                 onClick={() => setActivePreview(key)}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all cursor-pointer
-                  ${activePreview === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all duration-200 cursor-pointer active:scale-95
+                  ${activePreview === key ? "border-white/30 bg-white/10 shadow-lg" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                 <div className="flex gap-0.5">
                   {th.preview.map((c, i) => <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: c }} />)}
                 </div>
@@ -507,24 +507,22 @@ function SettingsPanel({
         />
       )}
 
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <div
-          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col ${t.settingsCard}`}
+          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col glass-strong ${t.settingsCard}`}
           onClick={e => e.stopPropagation()}
         >
-          {/* Panel header — logo 5x tıklama */}
+          {/* Panel header */}
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              {/* GİZLİ TOGGLE: Logo'ya 5x tıklama ⚠️ PROD'A ÇIKARKEN KALDIR */}
-              <button onClick={handleLogoTap} className="cursor-pointer select-none">
-                <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
+              <button onClick={handleLogoTap} className="cursor-pointer select-none hover:scale-105 active:scale-95 transition-all duration-200">
+                <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
               </button>
               <h2 className={`text-lg font-black ${t.accent}`}>Ayarlar</h2>
               {logoTapCount > 0 && logoTapCount < 5 && (
                 <span className="text-[9px] text-slate-600">{5 - logoTapCount} kez daha</span>
               )}
-
             </div>
             <div className="flex items-center gap-2">
               {isPremium ? (
@@ -534,12 +532,12 @@ function SettingsPanel({
               ) : (
                 <button
                   onClick={() => { setPremiumPreviewTheme(undefined); setPremiumModalOpen(true); }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400 hover:opacity-80 transition-all cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400 hover:opacity-80 transition-all cursor-pointer active:scale-95"
                 >
                   ✨ Premium Al
                 </button>
               )}
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer active:scale-90">
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
@@ -549,7 +547,7 @@ function SettingsPanel({
           <div className="flex gap-1 px-6 pb-3 shrink-0">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${tab === tb.key ? `bg-white/15 ${t.accent}` : "text-slate-500 hover:bg-white/5"}`}>
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${tab === tb.key ? `bg-white/15 ${t.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
                 {tb.label}
               </button>
             ))}
@@ -571,9 +569,9 @@ function SettingsPanel({
                     .filter(([, th]) => th.free)
                     .map(([key, th]) => (
                       <button key={key} onClick={() => handleThemeClick(key)}
-                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all cursor-pointer ${theme === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer active:scale-[0.98] ${theme === key ? "border-white/30 bg-white/10 shadow-lg" : "border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/15"}`}>
                         <div className="flex gap-1 shrink-0">
-                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />)}
+                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
                         <span className="text-xs font-bold text-slate-200">{th.label}</span>
                         {theme === key && <Check className="w-4 h-4 text-white absolute right-3 top-1/2 -translate-y-1/2" />}
@@ -604,11 +602,11 @@ function SettingsPanel({
                         const isActive = theme === key;
                         return (
                           <button key={key} onClick={() => handleThemeClick(key)}
-                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
-                              ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}
+                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden active:scale-[0.97]
+                              ${isActive ? "border-white/30 bg-white/10 shadow-lg" : "border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/15"}
                               ${locked ? "opacity-70" : ""}`}>
                             <div className="flex gap-0.5 shrink-0">
-                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />)}
+                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                             </div>
                             <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
                             {locked
@@ -629,11 +627,11 @@ function SettingsPanel({
                         const isActive = theme === key;
                         return (
                           <button key={key} onClick={() => handleThemeClick(key)}
-                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
-                              ${isActive ? "border-amber-400/40 bg-amber-50/20" : "border-slate-300/20 bg-white/5 hover:bg-white/10"}
+                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden active:scale-[0.97]
+                              ${isActive ? "border-amber-400/40 bg-amber-50/20 shadow-lg" : "border-slate-300/20 bg-white/5 hover:bg-white/10 hover:border-slate-300/30"}
                               ${locked ? "opacity-70" : ""}`}>
                             <div className="flex gap-0.5 shrink-0">
-                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: c }} />)}
+                              {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/20" style={{ backgroundColor: c }} />)}
                             </div>
                             <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
                             {locked
@@ -652,7 +650,7 @@ function SettingsPanel({
                     href="https://ko-fi.com/meccanen"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer active:scale-[0.98]"
                   >
                     <Coffee className="w-4 h-4" />
                     Bana bir kahve ısmarla ☕
@@ -689,7 +687,7 @@ function SettingsPanel({
                       {savedLocations.map((loc, idx) => {
                         const isActive = location.latitude.toFixed(3) === loc.latitude.toFixed(3);
                         return (
-                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all ${isActive ? "bg-white/10 border-white/20" : "bg-black/20 border-white/5"}`}>
+                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all duration-200 ${isActive ? "bg-white/10 border-white/20" : "bg-black/20 border-white/5"}`}>
                             <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
                               <div className="flex items-center gap-2">
                                 {isActive && <div className={`w-2 h-2 rounded-full ${t.accent.replace("text-","bg-")} shrink-0`} />}
@@ -720,7 +718,7 @@ function SettingsPanel({
                       onChange={e => setSearchQuery(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && performSearch()}
                       placeholder="Şehir arayın (Paris, Mekke, Konya…)"
-                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none" />
+                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all duration-200" />
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <button onClick={performSearch} disabled={isSearching}
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
@@ -774,7 +772,7 @@ function SettingsPanel({
                 </h3>
                 {PRAYER_METHODS.map(m => (
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer text-left active:scale-[0.99] ${prayerMethod === m.id ? "border-white/30 bg-white/10 shadow-lg" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
                       <div className={`text-xs font-bold ${t.textPrimary}`}>{m.label}</div>
                       <div className={`text-[10px] ${t.textMuted} mt-0.5`}>{m.description}</div>
@@ -793,7 +791,7 @@ function SettingsPanel({
                 </h3>
 
                 {/* Global açma/kapama */}
-                <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5"}`}>
+                <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                   <div className="flex items-center gap-3">
                     {notificationSettings.enabled
                       ? <Bell className="w-5 h-5 text-amber-400" />
@@ -829,7 +827,7 @@ function SettingsPanel({
                         notify("🔕 Bildirimler kapatıldı");
                       }
                     }}
-                    className={`relative w-12 h-6 rounded-full transition-all cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}
+                    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400 shadow-lg shadow-amber-500/20" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}
                   >
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.enabled ? "left-6" : "left-0.5"}`} />
                   </button>
@@ -853,7 +851,7 @@ function SettingsPanel({
                               await schedulePrayerNotifications(prayerTimes, updated, "");
                               notify(`⏰ ${min} dakika önce bildirim`);
                             }}
-                            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer border-2 ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}
+                            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer border-2 active:scale-95 ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}
                           >
                             {min} dk
                           </button>
@@ -1021,9 +1019,9 @@ export default function App() {
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
 
   return (
-    <div className={`min-h-screen ${t.bg} ${t.textPrimary} flex flex-col relative overflow-hidden p-4 md:p-8 transition-colors duration-500`}>
-      <div className={`absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] ${t.blob1} rounded-full blur-[100px] pointer-events-none`} />
-      <div className={`absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[40rem] h-[40rem] ${t.blob2} rounded-full blur-[120px] pointer-events-none`} />
+    <div className={`min-h-screen ${t.bg} ${t.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
+      <div className={`absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] ${t.blob1} rounded-full blur-[100px] pointer-events-none ambient-glow-1`} />
+      <div className={`absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[40rem] h-[40rem] ${t.blob2} rounded-full blur-[120px] pointer-events-none ambient-glow-2`} />
 
       {settingsOpen && (
         <SettingsPanel
@@ -1040,30 +1038,33 @@ export default function App() {
         />
       )}
 
-      <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 relative z-10">
+      <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-5 relative z-10">
 
         {/* HEADER */}
-        <header className={`flex justify-between items-center border-b ${t.header} pb-4`}>
+        <header className={`flex justify-between items-center ${t.header} pb-3 animate-in`}>
           <div className="flex items-center gap-3">
             <button onClick={() => setSettingsOpen(true)}
-              className="cursor-pointer select-none hover:scale-105 transition-all">
+              className="cursor-pointer select-none hover:scale-105 active:scale-95 transition-all duration-200">
               <img
                 src="/meccanen-logo.png"
                 alt="Meccanen"
-                className="h-8 w-auto object-contain"
+                className="h-8 sm:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
               />
             </button>
-            <div className="w-px h-8 bg-white/10" />
+            <div className="w-px h-7 bg-white/8" />
             <div>
-              <h1 className={`text-sm font-black tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
-              <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
-                Reklamsız
+              <h1 className={`text-sm sm:text-base font-black tracking-tight ${t.textPrimary}`}>Namaz Vakti</h1>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
+                  Reklamsız
+                </span>
                 {isPremium && <span className="text-amber-500">· ✨ Premium</span>}
                 {notificationSettings.enabled && <Bell className="w-3 h-3 text-amber-400" />}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {savedLocations.length > 1 ? (
               <button
                 onClick={() => {
@@ -1074,103 +1075,107 @@ export default function App() {
                   const next = savedLocations[(idx + 1) % savedLocations.length];
                   setLocationAndSave(next);
                 }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent} hover:bg-white/10 transition-all cursor-pointer active:scale-95`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 glass border ${t.header} rounded-full text-xs font-semibold ${t.accent} hover:bg-white/10 transition-all cursor-pointer active:scale-95`}
               >
                 <MapPin className="w-3.5 h-3.5" />
                 {location.name}
                 <ChevronsDown className="w-3 h-3 rotate-[-90deg]" />
               </button>
             ) : (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${t.header} rounded-full text-xs font-semibold ${t.accent}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 glass border ${t.header} rounded-full text-xs font-semibold ${t.accent}`}>
                 <MapPin className="w-3.5 h-3.5" />{location.name}
               </span>
             )}
             <button onClick={handleRefresh}
-              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${t.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
+              className={`p-1.5 text-slate-400 hover:text-white glass border ${t.header} rounded-full hover:bg-white/10 transition-all cursor-pointer active:scale-90`}>
               <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${t.accent}` : ""}`} />
+            </button>
+            <button onClick={() => setSettingsOpen(true)}
+              className={`p-1.5 text-slate-400 hover:text-white glass border ${t.header} rounded-full hover:bg-white/10 transition-all cursor-pointer active:scale-90 hidden sm:block`}>
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         </header>
 
         {/* SAAT + TAKVİM */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-6 transition-all`}>
+        <section className={`${t.card} ${t.cardHover} glass border rounded-[28px] p-6 sm:p-7 transition-all duration-300 card-elevated animate-in stagger-1`}>
           <div className="flex items-baseline justify-center font-mono select-none mb-1">
-            <span className={`text-6xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${t.clockGrad}`}>
+            <span className={`text-6xl sm:text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${t.clockGrad} tracking-tight`}>
               {localTime.hour}:{localTime.min}
             </span>
-            <span className={`text-3xl font-light ${t.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
+            <span className={`text-2xl sm:text-3xl font-light ${t.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
           </div>
-          <p className={`text-center text-sm font-semibold ${t.textSecondary} mb-4`}>{localTime.weekday}</p>
-          <div className={`border-t ${t.header} pt-4 flex justify-between items-start gap-4`}>
-            <div>
-              <div className={`text-[9px] font-black uppercase tracking-widest ${t.accent2} mb-1 flex items-center gap-1`}>
-                <Calendar className="w-3 h-3" />Miladi
+          <p className={`text-center text-sm sm:text-base font-semibold ${t.textSecondary} mb-5`}>{localTime.weekday}</p>
+          <div className={`border-t ${t.header} pt-5 flex justify-between items-start gap-4`}>
+            <div className="animate-in stagger-3">
+              <div className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${t.accent2} mb-1.5 flex items-center gap-1.5`}>
+                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />Miladi
               </div>
-              <div className={`text-2xl font-black ${t.textPrimary}`}>{localTime.gregDay}</div>
-              <div className={`text-xs ${t.textSecondary} font-semibold mt-0.5`}>{localTime.gregMonthYear}</div>
+              <div className={`text-2xl sm:text-3xl font-black ${t.textPrimary}`}>{localTime.gregDay}</div>
+              <div className={`text-xs sm:text-sm ${t.textSecondary} font-semibold mt-0.5`}>{localTime.gregMonthYear}</div>
             </div>
-            <div className="text-right">
-              <div className={`text-[9px] font-black uppercase tracking-widest ${t.hijriAccent} mb-1 flex items-center justify-end gap-1`}>
-                <Sparkles className="w-3 h-3" />Hicri
+            <div className="text-right animate-in stagger-4">
+              <div className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${t.hijriAccent} mb-1.5 flex items-center justify-end gap-1.5`}>
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />Hicri
               </div>
-              <div className={`text-2xl font-black ${t.hijriAccent}`}>{localTime.hijriDay}</div>
-              <div className={`text-xs font-semibold mt-0.5 ${t.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
+              <div className={`text-2xl sm:text-3xl font-black ${t.hijriAccent}`}>{localTime.hijriDay}</div>
+              <div className={`text-xs sm:text-sm font-semibold mt-0.5 ${t.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
             </div>
           </div>
         </section>
 
         {/* NAMAZ VAKİTLERİ */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-6 transition-all`}>
-          <div className="flex justify-between items-center mb-4">
-            <div className={`text-[10px] font-black uppercase tracking-widest ${t.accent} flex items-center gap-1.5`}>
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+        <section className={`${t.card} ${t.cardHover} glass border rounded-[28px] p-6 sm:p-7 transition-all duration-300 card-elevated animate-in stagger-2`}>
+          <div className="flex justify-between items-center mb-5">
+            <div className={`text-[10px] sm:text-[11px] font-black uppercase tracking-widest ${t.accent} flex items-center gap-1.5`}>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
               {currentMethod.label} Vakitleri
             </div>
-            <span className={`text-[9px] ${t.textMuted} font-mono`}>{location.name}, {location.country}</span>
+            <span className={`text-[9px] sm:text-[10px] ${t.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-6">
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
-                className={`flex flex-col items-center py-3 px-2 rounded-2xl border-2 transition-all ${activePrayerIndex === idx ? `${t.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-[9px] font-black uppercase tracking-wider mb-2 ${activePrayerIndex === idx ? "" : t.textMuted}`}>{item.name}</div>
-                <div className={`text-sm font-mono font-bold ${activePrayerIndex === idx ? "" : t.textSecondary}`}>{item.time}</div>
+                className={`flex flex-col items-center py-3 sm:py-4 px-2 rounded-2xl border-2 transition-all duration-300 ${activePrayerIndex === idx ? `${t.prayerActive} ring-2 scale-[1.02]` : "border-transparent bg-black/20 hover:bg-white/5 hover:scale-[1.02]"}`}>
+                <div className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-2 ${activePrayerIndex === idx ? "" : t.textMuted}`}>{item.name}</div>
+                <div className={`text-sm sm:text-base font-mono font-bold ${activePrayerIndex === idx ? "" : t.textSecondary}`}>{item.time}</div>
               </div>
             ))}
           </div>
           {prayerLoading && (
-            <div className="flex items-center justify-center gap-2 mt-3 text-xs text-slate-500">
+            <div className="flex items-center justify-center gap-2 mt-4 text-xs text-slate-500">
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />Güncelleniyor…
             </div>
           )}
         </section>
 
         {/* KONUM */}
-        <section className={`${t.card} ${t.cardHover} backdrop-blur-lg border rounded-[28px] p-5 transition-all`}>
+        <section className={`${t.card} ${t.cardHover} glass border rounded-[24px] p-5 sm:p-6 transition-all duration-300 card-elevated animate-in stagger-3`}>
           <div className="flex justify-between items-center">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+            <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Globe className={`w-3.5 h-3.5 ${t.accent}`} />Konum
             </div>
             <button onClick={() => setSettingsOpen(true)}
-              className={`text-[10px] font-bold ${t.accent} cursor-pointer hover:opacity-70 transition-all`}>
+              className={`text-[10px] sm:text-[11px] font-bold ${t.accent} cursor-pointer hover:opacity-80 transition-all active:scale-95`}>
               Değiştir →
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-3">
             <div>
-              <div className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Şehir</div>
-              <div className={`text-base font-black ${t.accent}`}>{location.name}, {location.country}</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-wider font-bold">Şehir</div>
+              <div className={`text-base sm:text-lg font-black ${t.accent}`}>{location.name}, {location.country}</div>
             </div>
             <div className="ml-auto text-right">
-              <div className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Koordinat</div>
-              <div className={`text-xs font-mono ${t.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
-              <div className="text-[10px] text-slate-600">{location.timezone}</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-wider font-bold">Koordinat</div>
+              <div className={`text-xs sm:text-sm font-mono ${t.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-600">{location.timezone}</div>
             </div>
           </div>
         </section>
 
         {/* FOOTER */}
-        <footer className={`text-center pt-4 pb-2 text-[10px] text-slate-600 border-t ${t.header}`}>
-          © {date.getFullYear()} Meccanen Namaz Vakti · AlAdhan API · Reklamsız
+        <footer className={`text-center pt-4 pb-2 text-[10px] sm:text-[11px] text-slate-600 border-t ${t.header} animate-in stagger-5`}>
+          <span className="opacity-60">© {date.getFullYear()} Meccanen · AlAdhan API · Reklamsız</span>
         </footer>
 
       </div>
