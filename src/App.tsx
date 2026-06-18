@@ -5,7 +5,7 @@ import {
   X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff, Moon, Navigation
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMoon as faMoonSolid, faSun } from "@fortawesome/free-solid-svg-icons";
+import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
 import { TURKEY_PROVINCES } from "./utils/weatherHelper";
@@ -18,7 +18,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, getCompassHeading } from "./utils/qiblaHelper";
-import { calcMoonPhase, getDailySpaceFact, MoonPhase } from "./utils/astronomyHelper";
+import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
 
 export const THEMES = {
@@ -202,10 +202,10 @@ const DEFAULT_LOCATION: Location = {
   timezone: "Europe/Istanbul", admin1: "Marmara"
 };
 
-const MOON_PHASE_ICONS: Record<MoonPhase, string> = {
-  newMoon: "\u{1F311}", waxingCrescent: "\u{1F312}", firstQuarter: "\u{1F313}",
-  waxingGibbous: "\u{1F314}", fullMoon: "\u{1F315}", waningGibbous: "\u{1F316}",
-  thirdQuarter: "\u{1F317}", waningCrescent: "\u{1F318}",
+  const MOON_PHASE_ICONS: Record<MoonPhase, React.ReactNode> = {
+  newMoon: <FontAwesomeIcon icon={faMoonSolid} />, waxingCrescent: <FontAwesomeIcon icon={faMoonSolid} />, firstQuarter: <FontAwesomeIcon icon={faMoonSolid} />,
+  waxingGibbous: <FontAwesomeIcon icon={faMoonSolid} />, fullMoon: <FontAwesomeIcon icon={faMoonSolid} />, waningGibbous: <FontAwesomeIcon icon={faMoonSolid} />,
+  thirdQuarter: <FontAwesomeIcon icon={faMoonSolid} />, waningCrescent: <FontAwesomeIcon icon={faMoonSolid} />,
 };
 
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
@@ -280,7 +280,7 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
         </div>
         <div style={{ background:cardBg, border:`1px solid ${cardBorder}`, borderRadius:18, padding:"10px 12px", position:"relative", zIndex:1 }}>
           <div style={{ fontSize:6, fontWeight:900, textTransform:"uppercase", letterSpacing:1, color:acc, marginBottom:7, display:"flex", alignItems:"center", gap:3 }}>
-            <span style={{ color:"#f59e0b", fontWeight:900 }}>★</span> Diyanet Vakitleri
+            <FontAwesomeIcon icon={faStar} style={{ color:"#f59e0b" }} /> Diyanet Vakitleri
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:4 }}>
             {prayers.map(({ name, time }, i) => (
@@ -335,7 +335,7 @@ function PremiumModal({ onClose, t: theme, lang }: {
         </button>
         <div className="p-6 pb-4 shrink-0">
           <div className="text-center mb-4">
-            <div className="text-xl mb-2">&#9733;</div>
+            <div className="text-xl mb-2"><FontAwesomeIcon icon={faStar} /></div>
             <h2 className={`text-lg font-bold ${theme.accent} mb-0.5`}>{t("premium", lang)}</h2>
             <p className="text-[11px] text-slate-400">{t("oneTime", lang)}</p>
           </div>
@@ -464,6 +464,7 @@ function SettingsPanel({
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
@@ -477,7 +478,7 @@ function SettingsPanel({
       localStorage.setItem("mnv_premium", String(newVal));
       if (!newVal) localStorage.removeItem("mnv_premium_tier");
       else localStorage.setItem("mnv_premium_tier", "test");
-      notify(newVal ? "✨ Premium aktif (test modu)" : "🔒 Premium devre dışı (test modu)");
+      notify(newVal ? t("premiumTestOn", lang) : t("premiumTestOff", lang));
     }
   };
 
@@ -490,7 +491,7 @@ function SettingsPanel({
       const data = await res.json();
       if (data.results?.length) {
         setSearchResults(data.results.map((r: any) => ({
-          name: r.name, country: r.country || "Bilinmiyor",
+          name: r.name, country: r.country || t("unknown", lang),
           latitude: r.latitude, longitude: r.longitude,
           timezone: r.timezone && r.timezone !== "GMT" && r.timezone !== "UTC"
             ? r.timezone : guessTimezone(r.longitude),
@@ -509,17 +510,17 @@ function SettingsPanel({
     );
     if (!exists && savedLocations.length >= maxLocs) {
       if (!isPremium) { setPremiumModalOpen(true); }
-      else { notify("⚠️ Maksimum 9 konum kaydedilebilir"); }
+      else { notify(t("maxLocations", lang, { n: "9" })); }
       return;
     }
     const newList = exists ? savedLocations : [...savedLocations, loc];
     setSavedLocations(newList);
     setLocation(loc);
     setSearchResults([]); setSearchQuery("");
-    notify(`📍 ${loc.name} seçildi`);
+    notify(t("citySelected", lang, { city: loc.name, country: loc.country }));
   };
 
-  const selectSaved = (loc: Location) => { setLocation(loc); notify(`📍 ${loc.name} seçildi`); };
+  const selectSaved = (loc: Location) => { setLocation(loc); notify(t("citySelected", lang, { city: loc.name, country: loc.country })); };
 
   const deleteSaved = (idx: number) => {
     const next = savedLocations.filter((_, i) => i !== idx);
@@ -537,7 +538,7 @@ function SettingsPanel({
     const th = THEMES[key];
     if (!th.free && !isPremium) { setPremiumModalOpen(true); return; }
     setTheme(key);
-    notify(`🎨 ${th.label}`);
+    notify(th.label);
   };
 
   const LANGUAGES: { code: LangCode; label: string }[] = [
@@ -572,11 +573,11 @@ function SettingsPanel({
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
               <button onClick={handleLogoTap} className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
-                <img src="/meccanen-logo.png" alt="Meccanen" className="h-6 w-auto object-contain opacity-80" />
+                <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-6 w-auto object-contain opacity-80" />
               </button>
               <h2 className={`text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
               {logoTapCount > 0 && logoTapCount < 5 && (
-                <span className="text-[9px] text-slate-600">{5 - logoTapCount} kez daha</span>
+                <span className="text-[9px] text-slate-600">{t("tapMore", lang, { n: String(5 - logoTapCount) })}</span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -632,7 +633,7 @@ function SettingsPanel({
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-[10px] text-amber-500/80 uppercase tracking-wide font-bold flex items-center gap-1">
-                    <Lock className="w-3 h-3" />{t("premium", lang)} ({premiumThemes.length} {t("themes", lang) || "Tema"})
+                    <Lock className="w-3 h-3" />{t("premium", lang)} ({premiumThemes.length} {t("themes", lang) || "Theme"})
                   </div>
                   {!isPremium && (
                     <button onClick={() => setPremiumModalOpen(true)}
@@ -754,7 +755,7 @@ function SettingsPanel({
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <button onClick={performSearch} disabled={isSearching}
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
-                      {isSearching ? "…" : t("search", lang)}
+                      {isSearching ? t("updating", lang) : t("search", lang)}
                     </button>
                   </div>
                   {searchResults.length > 0 && (
@@ -780,12 +781,12 @@ function SettingsPanel({
                   {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
                   <div>
                     <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
-                      <Map className="w-3 h-3" />Türkiye 81 İl
+                      <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none">
-                        <option value="">— Seçiniz —</option>
+                        <option value="">{t("select", lang)}</option>
                         {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                       </select>
                       <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
@@ -833,15 +834,15 @@ function SettingsPanel({
                       const next = !notificationSettings.enabled;
                       if (next) {
                         const granted = await requestNotificationPermission();
-                        if (!granted) { notify("⚠️ Bildirim izni verilmedi"); return; }
+                        if (!granted) { notify(t("notifyPermissionDenied", lang)); return; }
                       } else { await cancelAllNotifications(); }
                       const updated = { ...notificationSettings, enabled: next };
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
                         await schedulePrayerNotifications(prayerTimes, updated, "");
-                        notify("🔔 Bildirimler aktif!");
-                      } else { notify("🔕 Bildirimler kapatıldı"); }
+                        notify(t("notifyActive", lang));
+                      } else { notify(t("notifyOff", lang)); }
                     }}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.enabled ? "left-6" : "left-0.5"}`} />
@@ -859,7 +860,7 @@ function SettingsPanel({
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
                             await schedulePrayerNotifications(prayerTimes, updated, "");
-                            notify(`⏰ ${min} dakika önce bildirim`);
+                            notify(t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
                             {t("minutes", lang, { min: String(min) })}
@@ -947,11 +948,12 @@ export default function App() {
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [qiblaDir, setQiblaDir] = useState(0);
   const [compassListening, setCompassListening] = useState(false);
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(
+    () => !localStorage.getItem("mnv_location_prompted")
+  );
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
-  const spaceFact = useMemo(() => getDailySpaceFact(date), [date]);
   const tTheme = THEMES[themeKey];
 
   const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
@@ -1041,6 +1043,7 @@ export default function App() {
 
   const handleLocationAllowed = async () => {
     setShowLocationPrompt(false);
+    localStorage.setItem("mnv_location_prompted", "true");
     setIsDetectingLocation(true);
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) { setIsDetectingLocation(false); return; }
@@ -1057,7 +1060,7 @@ export default function App() {
         country = data.results[0].country || "";
       }
       const newLoc: Location = {
-        name, country: country || "Bilinmiyor",
+        name, country: country || t("unknown", lang),
         latitude: coords.latitude, longitude: coords.longitude,
         timezone: guessTimezone(coords.longitude),
       };
@@ -1074,6 +1077,7 @@ export default function App() {
 
   const handleLocationDenied = () => {
     setShowLocationPrompt(false);
+    localStorage.setItem("mnv_location_prompted", "true");
   };
 
   const localTime = useMemo(() => {
@@ -1145,7 +1149,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button onClick={() => setSettingsOpen(true)}
               className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
-              <img src="/meccanen-logo.png" alt="Meccanen" className="h-8 sm:h-9 w-auto object-contain opacity-90" />
+              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-8 sm:h-9 w-auto object-contain opacity-90" />
             </button>
             <div className="w-px h-7 bg-white/8" />
             <div>
@@ -1238,7 +1242,7 @@ export default function App() {
           </div>
           {prayerLoading && (
             <div className="flex items-center justify-center gap-2 mt-4 text-xs text-slate-500">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />Güncelleniyor…
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />{t("updating", lang)}
             </div>
           )}
         </section>
@@ -1305,13 +1309,6 @@ export default function App() {
             </div>
           </section>
         </div>
-
-        <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
-          <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
-            <Sparkles className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("spaceFact", lang)}
-          </div>
-          <p className={`text-sm ${tTheme.textSecondary} leading-relaxed`}>{spaceFact}</p>
-        </section>
 
         <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>
           &copy; {date.getFullYear()} {t("appName", lang)}

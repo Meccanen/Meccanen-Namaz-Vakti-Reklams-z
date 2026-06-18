@@ -1,5 +1,3 @@
-import { getSpaceAnnalsForDate } from "./spaceHelper";
-
 export type MoonPhase =
   | "newMoon"
   | "waxingCrescent"
@@ -22,9 +20,4 @@ export function calcMoonPhase(date: Date): { phase: MoonPhase; illumination: num
   ];
   const idx = Math.round((lunarAge / 29.53058867) * 8) % 8;
   return { phase: phases[idx], illumination: Math.round(illumination * 100) };
-}
-
-export function getDailySpaceFact(date: Date): string {
-  const event = getSpaceAnnalsForDate(date);
-  return event.description;
 }
