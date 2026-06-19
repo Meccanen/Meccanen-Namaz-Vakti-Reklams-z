@@ -1210,8 +1210,12 @@ export default function App() {
               <div className={`text-[10px] sm:text-[11px] font-semibold tracking-wide ${tTheme.hijriAccent} mb-1.5 flex items-center justify-end gap-1.5`}>
                 <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />{t("hijri", lang)}
               </div>
-              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.hijriAccent}`}>{localTime.hijriDay}</div>
+              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.hijriAccent} flex items-center justify-end gap-2`}>
+                {localTime.hijriDay}
+                <span className="text-xl sm:text-2xl" title={t(moonPhase.phase, lang)}>{MOON_PHASE_ICONS[moonPhase.phase]}</span>
+              </div>
               <div className={`text-xs sm:text-sm mt-0.5 ${tTheme.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
+              <div className={`text-[10px] sm:text-[11px] mt-1 ${tTheme.hijriAccent} opacity-60`}>{t(moonPhase.phase, lang)} · %{moonPhase.illumination}</div>
             </div>
           </div>
         </section>
@@ -1270,45 +1274,30 @@ export default function App() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
-            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
-              <Compass className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("qibla", lang)}
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28">
-                <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
-                  <div className="text-[9px] text-slate-500">{t("qibla", lang)}</div>
-                </div>
-                <div
-                  className="absolute top-1/2 left-1/2 w-0.5 h-12 sm:h-14 bg-amber-500 origin-bottom transition-transform duration-300"
-                  style={{
-                    transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
-                  }}
-                />
-                <div className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
+        <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
+          <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+            <Compass className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("qibla", lang)}
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28">
+              <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
+                <div className="text-[9px] text-slate-500">{t("qibla", lang)}</div>
               </div>
-              <button
-                onClick={() => setCompassListening(!compassListening)}
-                className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
-                {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
-              </button>
+              <div
+                className="absolute top-1/2 left-1/2 w-0.5 h-12 sm:h-14 bg-amber-500 origin-bottom transition-transform duration-300"
+                style={{
+                  transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
+                }}
+              />
+              <div className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
             </div>
-          </section>
-
-          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
-            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
-              <Moon className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("moonPhase", lang)}
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-4xl">{MOON_PHASE_ICONS[moonPhase.phase]}</div>
-              <div>
-                <div className="text-base font-bold text-slate-100">{t(moonPhase.phase, lang)}</div>
-                <div className="text-xs text-slate-400">{t(moonPhase.phase, lang)} · %{moonPhase.illumination} {t("moonPhase", lang)}</div>
-              </div>
-            </div>
-          </section>
-        </div>
+            <button
+              onClick={() => setCompassListening(!compassListening)}
+              className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
+              {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
+            </button>
+          </div>
+        </section>
 
         <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>
           &copy; {date.getFullYear()} {t("appName", lang)}
