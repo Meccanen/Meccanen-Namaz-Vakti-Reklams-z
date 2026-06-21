@@ -196,6 +196,8 @@ function guessTimezone(lng: number): string {
   return MAP[String(offset)] || "Europe/London";
 }
 
+const APP_VERSION = "1.0.22";
+
 const DEFAULT_LOCATION: Location = {
   name: "İstanbul", country: "Türkiye",
   latitude: 41.0082, longitude: 28.9784,
@@ -524,8 +526,9 @@ function SettingsPanel({
     { key: "konum" as const, label: t("location", lang) },
     { key: "metot" as const, label: t("prayerMethod", lang) },
     { key: "bildirim" as const, label: t("notifications", lang) },
+    { key: "hakkinda" as const, label: t("about", lang) },
   ];
-  type TabKey = "genel" | "konum" | "metot" | "bildirim";
+  type TabKey = "genel" | "konum" | "metot" | "bildirim" | "hakkinda";
 
   return (
     <>
@@ -874,6 +877,59 @@ function SettingsPanel({
                 </div>
               </div>
             )}
+
+            {/* ── HAKKINDA ── */}
+            {tab === "hakkinda" && (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center text-center py-4">
+                  <img src="/meccanen-logo.png" alt="Meccanen" className="h-10 w-auto object-contain opacity-90 mb-3" />
+                  <p className="text-xs text-slate-400">{t("appName", lang)}</p>
+                  <p className="text-[10px] text-slate-600 mt-1">v{APP_VERSION}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır.
+                    Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve
+                    namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.
+                  </p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz.
+                    Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır
+                    ve cihazınızda saklanır.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <a href="https://github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z"
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
+                    <span className="text-xs font-semibold text-slate-200">GitHub</span>
+                    <span className="text-[10px] text-slate-500">→</span>
+                  </a>
+                  <a href="https://ko-fi.com/meccanen"
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer">
+                    <span className="text-xs font-semibold text-amber-400 flex items-center gap-2">
+                      <Coffee className="w-3.5 h-3.5" />Ko-fi
+                    </span>
+                    <span className="text-[10px] text-amber-500/70">→</span>
+                  </a>
+                  <a href="https://paypal.me/meccanen"
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
+                    <span className="text-xs font-semibold text-slate-200">PayPal</span>
+                    <span className="text-[10px] text-slate-500">→</span>
+                  </a>
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-xs font-semibold text-slate-200">E-posta</span>
+                    <span className="text-[10px] text-slate-500">meccanen@meccanen-xyz</span>
+                  </div>
+                </div>
+
+                <p className="text-center text-[10px] text-slate-600">© 2026 Meccanen</p>
+              </div>
+            )}
           </div>
 
           {notification && (
@@ -1022,7 +1078,11 @@ export default function App() {
     localStorage.setItem("mnv_location_prompted", "true");
     setIsDetectingLocation(true);
     const hasPermission = await requestLocationPermission();
-    if (!hasPermission) { setIsDetectingLocation(false); return; }
+    if (!hasPermission) {
+      setIsDetectingLocation(false);
+      alert(t("locationDenied", lang) || "Konum izni alınamadı. Lütfen telefon ayarlarından izin verin.");
+      return;
+    }
     try {
       const coords = await getCurrentPosition();
       const res = await fetch(
@@ -1045,8 +1105,9 @@ export default function App() {
         l.latitude.toFixed(2) === newLoc.latitude.toFixed(2)
       );
       if (!exists) setSavedLocations([...savedLocations, newLoc]);
-    } catch {
-      // location error
+    } catch (e) {
+      console.log("[Meccanen] Location detection error:", e);
+      alert(t("locationError", lang) || "Konum alınırken bir sorun oluştu. Lütfen tekrar deneyin veya manuel ekleyin.");
     }
     setIsDetectingLocation(false);
   };
@@ -1160,7 +1221,7 @@ export default function App() {
               <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${tTheme.accent}` : ""}`} />
             </button>
             <button onClick={() => setSettingsOpen(true)}
-              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer hidden sm:block`}>
+              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               <Settings className="w-4 h-4" />
             </button>
           </div>

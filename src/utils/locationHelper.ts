@@ -3,9 +3,12 @@ import { Geolocation } from "@capacitor/geolocation";
 // Capacitor Geolocation API var mı? (APK'da var, web'de fallback kullanılır)
 function isNativeAvailable(): boolean {
   try {
-    return typeof Geolocation !== "undefined" &&
+    const available = typeof Geolocation !== "undefined" &&
       typeof Geolocation.requestPermissions === "function";
-  } catch {
+    console.log("[Meccanen] Geolocation native available:", available);
+    return available;
+  } catch (e) {
+    console.log("[Meccanen] Geolocation native check failed:", e);
     return false;
   }
 }
@@ -14,9 +17,12 @@ function isNativeAvailable(): boolean {
 export async function requestLocationPermission(): Promise<boolean> {
   if (isNativeAvailable()) {
     try {
+      console.log("[Meccanen] Requesting native location permission...");
       const result = await Geolocation.requestPermissions();
+      console.log("[Meccanen] Permission result:", JSON.stringify(result));
       return result.location === "granted" || result.coarseLocation === "granted";
-    } catch {
+    } catch (e) {
+      console.log("[Meccanen] Permission request failed:", e);
       return false;
     }
   }
@@ -47,11 +53,17 @@ export async function checkLocationPermission(): Promise<boolean> {
 // Konum koordinatlarını al
 export async function getCurrentPosition(): Promise<{ latitude: number; longitude: number }> {
   if (isNativeAvailable()) {
-    const pos = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 10000,
-    });
-    return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+      });
+      console.log("[Meccanen] Got position:", pos.coords.latitude, pos.coords.longitude);
+      return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+    } catch (e) {
+      console.log("[Meccanen] getCurrentPosition failed:", e);
+      throw e;
+    }
   }
   // Web fallback
   return new Promise((resolve, reject) => {
