@@ -578,10 +578,10 @@ function SettingsPanel({
             </div>
           </div>
 
-          <div className="flex gap-1 px-6 pb-3 shrink-0">
+          <div className="flex gap-1 px-4 sm:px-6 pb-3 shrink-0 overflow-x-auto scrollbar-hide">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
+                className={`px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
                 {tb.label}
               </button>
             ))}
