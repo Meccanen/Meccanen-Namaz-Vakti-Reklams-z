@@ -303,20 +303,20 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   );
 }
 
-function PremiumModal({ onClose, t: theme, lang }: {
+function PremiumModal({ onClose, t: theme, lang, onPurchase }: {
   onClose: () => void;
   t: typeof THEMES[ThemeKey];
   lang: LangCode;
+  onPurchase: () => void;
 }) {
   const [activePreview, setActivePreview] = useState<ThemeKey>("alacakaranlik");
   const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
-  const currentTier = getPremiumTier();
 
-  const handlePurchase = async (tier: string) => {
+  const handlePurchase = async () => {
     if (typeof window !== "undefined" && (window as any).Capacitor?.isNative) {
       // TODO: Google Play Billing integration
-      // await InAppPurchase.purchase(tier === "gold" ? "gold_sku" : "silver_sku");
-      setPremiumTier(tier);
+      // await InAppPurchase.purchase("meccanen_premium");
+      onPurchase();
       onClose();
     } else {
       alert(t("comingSoon", lang));
@@ -362,41 +362,13 @@ function PremiumModal({ onClose, t: theme, lang }: {
             ))}
           </div>
 
-          <div className="space-y-2 mb-3">
-            <button
-              onClick={() => handlePurchase("silver")}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${currentTier === "silver" ? "border-amber-400/50 bg-amber-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-500 flex items-center justify-center text-xs font-bold text-slate-900">S</div>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-slate-100">{t("silver", lang)}</div>
-                  <div className="text-[10px] text-slate-400">{t("silverDesc", lang)}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-bold text-amber-400">{t("silverPurchase", lang)}</div>
-                <div className="text-[9px] text-slate-500">{t("oneTime", lang)}</div>
-              </div>
-            </button>
+          <button
+            onClick={handlePurchase}
+            className="w-full py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 transition-all duration-200 cursor-pointer mb-2">
+            ₺79 · {t("singlePayment", lang)}
+          </button>
 
-            <button
-              onClick={() => handlePurchase("gold")}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${currentTier === "gold" ? "border-amber-400/50 bg-amber-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-amber-900">G</div>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-slate-100">{t("gold", lang)}</div>
-                  <div className="text-[10px] text-slate-400">{t("goldDesc", lang)}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-bold text-amber-400">{t("goldPurchase", lang)}</div>
-                <div className="text-[9px] text-slate-500">{t("oneTime", lang)}</div>
-              </div>
-            </button>
-          </div>
-
-          <p className="text-center text-[10px] text-slate-600">{t("noAds", lang)} · {t("noSubscription", lang)} · {t("singlePayment", lang)}</p>
+          <p className="text-center text-[10px] text-slate-600">{t("noAds", lang)} · {t("noSubscription", lang)}</p>
         </div>
       </div>
     </div>
@@ -503,7 +475,7 @@ function SettingsPanel({
   };
 
   const addAndSelectCity = (loc: Location) => {
-    const maxLocs = isPremium ? 9 : 1;
+    const maxLocs = isPremium ? 33 : 3;
     const exists = savedLocations.some(l =>
       l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
       l.longitude.toFixed(2) === loc.longitude.toFixed(2)
@@ -561,6 +533,10 @@ function SettingsPanel({
         <PremiumModal
           onClose={() => setPremiumModalOpen(false)}
           t={th} lang={lang}
+          onPurchase={() => {
+            setIsPremium(true);
+            localStorage.setItem("mnv_premium", "true");
+          }}
         />
       )}
 
@@ -717,7 +693,7 @@ function SettingsPanel({
                 {savedLocations.length > 0 && (
                   <div>
                     <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
-                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{isPremium ? 9 : 1})
+                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{isPremium ? 33 : 3})
                     </h3>
                     <div className="space-y-1.5">
                       {savedLocations.map((loc, idx) => {
@@ -769,7 +745,7 @@ function SettingsPanel({
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
-                            {!isPremium && savedLocations.length >= 1
+                            {!isPremium && savedLocations.length >= 3
                               ? <Lock className="w-3.5 h-3.5 text-amber-500" />
                               : <Plus className="w-3.5 h-3.5 text-slate-500" />
                             }
