@@ -51,6 +51,12 @@ jobs:
           }
           GRADLEEOF
           cat android/variables.gradle
+      - name: Konum izinleri kontrolü (Capacitor otomatik merge eder)
+        run: |
+          echo "--- AndroidManifest.xml (Capacitor plugin merge sonrası) ---"
+          cat android/app/src/main/AndroidManifest.xml
+          echo "--- Geolocation plugin native dosyaları ---"
+          find android -path "*geolocation*" -name "AndroidManifest.xml" -exec echo "Bulundu: {}" \; -exec cat {} \;
       - name: Version Code'u otomatik artır
         run: |
           # GitHub Actions çalışma numarasını versionCode olarak kullan — her seferinde benzersiz ve artan
