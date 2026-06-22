@@ -51,12 +51,33 @@ jobs:
           }
           GRADLEEOF
           cat android/variables.gradle
-      - name: Konum izinleri kontrolü (Capacitor otomatik merge eder)
+      - name: Konum izinlerini Manifest'e ekle
         run: |
-          echo "--- AndroidManifest.xml (Capacitor plugin merge sonrası) ---"
+          cat > /tmp/add_perms.py << 'PYEOF'
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path, "r") as f:
+              content = f.read()
+
+          if "ACCESS_COARSE_LOCATION" not in content:
+              new_perms = (
+                  '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+                  '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+              )
+              # </manifest> kapanışından hemen önce, mevcut <uses-permission> bloğunun yanına ekle
+              marker = '<uses-permission android:name="android.permission.INTERNET" />'
+              if marker in content:
+                  content = content.replace(marker, marker + "\n" + new_perms.rstrip())
+              else:
+                  content = content.replace("</manifest>", new_perms + "</manifest>")
+              with open(path, "w") as f:
+                  f.write(content)
+              print(">>> Konum izinleri eklendi.")
+          else:
+              print(">>> Konum izinleri zaten mevcut, dokunulmadı.")
+          PYEOF
+          python3 /tmp/add_perms.py
+          echo "--- AndroidManifest.xml (izin eklendikten sonra) ---"
           cat android/app/src/main/AndroidManifest.xml
-          echo "--- Geolocation plugin native dosyaları ---"
-          find android -path "*geolocation*" -name "AndroidManifest.xml" -exec echo "Bulundu: {}" \; -exec cat {} \;
       - name: Version Code'u otomatik artır
         run: |
           # GitHub Actions çalışma numarasını versionCode olarak kullan — her seferinde benzersiz ve artan
