@@ -81,6 +81,9 @@ const en: Record<string, string> = {
   notifyActive: "Notifications active!",
   notifyOff: "Notifications off",
   notifyMinutes: "{min} min before notification",
+  esmaTitle: "Name of This Prayer Time",
+  esmaRecite: "Recite",
+  esmaTimes: "{n}×",
 };
 
 const tr: Record<string, string> = {
@@ -164,6 +167,9 @@ const tr: Record<string, string> = {
   notifyActive: "Bildirimler aktif!",
   notifyOff: "Bildirimler kapatıldı",
   notifyMinutes: "{min} dakika önce bildirim",
+  esmaTitle: "Bu Vaktin Esması",
+  esmaRecite: "Zikir",
+  esmaTimes: "{n}×",
 };
 
 const ar: Record<string, string> = {
@@ -247,6 +253,9 @@ const ar: Record<string, string> = {
   notifyActive: "الإشعارات مفعلة!",
   notifyOff: "الإشعارات متوقفة",
   notifyMinutes: "{min} دقيقة قبل الإشعار",
+  esmaTitle: "اسم هذا الوقت",
+  esmaRecite: "الذكر",
+  esmaTimes: "{n}×",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
