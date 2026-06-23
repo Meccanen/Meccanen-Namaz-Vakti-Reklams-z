@@ -587,7 +587,7 @@ function SettingsPanel({
             ))}
           </div>
 
-          <div className="overflow-y-auto h-96 px-6 pb-6">
+          <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-6">
 
             {tab === "genel" && (
               <div className="space-y-4">
@@ -1086,14 +1086,16 @@ export default function App() {
     try {
       const coords = await getCurrentPosition();
       const res = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${coords.latitude.toFixed(2)},${coords.longitude.toFixed(2)}&count=1&language=${lang}`
+        `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&accept-language=${lang}`,
+        { headers: { "Accept": "application/json" } }
       );
       const data = await res.json();
       let name = `${coords.latitude.toFixed(2)}°N ${coords.longitude.toFixed(2)}°E`;
       let country = "";
-      if (data.results?.length) {
-        name = data.results[0].name;
-        country = data.results[0].country || "";
+      if (data?.address) {
+        const addr = data.address;
+        name = addr.city || addr.town || addr.village || addr.county || addr.state || name;
+        country = addr.country || "";
       }
       const newLoc: Location = {
         name, country: country || t("unknown", lang),
