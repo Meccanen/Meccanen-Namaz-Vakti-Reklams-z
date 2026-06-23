@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff, Moon, Navigation
+  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff, Moon, Navigation, BookOpen
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -17,7 +17,8 @@ import {
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
-import { calcQiblaDirection, requestCompassPermission, getCompassHeading } from "./utils/qiblaHelper";
+import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
+import { getEsmaForPrayerKey } from "./utils/esmaHelper";
 import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
 
@@ -1025,13 +1026,9 @@ export default function App() {
 
   useEffect(() => {
     if (!compassListening) return;
-    const handler = (e: DeviceOrientationEvent) => {
-      const h = getCompassHeading(e);
-      if (h !== null) setCompassHeading(h);
-    };
-    window.addEventListener("deviceorientation", handler);
     requestCompassPermission();
-    return () => window.removeEventListener("deviceorientation", handler);
+    const detach = attachCompassListener((h) => setCompassHeading(h));
+    return () => detach();
   }, [compassListening]);
 
   useEffect(() => {
@@ -1151,6 +1148,12 @@ export default function App() {
     for(let i=prayerTimes.length-1;i>=0;i--) if(now>=prayerTimes[i].time) return i;
     return 5;
   }, [prayerTimes, date, location.timezone]);
+
+  const currentEsma = useMemo(() => {
+    const key = prayerTimes[activePrayerIndex]?.key;
+    return key ? getEsmaForPrayerKey(key) : null;
+  }, [prayerTimes, activePrayerIndex]);
+
 
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
 
@@ -1338,8 +1341,30 @@ export default function App() {
           </div>
         </section>
 
-        <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>
-          &copy; {date.getFullYear()} {t("appName", lang)}
+        {currentEsma && (
+          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
+            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+              <BookOpen className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("esmaTitle", lang)}
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.accent}`} dir="rtl">{currentEsma.arabic}</div>
+              <div className="text-sm sm:text-base font-semibold">
+                {currentEsma.transliteration} — {currentEsma.name[lang] || currentEsma.name.en}
+              </div>
+              <div className={`text-xs sm:text-sm ${tTheme.textSecondary}`}>
+                {currentEsma.meaning[lang] || currentEsma.meaning.en}
+              </div>
+              <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
+                {t("esmaRecite", lang)}: {t("esmaTimes", lang, { n: String(currentEsma.zikirCount) })}
+              </div>
+              <div className={`text-xs sm:text-[13px] ${tTheme.textMuted} mt-1 max-w-xs leading-relaxed`}>
+                {currentEsma.purpose[lang] || currentEsma.purpose.en}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>          &copy; {date.getFullYear()} {t("appName", lang)}
         </footer>
 
       </div>
