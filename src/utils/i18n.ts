@@ -84,6 +84,9 @@ const en: Record<string, string> = {
   esmaTitle: "Name of This Prayer Time",
   esmaRecite: "Recite",
   esmaTimes: "{n}×",
+  aboutDesc1: "Meccanen Prayer Times is an ad-free, minimal prayer times app. Track prayer times from anywhere in the world, the Qibla direction, the Hijri calendar, and prayer reminders, all in one place.",
+  aboutDesc2: "We show no ads and do not collect personal data. Your location is only used to calculate prayer times and is stored on your device.",
+  aboutDesc3: "The Qibla compass uses your device's magnetic sensor to show the direction of the Kaaba. For each prayer time, we also show one of the 99 Names of Allah (Esma-ul Husna) with its meaning and a short recitation suggestion — this pairing is a devotional reminder, not a religious ruling.",
 };
 
 const tr: Record<string, string> = {
@@ -170,6 +173,9 @@ const tr: Record<string, string> = {
   esmaTitle: "Bu Vaktin Esması",
   esmaRecite: "Zikir",
   esmaTimes: "{n}×",
+  aboutDesc1: "Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır. Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.",
+  aboutDesc2: "Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz. Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır ve cihazınızda saklanır.",
+  aboutDesc3: "Kıble pusulası, cihazınızın mıknatıs sensörü ile Kâbe yönünü gösterir. Her namaz vakti için ayrıca, anlamını ve kısa bir zikir önerisini içeren bir Esmaül Hüsna ismi sunuyoruz — bu eşleştirme dini bir hüküm değil, vaktin ruhuna uygun seçilmiş bir hatırlatmadır.",
 };
 
 const ar: Record<string, string> = {
