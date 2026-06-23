@@ -316,14 +316,12 @@ function PremiumModal({ onClose, t: theme, lang, onPurchase }: {
   const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
 
   const handlePurchase = async () => {
-    if (typeof window !== "undefined" && (window as any).Capacitor?.isNative) {
-      // TODO: Google Play Billing integration
-      // await InAppPurchase.purchase("meccanen_premium");
-      onPurchase();
-      onClose();
-    } else {
-      alert(t("comingSoon", lang));
-    }
+    // ÖNEMLİ: Gerçek Google Play Billing entegrasyonu HENÜZ YAPILMADI.
+    // Daha önce burada native ortamda direkt onPurchase() çağrılıp herkese
+    // ücretsiz premium veriliyordu — bu satın alma akışı tamamlanana kadar
+    // KAPALI tutuluyor. Billing entegrasyonu (plugin + Play Console ürün ID'si
+    // + doğrulama) tamamlanmadan bu fonksiyon prod'da asla otomatik premium vermemeli.
+    alert(t("comingSoon", lang));
   };
 
   return (
@@ -890,14 +888,13 @@ function SettingsPanel({
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır.
-                    Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve
-                    namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.
+                    {t("aboutDesc1", lang)}
                   </p>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz.
-                    Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır
-                    ve cihazınızda saklanır.
+                    {t("aboutDesc2", lang)}
+                  </p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {t("aboutDesc3", lang)}
                   </p>
                 </div>
 
