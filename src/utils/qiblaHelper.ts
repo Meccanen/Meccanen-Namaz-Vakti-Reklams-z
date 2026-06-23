@@ -20,6 +20,40 @@ export function requestCompassPermission(): Promise<boolean> {
   return Promise.resolve(true);
 }
 
+// Android'de düz "deviceorientation" event'i genelde MUTLAK (manyetik kuzeye göre) değil,
+// cihazın listener eklendiği andaki rastgele referansına göre RELATİF gelir. Bu da kıble okunu
+// telefonu her açışta farklı (ve yanlış) bir yöne döndürür. Çözüm: önce "deviceorientationabsolute"
+// event'ini dinle (gerçek pusula verisi, çoğu modern Android cihazda mevcut); o gelmiyorsa
+// (bazı eski/özel cihazlarda desteklenmiyor) "deviceorientation"a düş, iOS'ta zaten
+// webkitCompassHeading üzerinden mutlak değer geliyor (getCompassHeading bunu otomatik kullanıyor).
+export function attachCompassListener(callback: (heading: number) => void): () => void {
+  let absoluteReceived = false;
+
+  const handleAbsolute = (e: DeviceOrientationEvent) => {
+    absoluteReceived = true;
+    const h = getCompassHeading(e);
+    if (h !== null) callback(h);
+  };
+
+  const handleRelative = (e: DeviceOrientationEvent) => {
+    // "deviceorientationabsolute" zaten veri gönderiyorsa, bu event'i yok say (çift/çakışan veri).
+    // iOS'ta webkitCompassHeading üzerinden gelen değer her zaman mutlaktır, o yüzden iOS'ta
+    // bu event hiçbir zaman göz ardı edilmez.
+    const isIOSAbsolute = (e as unknown as { webkitCompassHeading?: number }).webkitCompassHeading !== undefined;
+    if (absoluteReceived && !isIOSAbsolute) return;
+    const h = getCompassHeading(e);
+    if (h !== null) callback(h);
+  };
+
+  window.addEventListener("deviceorientationabsolute", handleAbsolute as EventListener);
+  window.addEventListener("deviceorientation", handleRelative as EventListener);
+
+  return () => {
+    window.removeEventListener("deviceorientationabsolute", handleAbsolute as EventListener);
+    window.removeEventListener("deviceorientation", handleRelative as EventListener);
+  };
+}
+
 export function getCompassHeading(e: DeviceOrientationEvent): number | null {
   // iOS Safari'de webkitCompassHeading zaten tilt-compensated geliyor, doğrudan kullan
   if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
