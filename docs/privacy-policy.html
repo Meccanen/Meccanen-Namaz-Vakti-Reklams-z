@@ -87,7 +87,7 @@
     <h2>1. Toplanan Bilgiler</h2>
     <p>Meccanen Namaz Vakti uygulaması aşağıdaki bilgileri yalnızca cihazınızda (localStorage) saklar:</p>
     <ul>
-      <li>Seçilen şehir/konum bilgisi (enlem, boylam, zaman dilimi)</li>
+      <li>Seçilen veya tespit edilen şehir/konum bilgisi (enlem, boylam, zaman dilimi)</li>
       <li>Namaz vakti hesaplama metodu tercihi</li>
       <li>Tema ve görünüm tercihleri</li>
       <li>Bildirim tercihleri</li>
@@ -96,31 +96,36 @@
     <p>Bu bilgiler hiçbir sunucuya gönderilmez ve yalnızca uygulamanın düzgün çalışması için kullanılır.</p>
 
     <h2>2. Kullanılan Harici Servisler</h2>
-    <p>Uygulama, namaz vakitlerini hesaplamak için aşağıdaki üçüncü taraf API'yi kullanır:</p>
+    <p>Uygulama, aşağıdaki üçüncü taraf API'leri kullanır:</p>
     <ul>
       <li><strong>AlAdhan API</strong> (aladhan.com) — Namaz vakti hesaplama. Bu servise yalnızca enlem, boylam ve tarih bilgisi gönderilir. Kişisel veri içermez.</li>
-      <li><strong>Open-Meteo Geocoding API</strong> — Şehir arama. Bu servise yalnızca arama metni gönderilir.</li>
+      <li><strong>Open-Meteo Geocoding API</strong> — Manuel şehir arama. Bu servise yalnızca arama metni gönderilir.</li>
+      <li><strong>OpenStreetMap Nominatim API</strong> — Konum izni verildiğinde, GPS koordinatlarınızı okunabilir bir şehir/ülke adına çevirmek için kullanılır. Bu servise yalnızca enlem ve boylam gönderilir.</li>
     </ul>
 
     <h2>3. Konum Bilgisi</h2>
-    <p>Uygulama, GPS veya cihaz konumuna otomatik olarak erişmez. Konum bilgisi yalnızca kullanıcının manuel olarak girdiği şehir adı veya seçtiği il üzerinden alınır. Bu bilgi cihazınızda saklanır ve üçüncü taraflarla paylaşılmaz.</p>
+    <p>Uygulama, izin verdiğiniz takdirde namaz vakitlerinizi otomatik belirlemek için cihazınızın GPS/konum servisine erişebilir. Bu izin isteğe bağlıdır; reddetmeniz durumunda şehrinizi elle arayıp seçebilirsiniz. Konum bilginiz yalnızca namaz vakti hesaplaması ve konum adının tespiti (yukarıdaki AlAdhan ve Nominatim servisleri) için kullanılır, cihazınızda saklanır ve hiçbir sunucuda kalıcı olarak tutulmaz veya üçüncü taraflarla paylaşılmaz.</p>
 
-    <h2>4. Bildirimler</h2>
+    <h2>4. Kıble Pusulası ve Hareket Sensörü</h2>
+    <p>Kıble özelliğini kullandığınızda, uygulama cihazınızın manyetik/hareket sensörlerine (pusula) erişir. Bu sensör verisi yalnızca ekranda kıble yönünü göstermek için anlık olarak işlenir; hiçbir şekilde kaydedilmez veya cihazınız dışına gönderilmez.</p>
+    <p>Ayrıca her namaz vakti için, cihazınızda yerel olarak hesaplanan bir Esmaül Hüsna ismi, anlamı ve kısa bir zikir önerisi gösterilir. Bu içerik tamamen statiktir, herhangi bir kişisel veri kullanmaz veya bir sunucuya bağlanmaz.</p>
+
+    <h2>5. Bildirimler</h2>
     <p>Namaz vakti bildirimlerini etkinleştirirseniz, uygulama Android sistem bildirimleri kullanır. Bildirim izni yalnızca namaz vakti hatırlatıcıları için kullanılır. Herhangi bir pazarlama bildirimi gönderilmez.</p>
 
-    <h2>5. Premium Satın Alma</h2>
+    <h2>6. Premium Satın Alma</h2>
     <p>Premium özellikler Google Play üzerinden satın alınır. Ödeme bilgileriniz Google Play tarafından işlenir. Uygulama hiçbir ödeme veya kart bilgisine erişemez.</p>
 
-    <h2>6. Reklam <span class="badge">REKLAMSIZ</span></h2>
+    <h2>7. Reklam <span class="badge">REKLAMSIZ</span></h2>
     <p>Meccanen Namaz Vakti uygulamasında hiçbir reklam bulunmaz. Herhangi bir reklam ağı veya izleme SDK'sı kullanılmaz.</p>
 
-    <h2>7. Çocukların Gizliliği</h2>
+    <h2>8. Çocukların Gizliliği</h2>
     <p>Uygulama 13 yaşın altındaki çocuklardan bilerek veri toplamaz. Ebeveynler veya yasal veliler herhangi bir endişe durumunda bizimle iletişime geçebilir.</p>
 
-    <h2>8. Değişiklikler</h2>
+    <h2>9. Değişiklikler</h2>
     <p>Bu gizlilik politikası zaman zaman güncellenebilir. Önemli değişiklikler bu sayfada yayınlanacaktır. Güncelleme tarihi sayfanın üst kısmında belirtilir.</p>
 
-    <h2>9. İletişim</h2>
+    <h2>10. İletişim</h2>
     <p>Gizlilik politikamız hakkında sorularınız için:</p>
     <ul>
       <li>Ko-fi: <a href="https://ko-fi.com/meccanen" target="_blank">ko-fi.com/meccanen</a></li>
