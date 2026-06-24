@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Lock, Coffee, Bell, BellOff, Moon, Navigation, BookOpen
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -24,7 +24,7 @@ import { requestLocationPermission, getCurrentPosition } from "./utils/locationH
 
 export const THEMES = {
   gece: {
-    label: "Gece Mavisi", preview: ["#020617","#0ea5e9","#818cf8"], free: true,
+    label: "Gece Mavisi", preview: ["#020617","#0ea5e9","#818cf8"],
     bg: "bg-[#020617]", card: "bg-slate-900/40 border-slate-800/80",
     cardHover: "hover:border-slate-700/60", header: "border-slate-800/80",
     accent: "text-sky-400", accent2: "text-indigo-400", accent3: "text-amber-300",
@@ -35,7 +35,7 @@ export const THEMES = {
     hijriAccent: "text-amber-400", settingsCard: "bg-slate-900/95 border-slate-700",
   },
   alacakaranlik: {
-    label: "Alacakaranlık", preview: ["#1a0a2e","#e879f9","#f59e0b"], free: false,
+    label: "Alacakaranlık", preview: ["#1a0a2e","#e879f9","#f59e0b"],
     bg: "bg-[#1a0a2e]", card: "bg-purple-950/30 border-purple-900/30",
     cardHover: "hover:border-purple-700/40", header: "border-purple-900/40",
     accent: "text-fuchsia-400", accent2: "text-purple-400", accent3: "text-amber-300",
@@ -46,7 +46,7 @@ export const THEMES = {
     hijriAccent: "text-fuchsia-400", settingsCard: "bg-purple-950/95 border-purple-700",
   },
   orman: {
-    label: "Orman Yeşili", preview: ["#051a0f","#34d399","#a3e635"], free: false,
+    label: "Orman Yeşili", preview: ["#051a0f","#34d399","#a3e635"],
     bg: "bg-[#051a0f]", card: "bg-emerald-950/30 border-emerald-900/30",
     cardHover: "hover:border-emerald-700/40", header: "border-emerald-900/40",
     accent: "text-emerald-400", accent2: "text-lime-400", accent3: "text-amber-300",
@@ -57,7 +57,7 @@ export const THEMES = {
     hijriAccent: "text-lime-400", settingsCard: "bg-emerald-950/95 border-emerald-700",
   },
   altin: {
-    label: "Altın Çöl", preview: ["#160d00","#f59e0b","#fb923c"], free: false,
+    label: "Altın Çöl", preview: ["#160d00","#f59e0b","#fb923c"],
     bg: "bg-[#160d00]", card: "bg-amber-950/30 border-amber-900/30",
     cardHover: "hover:border-amber-700/40", header: "border-amber-900/40",
     accent: "text-amber-400", accent2: "text-orange-400", accent3: "text-yellow-300",
@@ -68,7 +68,7 @@ export const THEMES = {
     hijriAccent: "text-orange-400", settingsCard: "bg-amber-950/95 border-amber-700",
   },
   ramazan: {
-    label: "Ramazan", preview: ["#0d0a1a","#c084fc","#fde68a"], free: false,
+    label: "Ramazan", preview: ["#0d0a1a","#c084fc","#fde68a"],
     bg: "bg-[#0d0a1a]", card: "bg-violet-950/30 border-violet-900/30",
     cardHover: "hover:border-violet-700/40", header: "border-violet-900/40",
     accent: "text-violet-300", accent2: "text-yellow-300", accent3: "text-rose-300",
@@ -79,7 +79,7 @@ export const THEMES = {
     hijriAccent: "text-yellow-300", settingsCard: "bg-violet-950/95 border-violet-800",
   },
   kabe: {
-    label: "Kâbe", preview: ["#0a0a0a","#d4af37","#ffffff"], free: false,
+    label: "Kâbe", preview: ["#0a0a0a","#d4af37","#ffffff"],
     bg: "bg-[#0a0a0a]", card: "bg-neutral-900/60 border-neutral-800/60",
     cardHover: "hover:border-neutral-700/50", header: "border-neutral-800/60",
     accent: "text-yellow-500", accent2: "text-yellow-300", accent3: "text-white",
@@ -90,7 +90,7 @@ export const THEMES = {
     hijriAccent: "text-yellow-400", settingsCard: "bg-neutral-900/95 border-neutral-700",
   },
   turkuaz: {
-    label: "Turkuaz Deniz", preview: ["#010f14","#06b6d4","#67e8f9"], free: false,
+    label: "Turkuaz Deniz", preview: ["#010f14","#06b6d4","#67e8f9"],
     bg: "bg-[#010f14]", card: "bg-cyan-950/30 border-cyan-900/30",
     cardHover: "hover:border-cyan-700/40", header: "border-cyan-900/40",
     accent: "text-cyan-400", accent2: "text-teal-400", accent3: "text-sky-200",
@@ -101,7 +101,7 @@ export const THEMES = {
     hijriAccent: "text-teal-400", settingsCard: "bg-cyan-950/95 border-cyan-800",
   },
   bordo: {
-    label: "Bordo Kadife", preview: ["#1a0008","#f43f5e","#fda4af"], free: false,
+    label: "Bordo Kadife", preview: ["#1a0008","#f43f5e","#fda4af"],
     bg: "bg-[#1a0008]", card: "bg-rose-950/30 border-rose-900/30",
     cardHover: "hover:border-rose-700/40", header: "border-rose-900/40",
     accent: "text-rose-400", accent2: "text-pink-400", accent3: "text-orange-300",
@@ -112,7 +112,7 @@ export const THEMES = {
     hijriAccent: "text-pink-400", settingsCard: "bg-rose-950/95 border-rose-800",
   },
   gunes: {
-    label: "Gün Batımı", preview: ["#1a0d00","#f97316","#fbbf24"], free: false,
+    label: "Gün Batımı", preview: ["#1a0d00","#f97316","#fbbf24"],
     bg: "bg-[#1a0d00]", card: "bg-orange-950/30 border-orange-900/30",
     cardHover: "hover:border-orange-700/40", header: "border-orange-900/40",
     accent: "text-orange-400", accent2: "text-amber-300", accent3: "text-yellow-200",
@@ -123,7 +123,7 @@ export const THEMES = {
     hijriAccent: "text-amber-300", settingsCard: "bg-orange-950/95 border-orange-800",
   },
   safir: {
-    label: "Safir Gece", preview: ["#00051a","#3b82f6","#a5b4fc"], free: false,
+    label: "Safir Gece", preview: ["#00051a","#3b82f6","#a5b4fc"],
     bg: "bg-[#00051a]", card: "bg-blue-950/30 border-blue-900/30",
     cardHover: "hover:border-blue-700/40", header: "border-blue-900/40",
     accent: "text-blue-400", accent2: "text-indigo-300", accent3: "text-sky-200",
@@ -134,7 +134,7 @@ export const THEMES = {
     hijriAccent: "text-indigo-300", settingsCard: "bg-blue-950/95 border-blue-800",
   },
   seher: {
-    label: "Beyaz Seher", preview: ["#fefce8","#d97706","#92400e"], free: false,
+    label: "Beyaz Seher", preview: ["#fefce8","#d97706","#92400e"],
     bg: "bg-[#fefce8]", card: "bg-white/70 border-amber-200/80",
     cardHover: "hover:border-amber-300/60", header: "border-amber-200/60",
     accent: "text-amber-700", accent2: "text-orange-600", accent3: "text-amber-900",
@@ -145,7 +145,7 @@ export const THEMES = {
     hijriAccent: "text-orange-700", settingsCard: "bg-white/98 border-amber-200",
   },
   gul: {
-    label: "Gül Bahçesi", preview: ["#fff1f2","#e11d48","#9f1239"], free: false,
+    label: "Gül Bahçesi", preview: ["#fff1f2","#e11d48","#9f1239"],
     bg: "bg-[#fff1f2]", card: "bg-white/70 border-rose-200/80",
     cardHover: "hover:border-rose-300/60", header: "border-rose-200/60",
     accent: "text-rose-600", accent2: "text-pink-600", accent3: "text-rose-800",
@@ -156,7 +156,7 @@ export const THEMES = {
     hijriAccent: "text-rose-700", settingsCard: "bg-white/98 border-rose-200",
   },
   nane: {
-    label: "Nane Yeşili", preview: ["#f0fdf4","#16a34a","#14532d"], free: false,
+    label: "Nane Yeşili", preview: ["#f0fdf4","#16a34a","#14532d"],
     bg: "bg-[#f0fdf4]", card: "bg-white/70 border-green-200/80",
     cardHover: "hover:border-green-300/60", header: "border-green-200/60",
     accent: "text-green-700", accent2: "text-emerald-600", accent3: "text-green-900",
@@ -168,21 +168,6 @@ export const THEMES = {
   },
 };
 export type ThemeKey = keyof typeof THEMES;
-
-function getIsPremium(): boolean { return localStorage.getItem("mnv_premium") === "true"; }
-
-function getPremiumTier(): string {
-  return localStorage.getItem("mnv_premium_tier") || "none";
-}
-
-function setPremiumTier(tier: string) {
-  localStorage.setItem("mnv_premium_tier", tier);
-  if (tier !== "none") {
-    localStorage.setItem("mnv_premium", "true");
-  } else {
-    localStorage.removeItem("mnv_premium");
-  }
-}
 
 function guessTimezone(lng: number): string {
   const offset = Math.round(lng / 15);
@@ -306,76 +291,6 @@ function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   );
 }
 
-function PremiumModal({ onClose, t: theme, lang, onPurchase }: {
-  onClose: () => void;
-  t: typeof THEMES[ThemeKey];
-  lang: LangCode;
-  onPurchase: () => void;
-}) {
-  const [activePreview, setActivePreview] = useState<ThemeKey>("alacakaranlik");
-  const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
-
-  const handlePurchase = async () => {
-    // ÖNEMLİ: Gerçek Google Play Billing entegrasyonu HENÜZ YAPILMADI.
-    // Daha önce burada native ortamda direkt onPurchase() çağrılıp herkese
-    // ücretsiz premium veriliyordu — bu satın alma akışı tamamlanana kadar
-    // KAPALI tutuluyor. Billing entegrasyonu (plugin + Play Console ürün ID'si
-    // + doğrulama) tamamlanmadan bu fonksiyon prod'da asla otomatik premium vermemeli.
-    alert(t("comingSoon", lang));
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
-      <div
-        className={`relative w-full max-w-sm rounded-[28px] border shadow-2xl flex flex-col max-h-[88vh] overflow-hidden glass-strong ${theme.settingsCard}`}
-        onClick={e => e.stopPropagation()}
-      >
-        <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer z-10">
-          <X className="w-4 h-4 text-slate-400" />
-        </button>
-        <div className="p-6 pb-4 shrink-0">
-          <div className="text-center mb-4">
-            <div className="text-xl mb-2"><FontAwesomeIcon icon={faStar} /></div>
-            <h2 className={`text-lg font-bold ${theme.accent} mb-0.5`}>{t("premium", lang)}</h2>
-            <p className="text-[11px] text-slate-400">{t("oneTime", lang)}</p>
-          </div>
-          <div className="mb-3">
-            <div className="text-[9px] text-slate-500 uppercase tracking-wide font-bold mb-2 text-center">
-              {t("themeSelection", lang)}: {THEMES[activePreview].label}
-            </div>
-            <ThemePreviewCard themeKey={activePreview} />
-          </div>
-        </div>
-        <div className="overflow-y-auto flex-1 px-6 pb-4">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {premiumThemes.slice(0, 12).map(([key, th]) => (
-              <button key={key}
-                onClick={() => setActivePreview(key)}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border transition-all duration-200 cursor-pointer
-                  ${activePreview === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
-                <div className="flex gap-0.5">
-                  {th.preview.map((c, i) => <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: c }} />)}
-                </div>
-                <span className="text-[9px] text-slate-300 font-bold text-center leading-tight">{th.label}</span>
-                {activePreview === key && <Check className="w-3 h-3 text-white" />}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handlePurchase}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 transition-all duration-200 cursor-pointer mb-2">
-            ₺79 · {t("singlePayment", lang)}
-          </button>
-
-          <p className="text-center text-[10px] text-slate-600">{t("noAds", lang)} · {t("noSubscription", lang)}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function LocationPermissionPrompt({ onAllow, onDeny, lang }: {
   onAllow: () => void;
   onDeny: () => void;
@@ -407,11 +322,9 @@ function SettingsPanel({
   theme, setTheme, location, setLocation,
   savedLocations, setSavedLocations,
   prayerMethod, setPrayerMethod,
-  isPremium, setIsPremium,
   onClose, t: th,
   notificationSettings, setNotificationSettings,
   prayerTimes,
-  logoTapCount, setLogoTapCount,
   lang, setLang,
   onFindLocation,
   isDetectingLocation,
@@ -420,12 +333,10 @@ function SettingsPanel({
   location: Location; setLocation: (l: Location) => void;
   savedLocations: Location[]; setSavedLocations: (locs: Location[]) => void;
   prayerMethod: number; setPrayerMethod: (m: number) => void;
-  isPremium: boolean; setIsPremium: (v: boolean) => void;
   onClose: () => void; t: typeof THEMES[ThemeKey];
   notificationSettings: NotificationSettings;
   setNotificationSettings: (s: NotificationSettings) => void;
   prayerTimes: { key: string; name: string; time: string }[];
-  logoTapCount: number; setLogoTapCount: (n: number) => void;
   lang: LangCode; setLang: (l: LangCode) => void;
   onFindLocation: () => void;
   isDetectingLocation: boolean;
@@ -436,24 +347,9 @@ function SettingsPanel({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
-  const [premiumModalOpen, setPremiumModalOpen] = useState(false);
-  const premiumThemes = (Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).filter(([, th]) => !th.free);
+  const MAX_LOCATIONS = 33;
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
-
-  const handleLogoTap = () => {
-    const next = logoTapCount + 1;
-    setLogoTapCount(next);
-    if (next >= 5) {
-      setLogoTapCount(0);
-      const newVal = !isPremium;
-      setIsPremium(newVal);
-      localStorage.setItem("mnv_premium", String(newVal));
-      if (!newVal) localStorage.removeItem("mnv_premium_tier");
-      else localStorage.setItem("mnv_premium_tier", "test");
-      notify(newVal ? t("premiumTestOn", lang) : t("premiumTestOff", lang));
-    }
-  };
 
   const performSearch = async () => {
     const q = searchQuery.trim();
@@ -476,14 +372,12 @@ function SettingsPanel({
   };
 
   const addAndSelectCity = (loc: Location) => {
-    const maxLocs = isPremium ? 33 : 3;
     const exists = savedLocations.some(l =>
       l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
       l.longitude.toFixed(2) === loc.longitude.toFixed(2)
     );
-    if (!exists && savedLocations.length >= maxLocs) {
-      if (!isPremium) { setPremiumModalOpen(true); }
-      else { notify(t("maxLocations", lang, { n: "9" })); }
+    if (!exists && savedLocations.length >= MAX_LOCATIONS) {
+      notify(t("maxLocations", lang, { n: String(MAX_LOCATIONS) }));
       return;
     }
     const newList = exists ? savedLocations : [...savedLocations, loc];
@@ -509,7 +403,6 @@ function SettingsPanel({
 
   const handleThemeClick = (key: ThemeKey) => {
     const th = THEMES[key];
-    if (!th.free && !isPremium) { setPremiumModalOpen(true); return; }
     setTheme(key);
     notify(th.label);
   };
@@ -531,17 +424,6 @@ function SettingsPanel({
 
   return (
     <>
-      {premiumModalOpen && (
-        <PremiumModal
-          onClose={() => setPremiumModalOpen(false)}
-          t={th} lang={lang}
-          onPurchase={() => {
-            setIsPremium(true);
-            localStorage.setItem("mnv_premium", "true");
-          }}
-        />
-      )}
-
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4" onClick={onClose}>
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <div
@@ -550,27 +432,10 @@ function SettingsPanel({
         >
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <button onClick={handleLogoTap} className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
-                <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-6 w-auto object-contain opacity-80" />
-              </button>
+              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-6 w-auto object-contain opacity-80" />
               <h2 className={`text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
-              {logoTapCount > 0 && logoTapCount < 5 && (
-                <span className="text-[9px] text-slate-600">{t("tapMore", lang, { n: String(5 - logoTapCount) })}</span>
-              )}
             </div>
             <div className="flex items-center gap-2">
-              {isPremium ? (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-400">
-                  {t("premium", lang)}
-                </span>
-              ) : (
-                <button
-                  onClick={() => setPremiumModalOpen(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-400 hover:opacity-80 transition-all cursor-pointer"
-                >
-                  {t("buyPremium", lang)}
-                </button>
-              )}
               <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
                 <X className="w-5 h-5 text-slate-400" />
               </button>
@@ -593,50 +458,18 @@ function SettingsPanel({
                 <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5" />{t("themeSelection", lang)}
                 </h3>
-                <div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-2">{t("free", lang)}</div>
-                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][])
-                    .filter(([, th]) => th.free)
-                    .map(([key, th]) => (
-                      <button key={key} onClick={() => handleThemeClick(key)}
-                        className={`relative w-full flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200 cursor-pointer ${theme === key ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
-                        <div className="flex gap-1 shrink-0">
-                          {th.preview.map((c, i) => <div key={i} className="w-4 h-4 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
-                        </div>
-                        <span className="text-xs font-bold text-slate-200">{th.label}</span>
-                        {theme === key && <Check className="w-4 h-4 text-white absolute right-3 top-1/2 -translate-y-1/2" />}
-                      </button>
-                    ))}
-                </div>
-
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] text-amber-500/80 uppercase tracking-wide font-bold flex items-center gap-1">
-                    <Lock className="w-3 h-3" />{t("premium", lang)} ({premiumThemes.length} {t("themes", lang) || "Theme"})
-                  </div>
-                  {!isPremium && (
-                    <button onClick={() => setPremiumModalOpen(true)}
-                      className="text-[9px] text-amber-400 font-bold hover:opacity-70 transition-all cursor-pointer">
-                      {t("buyPremium", lang)} →
-                    </button>
-                  )}
-                </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {premiumThemes.map(([key, th]) => {
-                    const locked = !isPremium;
+                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([key, th]) => {
                     const isActive = theme === key;
                     return (
                       <button key={key} onClick={() => handleThemeClick(key)}
                         className={`relative flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden
-                          ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}
-                          ${locked ? "opacity-60" : ""}`}>
+                          ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                         <div className="flex gap-0.5 shrink-0">
                           {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
                         <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
-                        {locked
-                          ? <Lock className="w-3 h-3 text-amber-500/70 absolute right-2.5 top-1/2 -translate-y-1/2 shrink-0" />
-                          : isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />
-                        }
+                        {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
                       </button>
                     );
                   })}
@@ -672,20 +505,6 @@ function SettingsPanel({
 
             {tab === "konum" && (
               <div className="space-y-4">
-                {!isPremium && (
-                  <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                    <Lock className="w-4 h-4 text-amber-500 shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-xs font-bold text-amber-400">1 {t("location", lang)} · 9 {t("premium", lang)}</div>
-                      <div className="text-[10px] text-slate-500">{t("location", lang)} {t("premium", lang)}</div>
-                    </div>
-                    <button onClick={() => setPremiumModalOpen(true)}
-                      className="text-[10px] text-amber-400 font-bold hover:opacity-70 cursor-pointer">
-                      {t("buyPremium", lang)} →
-                    </button>
-                  </div>
-                )}
-
                 <button onClick={onFindLocation} disabled={isDetectingLocation}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer">
                   <Navigation className={`w-4 h-4 ${isDetectingLocation ? "animate-spin" : ""}`} />
@@ -695,7 +514,7 @@ function SettingsPanel({
                 {savedLocations.length > 0 && (
                   <div>
                     <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
-                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{isPremium ? 33 : 3})
+                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{MAX_LOCATIONS})
                     </h3>
                     <div className="space-y-1.5">
                       {savedLocations.map((loc, idx) => {
@@ -747,10 +566,7 @@ function SettingsPanel({
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
-                            {!isPremium && savedLocations.length >= 3
-                              ? <Lock className="w-3.5 h-3.5 text-amber-500" />
-                              : <Plus className="w-3.5 h-3.5 text-slate-500" />
-                            }
+                            <Plus className="w-3.5 h-3.5 text-slate-500" />
                           </div>
                         </button>
                       ))}
@@ -919,10 +735,11 @@ function SettingsPanel({
                     <span className="text-xs font-semibold text-slate-200">PayPal</span>
                     <span className="text-[10px] text-slate-500">→</span>
                   </a>
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                  <a href="mailto:meccanen@meccanen.xyz"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
                     <span className="text-xs font-semibold text-slate-200">E-posta</span>
-                    <span className="text-[10px] text-slate-500">meccanen@meccanen-xyz</span>
-                  </div>
+                    <span className="text-[10px] text-slate-500">meccanen@meccanen.xyz</span>
+                  </a>
                 </div>
 
                 <p className="text-center text-[10px] text-slate-600">© 2026 Meccanen</p>
@@ -944,18 +761,13 @@ function SettingsPanel({
 export default function App() {
   const [themeKey, setThemeKey] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem("mnv_theme") as ThemeKey;
-    if (saved && THEMES[saved]) {
-      if (!THEMES[saved].free && !getIsPremium()) return "gece";
-      return saved;
-    }
+    if (saved && THEMES[saved]) return saved;
     return "gece";
   });
   const [lang, setLangState] = useState<LangCode>(() => {
     return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
   });
   const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
-  const [isPremium, setIsPremium] = useState<boolean>(getIsPremium);
-  const [logoTapCount, setLogoTapCount] = useState(0);
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [location, setLocation] = useState<Location>(() => {
@@ -1170,11 +982,9 @@ export default function App() {
           location={location} setLocation={setLocationAndSave}
           savedLocations={savedLocations} setSavedLocations={setSavedLocations}
           prayerMethod={prayerMethod} setPrayerMethod={setPrayerMethod}
-          isPremium={isPremium} setIsPremium={setIsPremium}
           notificationSettings={notificationSettings}
           setNotificationSettings={setNotificationSettings}
           prayerTimes={prayerTimes}
-          logoTapCount={logoTapCount} setLogoTapCount={setLogoTapCount}
           onClose={() => setSettingsOpen(false)} t={tTheme}
           lang={lang} setLang={setLang}
           onFindLocation={handleFindLocation}
@@ -1195,7 +1005,6 @@ export default function App() {
               <h1 className={`text-sm sm:text-base font-bold tracking-tight ${tTheme.textPrimary}`}>{t("appName", lang)}</h1>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
                 {t("adFree", lang)}
-                {isPremium && <span className="text-amber-500">· {t("premium", lang)}</span>}
                 {notificationSettings.enabled && <Bell className="w-3 h-3 text-amber-400" />}
               </p>
             </div>
@@ -1354,8 +1163,14 @@ export default function App() {
               <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
                 {t("esmaRecite", lang)}: {t("esmaTimes", lang, { n: String(currentEsma.zikirCount) })}
               </div>
+              <div className={`text-[9px] ${tTheme.textMuted} italic`}>
+                {currentEsma.countIsDocumented ? t("esmaSourceDocumented", lang) : t("esmaSourceDefault", lang)}
+              </div>
               <div className={`text-xs sm:text-[13px] ${tTheme.textMuted} mt-1 max-w-xs leading-relaxed`}>
                 {currentEsma.purpose[lang] || currentEsma.purpose.en}
+              </div>
+              <div className={`text-[9px] ${tTheme.textMuted} opacity-70 mt-1 max-w-xs leading-relaxed`}>
+                {t("esmaSourceCitation", lang)}
               </div>
             </div>
           </section>
