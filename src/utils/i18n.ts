@@ -85,8 +85,11 @@ const en: Record<string, string> = {
   esmaRecite: "Recite",
   esmaTimes: "{n}×",
   aboutDesc1: "Meccanen Prayer Times is an ad-free, minimal prayer times app. Track prayer times from anywhere in the world, the Qibla direction, the Hijri calendar, and prayer reminders, all in one place.",
-  aboutDesc2: "We show no ads and do not collect personal data. Your location is only used to calculate prayer times and is stored on your device.",
+  aboutDesc2: "We show no ads and do not collect personal data. All themes, locations, and features are completely free and equally available to everyone — there is no premium tier. Your location is only used to calculate prayer times and is stored on your device.",
   aboutDesc3: "The Qibla compass uses your device's magnetic sensor to show the direction of the Kaaba. For each prayer time, we also show one of the 99 Names of Allah (Esma-ul Husna) with its meaning and a short recitation suggestion — this pairing is a devotional reminder, not a religious ruling.",
+  esmaSourceDocumented: "Count recorded in the classical source",
+  esmaSourceDefault: "No count given in the source; standard tasbih count used",
+  esmaSourceCitation: "Source: Ottoman-era Esma-ul Husna \"havass\" tradition (İbn-i Îsâ-yı Saruhânî's Şerh-i Esmâ-i Hüsnâ, 1541; Kenzü'l-Havâss)",
 };
 
 const tr: Record<string, string> = {
@@ -174,8 +177,11 @@ const tr: Record<string, string> = {
   esmaRecite: "Zikir",
   esmaTimes: "{n}×",
   aboutDesc1: "Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır. Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.",
-  aboutDesc2: "Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz. Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır ve cihazınızda saklanır.",
+  aboutDesc2: "Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz. Tüm temalar, konumlar ve özellikler tamamen ücretsiz ve herkese eşit şekilde açıktır — premium katman yoktur. Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır ve cihazınızda saklanır.",
   aboutDesc3: "Kıble pusulası, cihazınızın mıknatıs sensörü ile Kâbe yönünü gösterir. Her namaz vakti için ayrıca, anlamını ve kısa bir zikir önerisini içeren bir Esmaül Hüsna ismi sunuyoruz — bu eşleştirme dini bir hüküm değil, vaktin ruhuna uygun seçilmiş bir hatırlatmadır.",
+  esmaSourceDocumented: "Klasik kaynakta belirtilen sayı",
+  esmaSourceDefault: "Kaynakta sayı belirtilmemiş, standart tesbih sayısı kullanıldı",
+  esmaSourceCitation: "Kaynak: Osmanlı dönemi Esmâ-i Hüsnâ \"havâss\" geleneği (İbn-i Îsâ-yı Saruhânî, Şerh-i Esmâ-i Hüsnâ, 1541; Kenzü'l-Havâss)",
 };
 
 const ar: Record<string, string> = {
@@ -262,6 +268,12 @@ const ar: Record<string, string> = {
   esmaTitle: "اسم هذا الوقت",
   esmaRecite: "الذكر",
   esmaTimes: "{n}×",
+  aboutDesc1: "صلوات مكانن هو تطبيق مواقيت صلاة بسيط وخالٍ من الإعلانات. تتبع مواقيت الصلاة من أي مكان في العالم، واتجاه القبلة، والتقويم الهجري، وتذكيرات الصلاة، كل ذلك في مكان واحد.",
+  aboutDesc2: "لا نعرض أي إعلانات ولا نجمع بيانات شخصية. جميع السمات والمواقع والميزات مجانية تمامًا ومتاحة بالتساوي لجميع المستخدمين — لا توجد فئة مميزة (premium). يُستخدم موقعك فقط لحساب مواقيت الصلاة ويُخزَّن على جهازك.",
+  aboutDesc3: "تستخدم بوصلة القبلة مستشعر الجهاز المغناطيسي لإظهار اتجاه الكعبة. لكل وقت صلاة، نعرض أيضًا أحد أسماء الله الحسنى مع معناه واقتراح ذكر قصير — هذا الربط تذكير تعبدي، وليس حكمًا شرعيًا.",
+  esmaSourceDocumented: "عدد مذكور في المصدر الكلاسيكي",
+  esmaSourceDefault: "لم يُذكر عدد في المصدر؛ استُخدم عدد التسبيح المعتاد",
+  esmaSourceCitation: "المصدر: تقاليد \"خواص\" الأسماء الحسنى العثمانية (شرح أسماء الحسنى لابن عيسى الساروخاني، 1541؛ كنز الخواص)",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
