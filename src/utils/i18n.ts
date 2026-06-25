@@ -87,9 +87,16 @@ const en: Record<string, string> = {
   aboutDesc1: "Meccanen Prayer Times is an ad-free, minimal prayer times app. Track prayer times from anywhere in the world, the Qibla direction, the Hijri calendar, and prayer reminders, all in one place.",
   aboutDesc2: "We show no ads and do not collect personal data. All themes, locations, and features are completely free and equally available to everyone — there is no premium tier. Your location is only used to calculate prayer times and is stored on your device.",
   aboutDesc3: "The Qibla compass uses your device's magnetic sensor to show the direction of the Kaaba. For each prayer time, we also show one of the 99 Names of Allah (Esma-ul Husna) with its meaning and a short recitation suggestion — this pairing is a devotional reminder, not a religious ruling.",
+  aboutDesc4: "If you choose the adhan sound for notifications, the full 3:47 recording used is a self-performed, self-recorded field recording by \"bagustris\" (Freesound/Pixabay), used under its stated free-use terms.",
   esmaSourceDocumented: "Count recorded in the classical source",
   esmaSourceDefault: "No count given in the source; standard tasbih count used",
   esmaSourceCitation: "Source: Ottoman-era Esma-ul Husna \"havass\" tradition (İbn-i Îsâ-yı Saruhânî's Şerh-i Esmâ-i Hüsnâ, 1541; Kenzü'l-Havâss)",
+  notifyAtVakitLabel: "Notify exactly at prayer time",
+  notifyAtVakitDesc: "In addition to the \"X minutes before\" reminder, send a separate notification right when the prayer time begins",
+  soundTypeLabel: "Notification sound",
+  soundDefault: "Default",
+  soundEzan: "Adhan (full, 3:47)",
+  soundEzanCredit: "Adhan recording: bagustris (Freesound/Pixabay), self-performed and self-recorded field recording, used under its stated free-use terms.",
 };
 
 const tr: Record<string, string> = {
@@ -179,9 +186,16 @@ const tr: Record<string, string> = {
   aboutDesc1: "Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır. Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.",
   aboutDesc2: "Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz. Tüm temalar, konumlar ve özellikler tamamen ücretsiz ve herkese eşit şekilde açıktır — premium katman yoktur. Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır ve cihazınızda saklanır.",
   aboutDesc3: "Kıble pusulası, cihazınızın mıknatıs sensörü ile Kâbe yönünü gösterir. Her namaz vakti için ayrıca, anlamını ve kısa bir zikir önerisini içeren bir Esmaül Hüsna ismi sunuyoruz — bu eşleştirme dini bir hüküm değil, vaktin ruhuna uygun seçilmiş bir hatırlatmadır.",
+  aboutDesc4: "Bildirimlerde ezan sesini seçerseniz, kullanılan tam 3:47 dakikalık kayıt, \"bagustris\" (Freesound/Pixabay) tarafından kendi okuyuşu ve kendi kaydı olarak yapılmış bir doğa kaydıdır; belirtilen ücretsiz kullanım şartlarıyla kullanılmıştır.",
   esmaSourceDocumented: "Klasik kaynakta belirtilen sayı",
   esmaSourceDefault: "Kaynakta sayı belirtilmemiş, standart tesbih sayısı kullanıldı",
   esmaSourceCitation: "Kaynak: Osmanlı dönemi Esmâ-i Hüsnâ \"havâss\" geleneği (İbn-i Îsâ-yı Saruhânî, Şerh-i Esmâ-i Hüsnâ, 1541; Kenzü'l-Havâss)",
+  notifyAtVakitLabel: "Tam vakit girdiğinde de bildir",
+  notifyAtVakitDesc: "\"X dakika önce\" hatırlatmasına ek olarak, vakit girdiği anda da ayrıca bir bildirim gönder",
+  soundTypeLabel: "Bildirim sesi",
+  soundDefault: "Varsayılan",
+  soundEzan: "Ezan (tam, 3:47)",
+  soundEzanCredit: "Ezan kaydı: bagustris (Freesound/Pixabay) — kendi okuyuşu ve kendi kaydı, belirtilen ücretsiz kullanım şartlarıyla kullanılmıştır.",
 };
 
 const ar: Record<string, string> = {
@@ -271,9 +285,16 @@ const ar: Record<string, string> = {
   aboutDesc1: "صلوات مكانن هو تطبيق مواقيت صلاة بسيط وخالٍ من الإعلانات. تتبع مواقيت الصلاة من أي مكان في العالم، واتجاه القبلة، والتقويم الهجري، وتذكيرات الصلاة، كل ذلك في مكان واحد.",
   aboutDesc2: "لا نعرض أي إعلانات ولا نجمع بيانات شخصية. جميع السمات والمواقع والميزات مجانية تمامًا ومتاحة بالتساوي لجميع المستخدمين — لا توجد فئة مميزة (premium). يُستخدم موقعك فقط لحساب مواقيت الصلاة ويُخزَّن على جهازك.",
   aboutDesc3: "تستخدم بوصلة القبلة مستشعر الجهاز المغناطيسي لإظهار اتجاه الكعبة. لكل وقت صلاة، نعرض أيضًا أحد أسماء الله الحسنى مع معناه واقتراح ذكر قصير — هذا الربط تذكير تعبدي، وليس حكمًا شرعيًا.",
+  aboutDesc4: "إذا اخترت صوت الأذان للتنبيهات، فإن التسجيل الكامل (3:47) المستخدم هو أداء وتسجيل شخصي من \"bagustris\" (Freesound/Pixabay)، يُستخدم بموجب شروط الاستخدام المجاني المذكورة.",
   esmaSourceDocumented: "عدد مذكور في المصدر الكلاسيكي",
   esmaSourceDefault: "لم يُذكر عدد في المصدر؛ استُخدم عدد التسبيح المعتاد",
   esmaSourceCitation: "المصدر: تقاليد \"خواص\" الأسماء الحسنى العثمانية (شرح أسماء الحسنى لابن عيسى الساروخاني، 1541؛ كنز الخواص)",
+  notifyAtVakitLabel: "التنبيه عند دخول الوقت بالضبط",
+  notifyAtVakitDesc: "بالإضافة إلى تنبيه \"قبل X دقيقة\"، يُرسل تنبيه منفصل عند دخول وقت الصلاة مباشرة",
+  soundTypeLabel: "صوت التنبيه",
+  soundDefault: "افتراضي",
+  soundEzan: "الأذان (كامل، 3:47)",
+  soundEzanCredit: "تسجيل الأذان: bagustris (Freesound/Pixabay) — أداء وتسجيل شخصي، يُستخدم بموجب شروط الاستخدام المجاني المذكورة.",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
