@@ -662,6 +662,42 @@ function SettingsPanel({
                         ))}
                       </div>
                     </div>
+                    <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
+                      <div>
+                        <div className="text-xs font-bold text-slate-200">{t("notifyAtVakitLabel", lang)}</div>
+                        <div className="text-[10px] text-slate-500">{t("notifyAtVakitDesc", lang)}</div>
+                      </div>
+                      <button onClick={async () => {
+                        const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
+                        setNotificationSettings(updated);
+                        saveNotificationSettings(updated);
+                        await schedulePrayerNotifications(prayerTimes, updated, "");
+                      }}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("soundTypeLabel", lang)}</div>
+                      <div className="flex gap-2">
+                        {(["default", "ezan"] as const).map(st => (
+                          <button key={st} onClick={async () => {
+                            const updated = { ...notificationSettings, soundType: st };
+                            setNotificationSettings(updated);
+                            saveNotificationSettings(updated);
+                            await schedulePrayerNotifications(prayerTimes, updated, "");
+                          }}
+                            className={`flex-1 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundType === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                            {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
+                          </button>
+                        ))}
+                      </div>
+                      {notificationSettings.soundType === "ezan" && (
+                        <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">{t("soundEzanCredit", lang)}</p>
+                      )}
+                    </div>
+
                     <div>
                       <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
                       <div className="space-y-2">
@@ -711,6 +747,9 @@ function SettingsPanel({
                   </p>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     {t("aboutDesc3", lang)}
+                  </p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {t("aboutDesc4", lang)}
                   </p>
                 </div>
 
