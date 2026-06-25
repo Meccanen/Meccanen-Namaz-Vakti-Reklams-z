@@ -51,6 +51,12 @@ jobs:
           }
           GRADLEEOF
           cat android/variables.gradle
+      - name: Bildirim ses dosyalarını res/raw'a kopyala
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cp assets/sounds/ezan_sesi.mp3 android/app/src/main/res/raw/ezan_sesi.mp3
+          echo "--- res/raw içeriği ---"
+          ls -la android/app/src/main/res/raw/
       - name: Konum izinlerini Manifest'e ekle
         run: |
           cat > /tmp/add_perms.py << 'PYEOF'
