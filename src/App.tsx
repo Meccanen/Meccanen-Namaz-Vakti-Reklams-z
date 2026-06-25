@@ -18,7 +18,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
-import { getEsmaForPrayerKey } from "./utils/esmaHelper";
+import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
 
@@ -997,10 +997,9 @@ export default function App() {
     return 5;
   }, [prayerTimes, date, location.timezone]);
 
-  const currentEsma = useMemo(() => {
-    const key = prayerTimes[activePrayerIndex]?.key;
-    return key ? getEsmaForPrayerKey(key) : null;
-  }, [prayerTimes, activePrayerIndex]);
+  const esmaSaati = useMemo(() => {
+    return getCurrentEsmaSaati(date, prayerTimes, null);
+  }, [prayerTimes, date]);
 
 
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
@@ -1186,27 +1185,26 @@ export default function App() {
           </div>
         </section>
 
-        {currentEsma && (
+        {esmaSaati && (
           <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
             <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
               <BookOpen className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("esmaTitle", lang)}
             </div>
             <div className="flex flex-col items-center gap-2 text-center">
-              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.accent}`} dir="rtl">{currentEsma.arabic}</div>
+              <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.textSecondary}`}>
+                {SEGMENT_LABELS[esmaSaati.segment][lang] || SEGMENT_LABELS[esmaSaati.segment].en}
+                {" · "}
+                {PLANET_LABELS[esmaSaati.planet][lang] || PLANET_LABELS[esmaSaati.planet].en}
+              </div>
+              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.accent}`} dir="rtl">{esmaSaati.meaning.arabic}</div>
               <div className="text-sm sm:text-base font-semibold">
-                {currentEsma.transliteration} — {currentEsma.name[lang] || currentEsma.name.en}
+                {esmaSaati.meaning.transliteration}
               </div>
               <div className={`text-xs sm:text-sm ${tTheme.textSecondary}`}>
-                {currentEsma.meaning[lang] || currentEsma.meaning.en}
+                {esmaSaati.meaning[lang] || esmaSaati.meaning.en}
               </div>
               <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
-                {t("esmaRecite", lang)}: {t("esmaTimes", lang, { n: String(currentEsma.zikirCount) })}
-              </div>
-              <div className={`text-[9px] ${tTheme.textMuted} italic`}>
-                {currentEsma.countIsDocumented ? t("esmaSourceDocumented", lang) : t("esmaSourceDefault", lang)}
-              </div>
-              <div className={`text-xs sm:text-[13px] ${tTheme.textMuted} mt-1 max-w-xs leading-relaxed`}>
-                {currentEsma.purpose[lang] || currentEsma.purpose.en}
+                {t("esmaRecite", lang)}: {esmaSaati.item.count !== null ? t("esmaTimes", lang, { n: String(esmaSaati.item.count) }) : t("esmaCountUnknown", lang)}
               </div>
               <div className={`text-[9px] ${tTheme.textMuted} opacity-70 mt-1 max-w-xs leading-relaxed`}>
                 {t("esmaSourceCitation", lang)}
