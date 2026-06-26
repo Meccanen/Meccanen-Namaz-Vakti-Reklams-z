@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -1224,7 +1224,21 @@ export default function App() {
           </div>
         </section>
 
-        <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>          &copy; {date.getFullYear()} {t("appName", lang)}
+        <footer className={`text-center pt-5 pb-3 text-xs sm:text-sm text-slate-600 border-t ${tTheme.header} space-y-3`}>
+          <div>&copy; {date.getFullYear()} Meccanen Bilişim — {t("appName", lang)}</div>
+          <div className="flex flex-col items-center gap-2">
+            <div className={`text-[11px] sm:text-xs ${tTheme.textMuted}`}>{t("supportUs", lang)}</div>
+            <div className="flex items-center gap-2">
+              <a href="https://ko-fi.com/meccanen" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all cursor-pointer">
+                <Coffee className="w-3.5 h-3.5" />Ko-fi
+              </a>
+              <a href="https://paypal.me/meccanen" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-400 text-xs font-semibold hover:bg-sky-500/20 transition-all cursor-pointer">
+                <Heart className="w-3.5 h-3.5" />PayPal
+              </a>
+            </div>
+          </div>
         </footer>
 
       </div>
