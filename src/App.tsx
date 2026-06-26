@@ -16,7 +16,7 @@ import {
   saveNotificationSettings, loadNotificationSettings,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
-import { t, detectLanguage, LangCode } from "./utils/i18n";
+import { t, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
@@ -801,10 +801,10 @@ export default function App() {
   const [themeKey, setThemeKey] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem("mnv_theme") as ThemeKey;
     if (saved && THEMES[saved]) return saved;
-    return "gece";
+    return "nane";
   });
   const [lang, setLangState] = useState<LangCode>(() => {
-    return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
+    return (localStorage.getItem("mnv_lang") as LangCode) || "tr";
   });
   const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
@@ -1048,23 +1048,17 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {savedLocations.length > 1 ? (
-              <button onClick={() => {
-                const idx = savedLocations.findIndex(l =>
-                  l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
-                  l.longitude.toFixed(3) === location.longitude.toFixed(3)
-                );
-                const next = savedLocations[(idx + 1) % savedLocations.length];
-                setLocationAndSave(next);
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent}`}>
+              <MapPin className="w-3.5 h-3.5" />{location.name}
+            </span>
+            <button onClick={() => {
+                const order: LangCode[] = ["tr", "en", "ar"];
+                const next = order[(order.indexOf(lang) + 1) % order.length];
+                setLang(next);
               }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent} hover:bg-white/10 transition-all cursor-pointer`}>
-                <MapPin className="w-3.5 h-3.5" />{location.name}<ChevronsDown className="w-3 h-3 -rotate-90" />
-              </button>
-            ) : (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent}`}>
-                <MapPin className="w-3.5 h-3.5" />{location.name}
-              </span>
-            )}
+              className={`px-3 py-1.5 text-sm font-bold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
+              {lang.toUpperCase()}
+            </button>
             <button onClick={handleRefresh}
               className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${tTheme.accent}` : ""}`} />
@@ -1124,9 +1118,9 @@ export default function App() {
           <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-6">
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
-                className={`flex flex-col items-center py-3 sm:py-4 px-2 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-[10px] sm:text-[11px] font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{item.name}</div>
-                <div className={`text-sm sm:text-base font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
+                className={`flex flex-col items-center py-4 sm:py-5 px-2 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
+                <div className={`text-sm sm:text-base font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{item.name}</div>
+                <div className={`text-lg sm:text-xl font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
               </div>
             ))}
           </div>
@@ -1137,81 +1131,81 @@ export default function App() {
           )}
         </section>
 
-        <section className={`${tTheme.card} border rounded-xl p-5 sm:p-6 transition-all duration-300 shadow-md`}>
-          <div className="flex justify-between items-center">
-            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5">
-              <Globe className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("location", lang)}
-            </div>
-            <button onClick={() => setSettingsOpen(true)}
-              className={`text-[11px] sm:text-[12px] font-medium ${tTheme.accent} cursor-pointer hover:opacity-80 transition-all`}>
-              {t("change", lang)} →
-            </button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <div>
-              <div className="text-[10px] sm:text-[11px] text-slate-500 tracking-wide font-medium">{t("city", lang)}</div>
-              <div className={`text-base sm:text-lg font-bold ${tTheme.accent}`}>{location.name}, {location.country}</div>
-            </div>
-            <div className="ml-auto text-right">
-              <div className="text-[10px] sm:text-[11px] text-slate-500 tracking-wide font-medium">{t("coordinates", lang)}</div>
-              <div className={`text-xs sm:text-sm font-mono ${tTheme.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
-              <div className="text-[10px] sm:text-[11px] text-slate-600">{location.timezone}</div>
-            </div>
-          </div>
-        </section>
-
-        <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
-          <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
-            <Compass className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("qibla", lang)}
-          </div>
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28">
-              <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
-                <div className="text-[9px] text-slate-500">{t("qibla", lang)}</div>
-              </div>
-              <div
-                className="absolute top-1/2 left-1/2 w-0.5 h-12 sm:h-14 bg-amber-500 origin-bottom transition-transform duration-300"
-                style={{
-                  transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
-                }}
-              />
-              <div className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
-            </div>
-            <button
-              onClick={() => setCompassListening(!compassListening)}
-              className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
-              {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
-            </button>
-          </div>
-        </section>
-
         {esmaSaati && (
-          <section className={`${tTheme.card} border rounded-xl p-5 transition-all duration-300 shadow-md`}>
-            <div className="text-[11px] sm:text-[12px] font-semibold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
-              <BookOpen className={`w-3.5 h-3.5 ${tTheme.accent}`} />{t("esmaTitle", lang)}
+          <section className={`${tTheme.card} border rounded-xl p-6 sm:p-7 transition-all duration-300 shadow-md`}>
+            <div className="text-sm sm:text-base font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+              <BookOpen className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.accent}`} />{t("esmaTitle", lang)}
             </div>
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.textSecondary}`}>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className={`text-sm sm:text-base font-semibold px-4 py-1.5 rounded-full border border-white/10 ${tTheme.textSecondary}`}>
                 {SEGMENT_LABELS[esmaSaati.segment][lang] || SEGMENT_LABELS[esmaSaati.segment].en}
                 {" · "}
                 {PLANET_LABELS[esmaSaati.planet][lang] || PLANET_LABELS[esmaSaati.planet].en}
               </div>
-              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.accent}`} dir="rtl">{esmaSaati.meaning.arabic}</div>
-              <div className="text-sm sm:text-base font-semibold">
+              <div className={`text-4xl sm:text-6xl font-bold ${tTheme.accent}`} dir="rtl">{esmaSaati.meaning.arabic}</div>
+              <div className="text-xl sm:text-2xl font-bold">
                 {esmaSaati.meaning.transliteration}
               </div>
-              <div className={`text-xs sm:text-sm ${tTheme.textSecondary}`}>
+              <div className={`text-base sm:text-lg ${tTheme.textSecondary} max-w-md leading-relaxed`}>
                 {esmaSaati.meaning[lang] || esmaSaati.meaning.en}
               </div>
-              <div className={`text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
+              <div className={`text-sm sm:text-base font-bold px-4 py-2 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
                 {t("esmaRecite", lang)}: {esmaSaati.item.count !== null ? t("esmaTimes", lang, { n: String(esmaSaati.item.count) }) : t("esmaCountUnknown", lang)}
               </div>
-              <div className={`text-[9px] ${tTheme.textMuted} opacity-70 mt-1 max-w-xs leading-relaxed`}>
+              <div className={`text-xs sm:text-sm ${tTheme.textMuted} opacity-70 mt-2 max-w-md leading-relaxed`}>
                 {t("esmaSourceCitation", lang)}
               </div>
             </div>
           </section>
         )}
+
+        <section className={`${tTheme.card} border rounded-xl p-5 sm:p-6 transition-all duration-300 shadow-md`}>
+          <div className="flex justify-between items-center">
+            <div className="text-sm sm:text-base font-semibold tracking-wide text-slate-400 flex items-center gap-2">
+              <Globe className={`w-4 h-4 sm:w-5 sm:h-5 ${tTheme.accent}`} />{t("location", lang)}
+            </div>
+            <button onClick={() => setSettingsOpen(true)}
+              className={`text-sm sm:text-base font-semibold ${tTheme.accent} cursor-pointer hover:opacity-80 transition-all`}>
+              {t("change", lang)} →
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <div>
+              <div className="text-xs sm:text-sm text-slate-500 tracking-wide font-medium">{t("city", lang)}</div>
+              <div className={`text-xl sm:text-2xl font-bold ${tTheme.accent}`}>{location.name}, {location.country}</div>
+            </div>
+            <div className="ml-auto text-right">
+              <div className="text-xs sm:text-sm text-slate-500 tracking-wide font-medium">{t("coordinates", lang)}</div>
+              <div className={`text-sm sm:text-base font-mono ${tTheme.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
+              <div className="text-xs sm:text-sm text-slate-600">{location.timezone}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className={`${tTheme.card} border rounded-xl p-6 transition-all duration-300 shadow-md`}>
+          <div className="text-sm sm:text-base font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+            <Compass className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.accent}`} />{t("qibla", lang)}
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-32 h-32 sm:w-36 sm:h-36">
+              <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
+                <div className="text-xs sm:text-sm text-slate-500">{t("qibla", lang)}</div>
+              </div>
+              <div
+                className="absolute top-1/2 left-1/2 w-1 h-16 sm:h-[4.5rem] bg-amber-500 origin-bottom transition-transform duration-300"
+                style={{
+                  transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
+                }}
+              />
+              <div className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            <button
+              onClick={() => setCompassListening(!compassListening)}
+              className={`text-sm sm:text-base font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
+              {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
+            </button>
+          </div>
+        </section>
 
         <footer className={`text-center pt-4 pb-2 text-[11px] sm:text-[12px] text-slate-600 border-t ${tTheme.header}`}>          &copy; {date.getFullYear()} {t("appName", lang)}
         </footer>
