@@ -16,7 +16,7 @@ import {
   saveNotificationSettings, loadNotificationSettings,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
-import { t, LangCode } from "./utils/i18n";
+import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
@@ -328,6 +328,7 @@ function SettingsPanel({
   lang, setLang,
   onFindLocation,
   isDetectingLocation,
+  initialTab,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
@@ -340,8 +341,9 @@ function SettingsPanel({
   lang: LangCode; setLang: (l: LangCode) => void;
   onFindLocation: () => void;
   isDetectingLocation: boolean;
+  initialTab?: "genel"|"konum"|"metot"|"bildirim";
 }) {
-  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
+  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">(initialTab || "genel");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -804,11 +806,12 @@ export default function App() {
     return "nane";
   });
   const [lang, setLangState] = useState<LangCode>(() => {
-    return (localStorage.getItem("mnv_lang") as LangCode) || "tr";
+    return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
   });
   const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
   const [location, setLocation] = useState<Location>(() => {
     try { const s = localStorage.getItem("mnv_location"); return s ? JSON.parse(s) : DEFAULT_LOCATION; }
     catch { return DEFAULT_LOCATION; }
@@ -1027,6 +1030,7 @@ export default function App() {
           lang={lang} setLang={setLang}
           onFindLocation={handleFindLocation}
           isDetectingLocation={isDetectingLocation}
+          initialTab={settingsInitialTab}
         />
       )}
 
@@ -1034,7 +1038,7 @@ export default function App() {
 
         <header className="flex justify-between items-center pb-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSettingsOpen(true)}
+            <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
               className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200">
               <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-8 sm:h-9 w-auto object-contain opacity-90" />
             </button>
@@ -1048,9 +1052,23 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent}`}>
-              <MapPin className="w-3.5 h-3.5" />{location.name}
-            </span>
+            {savedLocations.length > 1 ? (
+              <button onClick={() => {
+                const idx = savedLocations.findIndex(l =>
+                  l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
+                  l.longitude.toFixed(3) === location.longitude.toFixed(3)
+                );
+                const next = savedLocations[(idx + 1) % savedLocations.length];
+                setLocationAndSave(next);
+              }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent} hover:bg-white/10 transition-all cursor-pointer`}>
+                <MapPin className="w-3.5 h-3.5" />{location.name}<ChevronsDown className="w-3 h-3 -rotate-90" />
+              </button>
+            ) : (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/30 border ${tTheme.header} rounded-full text-xs font-semibold ${tTheme.accent}`}>
+                <MapPin className="w-3.5 h-3.5" />{location.name}
+              </span>
+            )}
             <button onClick={() => {
                 const order: LangCode[] = ["tr", "en", "ar"];
                 const next = order[(order.indexOf(lang) + 1) % order.length];
@@ -1059,11 +1077,7 @@ export default function App() {
               className={`px-3 py-1.5 text-sm font-bold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               {lang.toUpperCase()}
             </button>
-            <button onClick={handleRefresh}
-              className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-              <RefreshCw className={`w-4 h-4 ${prayerLoading ? `animate-spin ${tTheme.accent}` : ""}`} />
-            </button>
-            <button onClick={() => setSettingsOpen(true)}
+            <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
               className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               <Settings className="w-4 h-4" />
             </button>
@@ -1164,7 +1178,7 @@ export default function App() {
             <div className="text-sm sm:text-base font-semibold tracking-wide text-slate-400 flex items-center gap-2">
               <Globe className={`w-4 h-4 sm:w-5 sm:h-5 ${tTheme.accent}`} />{t("location", lang)}
             </div>
-            <button onClick={() => setSettingsOpen(true)}
+            <button onClick={() => { setSettingsInitialTab("konum"); setSettingsOpen(true); }}
               className={`text-sm sm:text-base font-semibold ${tTheme.accent} cursor-pointer hover:opacity-80 transition-all`}>
               {t("change", lang)} →
             </button>
