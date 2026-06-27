@@ -770,7 +770,7 @@ function SettingsPanel({
                     </span>
                     <span className="text-[10px] text-amber-500/70">→</span>
                   </a>
-                  <a href="https://paypal.me/meccanen"
+                  <a href="https://paypal.me/bulentt"
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
                     <span className="text-xs font-semibold text-slate-200">PayPal</span>
@@ -1069,14 +1069,20 @@ export default function App() {
                 <MapPin className="w-3.5 h-3.5" />{location.name}
               </span>
             )}
-            <button onClick={() => {
-                const order: LangCode[] = ["tr", "en", "ar"];
-                const next = order[(order.indexOf(lang) + 1) % order.length];
-                setLang(next);
-              }}
-              className={`px-3 py-1.5 text-sm font-bold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-              {lang.toUpperCase()}
-            </button>
+            <div className="flex flex-col items-stretch gap-1">
+              <button onClick={() => {
+                  const order: LangCode[] = ["tr", "en", "ar"];
+                  const next = order[(order.indexOf(lang) + 1) % order.length];
+                  setLang(next);
+                }}
+                className={`px-3 py-1 text-sm font-bold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
+                {lang.toUpperCase()}
+              </button>
+              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                className={`flex items-center justify-center gap-1 px-3 py-1 text-[10px] font-semibold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
+                <Palette className="w-3 h-3" />{t("theme", lang)}
+              </button>
+            </div>
             <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
               className={`p-1.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
               <Settings className="w-4 h-4" />
@@ -1116,9 +1122,10 @@ export default function App() {
 
         <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
           <div className="flex justify-between items-center mb-5">
-            <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent} flex items-center gap-2`}>
+            <button onClick={() => { setSettingsInitialTab("metot"); setSettingsOpen(true); }}
+              className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent} flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all`}>
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />{currentMethod.label}
-            </div>
+            </button>
             <span className={`text-xs sm:text-sm ${tTheme.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
 
@@ -1233,7 +1240,7 @@ export default function App() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all cursor-pointer">
                 <Coffee className="w-3.5 h-3.5" />Ko-fi
               </a>
-              <a href="https://paypal.me/meccanen" target="_blank" rel="noopener noreferrer"
+              <a href="https://paypal.me/bulentt" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-400 text-xs font-semibold hover:bg-sky-500/20 transition-all cursor-pointer">
                 <Heart className="w-3.5 h-3.5" />PayPal
               </a>
