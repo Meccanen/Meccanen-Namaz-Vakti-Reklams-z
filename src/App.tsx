@@ -650,19 +650,22 @@ function SettingsPanel({
                     <div>
                       <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("minutesBefore", lang)}</div>
                       <div className="flex gap-2 flex-wrap">
-                        {[5, 10, 15, 20, 30].map(min => (
+                        {[0, 5, 10, 15, 20, 30].map(min => (
                           <button key={min} onClick={async () => {
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
                             await schedulePrayerNotifications(prayerTimes, updated, "");
-                            notify(t("notifyMinutes", lang, { min: String(min) }));
+                            notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
-                            {t("minutes", lang, { min: String(min) })}
+                            {min === 0 ? t("minutesOff", lang) : t("minutes", lang, { min: String(min) })}
                           </button>
                         ))}
                       </div>
+                      {notificationSettings.minutesBefore === 0 && !notificationSettings.notifyAtVakit && (
+                        <p className="text-[10px] text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
+                      )}
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
                       <div>
