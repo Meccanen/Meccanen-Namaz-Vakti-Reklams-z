@@ -329,6 +329,7 @@ function SettingsPanel({
   onFindLocation,
   isDetectingLocation,
   autoLocationEnabled,
+  onToggleAutoLocation,
   initialTab,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
@@ -343,6 +344,7 @@ function SettingsPanel({
   onFindLocation: () => void;
   isDetectingLocation: boolean;
   autoLocationEnabled: boolean;
+  onToggleAutoLocation: (val: boolean) => void;
   initialTab?: "genel"|"konum"|"metot"|"bildirim";
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">(initialTab || "genel");
@@ -512,15 +514,29 @@ function SettingsPanel({
 
             {tab === "konum" && (
               <div className="space-y-4">
-                {autoLocationEnabled && (
-                  <div className="flex items-center gap-2 p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
-                    <Navigation className="w-4 h-4 text-sky-400 shrink-0" />
+                {/* Otomatik konum toggle — her zaman görünür, tıklanınca açılır/kapanır */}
+                <div className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${autoLocationEnabled ? "bg-sky-500/10 border-sky-500/20" : "bg-white/5 border-white/5"}`}>
+                  <div className="flex items-center gap-2">
+                    <Navigation className={`w-4 h-4 shrink-0 ${autoLocationEnabled ? "text-sky-400" : "text-slate-500"}`} />
                     <div>
-                      <div className="text-xs font-bold text-sky-400">{t("autoLocationActive", lang)}</div>
-                      <div className="text-[10px] text-slate-500">{t("autoLocationDesc", lang)}</div>
+                      <div className={`text-xs font-bold ${autoLocationEnabled ? "text-sky-400" : "text-slate-400"}`}>
+                        {t("autoLocationToggleLabel", lang)}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {autoLocationEnabled ? t("autoLocationDesc", lang) : t("autoLocationOffDesc", lang)}
+                      </div>
                     </div>
                   </div>
-                )}
+                  <button onClick={() => {
+                    const next = !autoLocationEnabled;
+                    localStorage.setItem("mnv_auto_location", String(next));
+                    onToggleAutoLocation(next);
+                  }}
+                    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${autoLocationEnabled ? "bg-sky-500 border-sky-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${autoLocationEnabled ? "left-6" : "left-0.5"}`} />
+                  </button>
+                </div>
+
                 <button onClick={onFindLocation} disabled={isDetectingLocation}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer">
                   <Navigation className={`w-4 h-4 ${isDetectingLocation ? "animate-spin" : ""}`} />
@@ -946,6 +962,13 @@ export default function App() {
     setShowLocationPrompt(true);
   };
 
+  const handleToggleAutoLocation = (val: boolean) => {
+    localStorage.setItem("mnv_auto_location", String(val));
+    setAutoLocationEnabled(val);
+    // Açılıyorsa hemen bir konum tespiti yap.
+    if (val) detectAndUpdateLocation();
+  };
+
   const handleLocationAllowed = async () => {
     setShowLocationPrompt(false);
     localStorage.setItem("mnv_location_prompted", "true");
@@ -1088,6 +1111,7 @@ export default function App() {
           onFindLocation={handleFindLocation}
           isDetectingLocation={isDetectingLocation}
           autoLocationEnabled={autoLocationEnabled}
+          onToggleAutoLocation={handleToggleAutoLocation}
           initialTab={settingsInitialTab}
         />
       )}
