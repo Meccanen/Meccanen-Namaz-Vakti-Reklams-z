@@ -328,6 +328,7 @@ function SettingsPanel({
   lang, setLang,
   onFindLocation,
   isDetectingLocation,
+  autoLocationEnabled,
   initialTab,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
@@ -341,6 +342,7 @@ function SettingsPanel({
   lang: LangCode; setLang: (l: LangCode) => void;
   onFindLocation: () => void;
   isDetectingLocation: boolean;
+  autoLocationEnabled: boolean;
   initialTab?: "genel"|"konum"|"metot"|"bildirim";
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim">(initialTab || "genel");
@@ -385,6 +387,9 @@ function SettingsPanel({
     const newList = exists ? savedLocations : [...savedLocations, loc];
     setSavedLocations(newList);
     setLocation(loc);
+    // Manuel şehir seçilince otomatik konum takibini kapat.
+    localStorage.setItem("mnv_auto_location", "false");
+    setAutoLocationEnabled(false);
     setSearchResults([]); setSearchQuery("");
     notify(t("citySelected", lang, { city: loc.name, country: loc.country }));
   };
@@ -507,6 +512,15 @@ function SettingsPanel({
 
             {tab === "konum" && (
               <div className="space-y-4">
+                {autoLocationEnabled && (
+                  <div className="flex items-center gap-2 p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
+                    <Navigation className="w-4 h-4 text-sky-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold text-sky-400">{t("autoLocationActive", lang)}</div>
+                      <div className="text-[10px] text-slate-500">{t("autoLocationDesc", lang)}</div>
+                    </div>
+                  </div>
+                )}
                 <button onClick={onFindLocation} disabled={isDetectingLocation}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer">
                   <Navigation className={`w-4 h-4 ${isDetectingLocation ? "animate-spin" : ""}`} />
@@ -839,6 +853,11 @@ export default function App() {
     () => !localStorage.getItem("mnv_location_prompted")
   );
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  // Kullanıcı "Konumu Bul" seçtiyse bu flag localStorage'da true kalır.
+  // Bu sayede: (1) uygulama her açılışında, (2) her 30 dakikada bir konum otomatik güncellenir.
+  const [autoLocationEnabled, setAutoLocationEnabled] = useState<boolean>(
+    () => localStorage.getItem("mnv_auto_location") === "true"
+  );
 
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
   const tTheme = THEMES[themeKey];
@@ -921,6 +940,9 @@ export default function App() {
   }, [prayerTimes, date, location.timezone]);
 
   const handleFindLocation = async () => {
+    // Kullanıcı "Konumu Bul"a bastı → otomatik güncellemeyi aktif et ve kaydet.
+    localStorage.setItem("mnv_auto_location", "true");
+    setAutoLocationEnabled(true);
     setShowLocationPrompt(true);
   };
 
@@ -934,8 +956,23 @@ export default function App() {
       alert(t("locationDenied", lang) || "Konum izni alınamadı. Lütfen telefon ayarlarından izin verin.");
       return;
     }
+    await detectAndUpdateLocation();
+  };
+
+  // Konum tespiti ve güncelleme — hem manuel hem otomatik tarafından kullanılır.
+  const detectAndUpdateLocation = async () => {
+    setIsDetectingLocation(true);
     try {
       const coords = await getCurrentPosition();
+
+      // Mevcut konumla karşılaştır — çok yakınsa (0.05° ≈ 5km) gereksiz API çağrısı yapma.
+      const latDiff = Math.abs(coords.latitude - location.latitude);
+      const lonDiff = Math.abs(coords.longitude - location.longitude);
+      if (latDiff < 0.05 && lonDiff < 0.05) {
+        setIsDetectingLocation(false);
+        return;
+      }
+
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&accept-language=${lang}`,
         { headers: { "Accept": "application/json" } }
@@ -960,10 +997,27 @@ export default function App() {
       if (!exists) setSavedLocations([...savedLocations, newLoc]);
     } catch (e) {
       console.log("[Meccanen] Location detection error:", e);
-      alert(t("locationError", lang) || "Konum alınırken bir sorun oluştu. Lütfen tekrar deneyin veya manuel ekleyin.");
     }
     setIsDetectingLocation(false);
   };
+
+  // Uygulama açılışında otomatik konum güncelleme
+  useEffect(() => {
+    if (autoLocationEnabled) {
+      detectAndUpdateLocation();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Sadece mount'ta çalışır
+
+  // Her 30 dakikada bir otomatik konum güncelleme
+  useEffect(() => {
+    if (!autoLocationEnabled) return;
+    const interval = setInterval(() => {
+      detectAndUpdateLocation();
+    }, 30 * 60 * 1000); // 30 dakika
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLocationEnabled]);
 
   const handleLocationDenied = () => {
     setShowLocationPrompt(false);
@@ -1033,6 +1087,7 @@ export default function App() {
           lang={lang} setLang={setLang}
           onFindLocation={handleFindLocation}
           isDetectingLocation={isDetectingLocation}
+          autoLocationEnabled={autoLocationEnabled}
           initialTab={settingsInitialTab}
         />
       )}
