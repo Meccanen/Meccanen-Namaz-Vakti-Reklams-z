@@ -605,6 +605,7 @@ function SettingsPanel({
                     </div>
                   )}
                   {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
+                  {lang === "tr" && (
                   <div>
                     <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
                       <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
@@ -618,6 +619,7 @@ function SettingsPanel({
                       <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
             )}
@@ -666,7 +668,7 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "");
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                         notify(t("notifyActive", lang));
                       } else { notify(t("notifyOff", lang)); }
                     }}
@@ -685,7 +687,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "");
+                            await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
@@ -706,7 +708,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "");
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
@@ -721,7 +723,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, soundType: st };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "");
+                            await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                           }}
                             className={`flex-1 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundType === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
                             {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
@@ -746,7 +748,7 @@ function SettingsPanel({
                               const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
                               setNotificationSettings(updated);
                               saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "");
+                              await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             }}
                               className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                               <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
@@ -902,7 +904,7 @@ export default function App() {
 
   useEffect(() => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
-      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name);
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang);
     }
   }, [prayerTimes, notificationSettings.enabled]);
 
@@ -1052,21 +1054,27 @@ export default function App() {
     let hour="--", min="--", sec="--", weekday="—", gregDay="--", gregMonthYear="— —";
     let hijriDay="--", hijriMonth="—", hijriYear="----";
     try {
+      const locale = lang === "tr" ? "tr-TR" : lang === "ar" ? "ar-SA" : "en-US";
       const tp = new Intl.DateTimeFormat("en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(date);
       hour=tp.find(p=>p.type==="hour")?.value||"--";
       min=tp.find(p=>p.type==="minute")?.value||"--";
       sec=tp.find(p=>p.type==="second")?.value||"--";
-      weekday=new Intl.DateTimeFormat("tr-TR",{timeZone:tz,weekday:"long"}).format(date);
-      gregDay=new Intl.DateTimeFormat("tr-TR",{timeZone:tz,day:"numeric"}).format(date);
-      gregMonthYear=new Intl.DateTimeFormat("tr-TR",{timeZone:tz,month:"long",year:"numeric"}).format(date);
-      const HIJRI_MONTHS=["Muharrem","Safer","Rebiülevvel","Rebiülahir","Cemaziyelevvel","Cemaziyelahir","Recep","Şaban","Ramazan","Şevval","Zilkade","Zilhicce"];
+      weekday=new Intl.DateTimeFormat(locale,{timeZone:tz,weekday:"long"}).format(date);
+      gregDay=new Intl.DateTimeFormat(locale,{timeZone:tz,day:"numeric"}).format(date);
+      gregMonthYear=new Intl.DateTimeFormat(locale,{timeZone:tz,month:"long",year:"numeric"}).format(date);
+      const HIJRI_MONTHS: Record<string, string[]> = {
+        tr: ["Muharrem","Safer","Rebiülevvel","Rebiülahir","Cemaziyelevvel","Cemaziyelahir","Recep","Şaban","Ramazan","Şevval","Zilkade","Zilhicce"],
+        en: ["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Thania","Rajab","Sha'ban","Ramadan","Shawwal","Dhu al-Qi'dah","Dhu al-Hijjah"],
+        ar: ["محرم","صفر","ربيع الأول","ربيع الثاني","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"],
+      };
+      const months = HIJRI_MONTHS[lang] || HIJRI_MONTHS.en;
       const hp=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{timeZone:tz,day:"numeric",month:"numeric",year:"numeric"}).formatToParts(date);
       hijriDay=hp.find(p=>p.type==="day")?.value||"--";
-      hijriMonth=HIJRI_MONTHS[parseInt(hp.find(p=>p.type==="month")?.value||"1")-1]||"—";
+      hijriMonth=months[parseInt(hp.find(p=>p.type==="month")?.value||"1")-1]||"—";
       hijriYear=hp.find(p=>p.type==="year")?.value||"----";
     } catch {}
     return {hour,min,sec,weekday,gregDay,gregMonthYear,hijriDay,hijriMonth,hijriYear};
-  }, [date, location.timezone]);
+  }, [date, location.timezone, lang]);
 
   const activePrayerIndex = useMemo(() => {
     let h=0, m=0;
@@ -1215,7 +1223,7 @@ export default function App() {
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
                 className={`flex flex-col items-center py-4 sm:py-5 px-2 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-base sm:text-lg font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{item.name}</div>
+                <div className={`text-base sm:text-lg font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{t(`prayer_${item.key}`, lang) || item.name}</div>
                 <div className={`text-xl sm:text-2xl font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
               </div>
             ))}
