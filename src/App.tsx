@@ -924,37 +924,49 @@ export default function App() {
 
   useEffect(() => {
     if (!prayerTimes.length) { setNextPrayerStr(""); return; }
-    let h=0, m=0;
+
+    const tz = location.timezone || "Europe/Istanbul";
+
+    // Timezone'daki mevcut saat:dakika:saniyeyi bul
+    let h=0, m=0, s=0;
     try {
-      const tp=new Intl.DateTimeFormat("en-US",{timeZone:location.timezone||"Europe/Istanbul",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(date);
-      h=parseInt(tp.find(p=>p.type==="hour")?.value||"0");
-      m=parseInt(tp.find(p=>p.type==="minute")?.value||"0");
+      const tp = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false
+      }).formatToParts(date);
+      h = parseInt(tp.find(p=>p.type==="hour")?.value||"0");
+      m = parseInt(tp.find(p=>p.type==="minute")?.value||"0");
+      s = parseInt(tp.find(p=>p.type==="second")?.value||"0");
     } catch {}
-    const nowStr=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+
+    const nowSeconds = h * 3600 + m * 60 + s;
+
+    // Bir sonraki vakti bul
     let nextIdx = -1;
     for (let i = 0; i < prayerTimes.length; i++) {
-      if (nowStr < prayerTimes[i].time) { nextIdx = i; break; }
+      const [ph, pm] = prayerTimes[i].time.split(":").map(Number);
+      if (nowSeconds < ph * 3600 + pm * 60) { nextIdx = i; break; }
     }
+
+    let diffSeconds: number;
+    let nextName: string;
+
     if (nextIdx === -1) {
-      const [hStr, mStr] = prayerTimes[0].time.split(":").map(Number);
-      const tomorrow = new Date(date);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(hStr, mStr, 0, 0);
-      const diff = tomorrow.getTime() - date.getTime();
-      const hours = Math.floor(diff / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setNextPrayerStr(`${prayerTimes[0].name}: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`);
+      // Tüm vakitler geçti → yarınki ilk vakte (imsak) kalan süre
+      const [ph, pm] = prayerTimes[0].time.split(":").map(Number);
+      const nextDaySeconds = ph * 3600 + pm * 60;
+      diffSeconds = (86400 - nowSeconds) + nextDaySeconds;
+      nextName = prayerTimes[0].name;
     } else {
-      const [hStr, mStr] = prayerTimes[nextIdx].time.split(":").map(Number);
-      const target = new Date(date);
-      target.setHours(hStr, mStr, 0, 0);
-      const diff = target.getTime() - date.getTime();
-      const hours = Math.floor(diff / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setNextPrayerStr(`${prayerTimes[nextIdx].name}: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`);
+      const [ph, pm] = prayerTimes[nextIdx].time.split(":").map(Number);
+      diffSeconds = (ph * 3600 + pm * 60) - nowSeconds;
+      nextName = prayerTimes[nextIdx].name;
     }
+
+    if (diffSeconds < 0) diffSeconds = 0;
+    const hours = Math.floor(diffSeconds / 3600);
+    const mins  = Math.floor((diffSeconds % 3600) / 60);
+    const secs  = diffSeconds % 60;
+    setNextPrayerStr(`${nextName}: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`);
   }, [prayerTimes, date, location.timezone]);
 
   const handleFindLocation = async () => {
