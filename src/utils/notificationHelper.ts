@@ -127,6 +127,7 @@ export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
   settings: NotificationSettings,
   locationName: string,
+  lang: "tr" | "en" | "ar" = "tr",
 ): Promise<void> {
   if (!isNativeAvailable()) return;
   if (!settings.enabled) { await cancelAllNotifications(); return; }
@@ -137,6 +138,27 @@ export async function schedulePrayerNotifications(
   await ensureChannels();
   await cancelAllNotifications();
 
+  // Bildirim metinleri (çok dilli)
+  const PRAYER_NAMES: Record<string, Record<string, string>> = {
+    imsak:  { tr: "İmsak",   en: "Fajr",    ar: "الفجر"   },
+    gunes:  { tr: "Güneş",   en: "Sunrise",  ar: "الشروق"  },
+    ogle:   { tr: "Öğle",    en: "Dhuhr",   ar: "الظهر"   },
+    ikindi: { tr: "İkindi",  en: "Asr",     ar: "العصر"   },
+    aksam:  { tr: "Akşam",   en: "Maghrib", ar: "المغرب"  },
+    yatsi:  { tr: "Yatsı",   en: "Isha",    ar: "العشاء"  },
+  };
+  const TEXTS: Record<string, Record<string, string>> = {
+    beforeTitle: { tr: "Namaz Vakti",  en: "Prayer Time",    ar: "وقت الصلاة"   },
+    beforeBody:  { tr: "{name} namazına {min} dakika kaldı.", en: "{min} minutes until {name}.", ar: "تبقّى {min} دقيقة على صلاة {name}." },
+    atTitle:     { tr: "Namaz Vakti",  en: "Prayer Time",    ar: "وقت الصلاة"   },
+    atBody:      { tr: "{name} namazı vakti girdi.",          en: "It is time for {name}.",        ar: "حان وقت صلاة {name}."            },
+  };
+  const tx = (key: string, vars: Record<string,string> = {}) => {
+    let s = TEXTS[key][lang] || TEXTS[key].en;
+    Object.entries(vars).forEach(([k,v]) => { s = s.replace(`{${k}}`, v); });
+    return s;
+  };
+
   const channelId = settings.soundType === "ezan" ? CHANNEL_EZAN : CHANNEL_DEFAULT;
   const notifications: any[] = [];
   const now = new Date();
@@ -144,6 +166,7 @@ export async function schedulePrayerNotifications(
   prayerTimes.forEach((prayer, idx) => {
     const prayerKey = prayer.key as keyof typeof settings.prayers;
     if (!settings.prayers[prayerKey]) return;
+    const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
 
     const [hour, min] = prayer.time.split(":").map(Number);
 
@@ -159,8 +182,8 @@ export async function schedulePrayerNotifications(
           const id = (dayOffset * 100) + (idx * 2) + 1;
           notifications.push({
             id,
-            title: `🕌 ${prayer.name} Namazı`,
-            body: `${locationName} için ${prayer.name} namazına ${settings.minutesBefore} dakika kaldı.`,
+            title: `🕌 ${tx("beforeTitle")}`,
+            body: tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) }),
             schedule: { at: beforeDate },
             channelId,
             sound: settings.soundType === "ezan" ? EZAN_SOUND_FILE : "default",
@@ -180,8 +203,8 @@ export async function schedulePrayerNotifications(
           const id = (dayOffset * 100) + (idx * 2) + 2;
           notifications.push({
             id,
-            title: `🕌 ${prayer.name} Vakti Girdi`,
-            body: `${locationName} için ${prayer.name} namazı vakti girdi.`,
+            title: `🕌 ${tx("atTitle")}`,
+            body: tx("atBody", { name: prayerName }),
             schedule: { at: atDate },
             channelId,
             sound: settings.soundType === "ezan" ? EZAN_SOUND_FILE : "default",
