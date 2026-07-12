@@ -4,7 +4,7 @@ ext {
     // Android 8.0+: bildirim kanalı (createChannel) desteği garantili,
     // ezan sesi özel bildirim sesi kesin çalışır.
     // Android 7.x payı zaten <%1 — pratikte sıfır kullanıcı kaybı.
-    minSdkVersion    = 26
+    minSdkVersion    = 24
     compileSdkVersion= 35
     targetSdkVersion = 35
 
