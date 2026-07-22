@@ -193,6 +193,14 @@ const de: Record<string, string> = {
   themes: "Themen",
   months: "{min} Min.",
   minutes: "{min} Min.",
+  newMoon: "Neumond",
+  waxingCrescent: "Zunehmende Sichel",
+  firstQuarter: "Erstes Viertel",
+  waxingGibbous: "Zunehmender Mond",
+  fullMoon: "Vollmond",
+  waningGibbous: "Abnehmender Mond",
+  thirdQuarter: "Letztes Viertel",
+  waningCrescent: "Abnehmende Sichel",
 };
 
 
@@ -505,6 +513,14 @@ const ur: Record<string, string> = {
   themes: "تھیمز",
   minutes: "{min} منٹ",
   months: "{min} منٹ",
+  newMoon: "نیا چاند",
+  waxingCrescent: "بڑھتا ہلال",
+  firstQuarter: "پہلی چوتھائی",
+  waxingGibbous: "بڑھتا چاند",
+  fullMoon: "پورا چاند",
+  waningGibbous: "گھٹتا چاند",
+  thirdQuarter: "آخری چوتھائی",
+  waningCrescent: "گھٹتا ہلال",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
