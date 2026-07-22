@@ -258,3 +258,24 @@ export const TURKEY_PROVINCES = [
   { id: 80, name: "Osmaniye", latitude: 37.0742, longitude: 36.2467 },
   { id: 81, name: "Düzce", latitude: 40.8417, longitude: 31.1583 }
 ].sort((a, b) => a.name.localeCompare(b.name, "tr-TR"));
+
+export const PAKISTAN_CITIES = [
+  { id: 1,  name: "Karaçi",     urdu: "کراچی",     latitude: 24.8607,  longitude: 67.0011  },
+  { id: 2,  name: "Lahor",      urdu: "لاہور",      latitude: 31.5497,  longitude: 74.3436  },
+  { id: 3,  name: "İslamabad",  urdu: "اسلام آباد", latitude: 33.6844,  longitude: 73.0479  },
+  { id: 4,  name: "Ravalpindi", urdu: "راولپنڈی",   latitude: 33.5651,  longitude: 73.0169  },
+  { id: 5,  name: "Faysalabad", urdu: "فیصل آباد",  latitude: 31.4187,  longitude: 73.0791  },
+  { id: 6,  name: "Peşavar",    urdu: "پشاور",      latitude: 34.0151,  longitude: 71.5249  },
+  { id: 7,  name: "Quetta",     urdu: "کوئٹہ",      latitude: 30.1798,  longitude: 66.9750  },
+  { id: 8,  name: "Multan",     urdu: "ملتان",      latitude: 30.1575,  longitude: 71.5249  },
+  { id: 9,  name: "Haydarabad", urdu: "حیدرآباد",   latitude: 25.3960,  longitude: 68.3578  },
+  { id: 10, name: "Gujranwala", urdu: "گوجرانوالہ", latitude: 32.1877,  longitude: 74.1945  },
+  { id: 11, name: "Sialkot",    urdu: "سیالکوٹ",    latitude: 32.4945,  longitude: 74.5229  },
+  { id: 12, name: "Bahawalpur", urdu: "بہاولپور",   latitude: 29.3956,  longitude: 71.6836  },
+  { id: 13, name: "Sargodha",   urdu: "سرگودھا",    latitude: 32.0836,  longitude: 72.6711  },
+  { id: 14, name: "Sukkur",     urdu: "سکھر",       latitude: 27.7052,  longitude: 68.8574  },
+  { id: 15, name: "Larkana",    urdu: "لاڑکانہ",    latitude: 27.5570,  longitude: 68.2072  },
+  { id: 16, name: "Şimla",      urdu: "شملہ",       latitude: 34.3696,  longitude: 73.4714  },
+  { id: 17, name: "Gilgit",     urdu: "گلگت",       latitude: 35.9220,  longitude: 74.3089  },
+  { id: 18, name: "Muzaffarabad",urdu: "مظفرآباد",  latitude: 34.3700,  longitude: 73.4700  },
+].sort((a, b) => a.name.localeCompare(b.name, "tr-TR"));
