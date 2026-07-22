@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
 import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
 import { Location } from "./types";
-import { TURKEY_PROVINCES } from "./utils/weatherHelper";
+import { TURKEY_PROVINCES, PAKISTAN_CITIES } from "./utils/weatherHelper";
 import {
   NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS,
   requestNotificationPermission, checkNotificationPermission,
@@ -410,6 +410,12 @@ function SettingsPanel({
     addAndSelectCity({ name: p.name, country: "Türkiye", latitude: p.latitude, longitude: p.longitude, timezone: "Europe/Istanbul", admin1: "Türkiye" });
   };
 
+  const selectPakistanCity = (id: number) => {
+    const p = PAKISTAN_CITIES.find(x => x.id === id);
+    if (!p) return;
+    addAndSelectCity({ name: p.urdu, country: "پاکستان", latitude: p.latitude, longitude: p.longitude, timezone: "Asia/Karachi", admin1: "Pakistan" });
+  };
+
   const handleThemeClick = (key: ThemeKey) => {
     const th = THEMES[key];
     setTheme(key);
@@ -420,6 +426,8 @@ function SettingsPanel({
     { code: "tr", label: "Türkçe" },
     { code: "en", label: "English" },
     { code: "ar", label: "العربية" },
+    { code: "de", label: "Deutsch" },
+    { code: "ur", label: "اردو" },
   ];
 
   const tabs = [
@@ -617,6 +625,22 @@ function SettingsPanel({
                         {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                       </select>
                       <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  )}
+                  {lang === "ur" && (
+                  <div dir="rtl">
+                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                      <Map className="w-3 h-3" />{t("pakistanCities", lang)}
+                    </label>
+                    <div className="relative">
+                      <select onChange={e => { if (e.target.value) { selectPakistanCity(Number(e.target.value)); e.target.value = ""; } }}
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none"
+                        dir="rtl">
+                        <option value="">{t("select", lang)}</option>
+                        {PAKISTAN_CITIES.map(p => <option key={p.id} value={p.id}>{p.urdu}</option>)}
+                      </select>
+                      <ChevronsDown className="absolute left-3 right-auto top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
                     </div>
                   </div>
                   )}
@@ -1108,7 +1132,7 @@ export default function App() {
   const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
 
   return (
-    <div className={`min-h-screen ${tTheme.bg} ${tTheme.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
+    <div dir={lang === "ar" || lang === "ur" ? "rtl" : "ltr"} className={`min-h-screen ${tTheme.bg} ${tTheme.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
       {showLocationPrompt && (
         <LocationPermissionPrompt
           onAllow={handleLocationAllowed}
@@ -1173,7 +1197,7 @@ export default function App() {
             )}
             <div className="flex flex-col items-stretch gap-1">
               <button onClick={() => {
-                  const order: LangCode[] = ["tr", "en", "ar"];
+                  const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
                   const next = order[(order.indexOf(lang) + 1) % order.length];
                   setLang(next);
                 }}
