@@ -1090,7 +1090,10 @@ export default function App() {
     let hour="--", min="--", sec="--", weekday="—", gregDay="--", gregMonthYear="— —";
     let hijriDay="--", hijriMonth="—", hijriYear="----";
     try {
-      const locale = lang === "tr" ? "tr-TR" : lang === "ar" ? "ar-SA" : "en-US";
+      const LOCALE_MAP: Record<string, string> = {
+        tr: "tr-TR", en: "en-US", ar: "ar-SA", de: "de-DE", ur: "ur-PK",
+      };
+      const locale = LOCALE_MAP[lang] || "en-US";
       const tp = new Intl.DateTimeFormat("en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(date);
       hour=tp.find(p=>p.type==="hour")?.value||"--";
       min=tp.find(p=>p.type==="minute")?.value||"--";
@@ -1102,6 +1105,8 @@ export default function App() {
         tr: ["Muharrem","Safer","Rebiülevvel","Rebiülahir","Cemaziyelevvel","Cemaziyelahir","Recep","Şaban","Ramazan","Şevval","Zilkade","Zilhicce"],
         en: ["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Thania","Rajab","Sha'ban","Ramadan","Shawwal","Dhu al-Qi'dah","Dhu al-Hijjah"],
         ar: ["محرم","صفر","ربيع الأول","ربيع الثاني","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"],
+        de: ["Muharram","Safar","Rabi al-Awwal","Rabi ath-Thani","Dschumada l-ula","Dschumada th-thaniya","Radschab","Scha'ban","Ramadan","Schawwal","Dhu l-Qa'da","Dhu l-Hijja"],
+        ur: ["محرم","صفر","ربیع الاول","ربیع الثانی","جمادی الاول","جمادی الثانی","رجب","شعبان","رمضان","شوال","ذوالقعدہ","ذوالحجہ"],
       };
       const months = HIJRI_MONTHS[lang] || HIJRI_MONTHS.en;
       const hp=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{timeZone:tz,day:"numeric",month:"numeric",year:"numeric"}).formatToParts(date);
