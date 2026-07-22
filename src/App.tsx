@@ -419,7 +419,7 @@ function SettingsPanel({
   const handleThemeClick = (key: ThemeKey) => {
     const th = THEMES[key];
     setTheme(key);
-    notify(th.label);
+    notify(t(`theme_${key}`, lang));
   };
 
   const LANGUAGES: { code: LangCode; label: string }[] = [
@@ -485,7 +485,7 @@ function SettingsPanel({
                         <div className="flex gap-0.5 shrink-0">
                           {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
-                        <span className="text-[11px] font-bold text-slate-200 leading-tight">{th.label}</span>
+                        <span className="text-[11px] font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
                         {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
                       </button>
                     );
