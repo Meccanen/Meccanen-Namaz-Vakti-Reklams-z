@@ -441,20 +441,20 @@ function SettingsPanel({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 px-3 pb-3 sm:pt-8 sm:px-4" onClick={onClose}>
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <div
-          className={`relative w-full max-w-lg max-h-[88vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col glass-strong ${th.settingsCard}`}
+          className={`relative w-full max-w-lg max-h-[92vh] overflow-hidden rounded-[28px] border shadow-2xl flex flex-col glass-strong ${th.settingsCard}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-6 w-auto object-contain opacity-80" />
-              <h2 className={`text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
+              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-7 w-auto object-contain opacity-80" />
+              <h2 className={`text-xl font-bold ${th.accent}`}>{t("settings", lang)}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
-                <X className="w-5 h-5 text-slate-400" />
+                <X className="w-6 h-6 text-slate-400" />
               </button>
             </div>
           </div>
@@ -462,7 +462,7 @@ function SettingsPanel({
           <div className="flex gap-1 px-4 sm:px-6 pb-3 shrink-0 overflow-x-auto scrollbar-hide">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
+                className={`px-3 sm:px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
                 {tb.label}
               </button>
             ))}
@@ -472,7 +472,7 @@ function SettingsPanel({
 
             {tab === "genel" && (
               <div className="space-y-4">
-                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5" />{t("themeSelection", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -485,7 +485,7 @@ function SettingsPanel({
                         <div className="flex gap-0.5 shrink-0">
                           {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
-                        <span className="text-[11px] font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
+                        <span className="text-sm font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
                         {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
                       </button>
                     );
@@ -494,7 +494,7 @@ function SettingsPanel({
 
                 <div className={`border-t ${th.header} pt-4 space-y-3`}>
                   <div>
-                    <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                    <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
                       <Globe className="w-3.5 h-3.5" />{t("language", lang)}
                     </h3>
                     <div className="flex gap-2">
@@ -530,7 +530,7 @@ function SettingsPanel({
                       <div className={`text-xs font-bold ${autoLocationEnabled ? "text-sky-400" : "text-slate-400"}`}>
                         {t("autoLocationToggleLabel", lang)}
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-sm text-slate-500">
                         {autoLocationEnabled ? t("autoLocationDesc", lang) : t("autoLocationOffDesc", lang)}
                       </div>
                     </div>
@@ -553,7 +553,7 @@ function SettingsPanel({
 
                 {savedLocations.length > 0 && (
                   <div>
-                    <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                    <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
                       <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{MAX_LOCATIONS})
                     </h3>
                     <div className="space-y-1.5">
@@ -565,9 +565,9 @@ function SettingsPanel({
                               <div className="flex items-center gap-2">
                                 {isActive && <div className={`w-2 h-2 rounded-full ${th.accent.replace("text-","bg-")} shrink-0`} />}
                                 <span className={`text-sm font-bold ${isActive ? th.accent : "text-slate-200"}`}>{loc.name}</span>
-                                <span className="text-xs text-slate-500">{loc.country}</span>
+                                <span className="text-sm text-slate-500">{loc.country}</span>
                               </div>
-                              <div className="text-[10px] text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
+                              <div className="text-sm text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
                             </button>
                             <button onClick={() => deleteSaved(idx)} className="p-1.5 text-slate-600 hover:text-red-400 transition-all cursor-pointer shrink-0">
                               <Trash2 className="w-4 h-4" />
@@ -580,7 +580,7 @@ function SettingsPanel({
                 )}
 
                 <div>
-                  <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                  <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
                     <Search className="w-3.5 h-3.5" />{t("searchCity", lang)}
                   </h3>
                   <div className="relative mb-2">
@@ -588,10 +588,10 @@ function SettingsPanel({
                       onChange={e => setSearchQuery(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && performSearch()}
                       placeholder={t("searchCity", lang)}
-                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all duration-200" />
+                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all duration-200" />
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <button onClick={performSearch} disabled={isSearching}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-xs font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
                       {isSearching ? t("updating", lang) : t("search", lang)}
                     </button>
                   </div>
@@ -599,28 +599,28 @@ function SettingsPanel({
                     <div className="bg-black/40 border border-white/10 rounded-2xl p-2 max-h-44 overflow-y-auto space-y-1 mb-2">
                       {searchResults.map((r, i) => (
                         <button key={i} onClick={() => addAndSelectCity(r)}
-                          className="w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-xs text-slate-300 flex justify-between items-center transition-all cursor-pointer">
+                          className="w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-sm text-slate-300 flex justify-between items-center transition-all cursor-pointer">
                           <div>
                             <span className="font-bold text-slate-100">{r.name}</span>
-                            {r.admin1 && <span className="text-slate-500 ml-1.5 text-[10px]">({r.admin1})</span>}
+                            {r.admin1 && <span className="text-slate-500 ml-1.5 text-sm">({r.admin1})</span>}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
                             <Plus className="w-3.5 h-3.5 text-slate-500" />
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
-                  {searchError && <p className="text-xs text-amber-500 mb-2">{searchError}</p>}
+                  {searchError && <p className="text-sm text-amber-500 mb-2">{searchError}</p>}
                   {lang === "tr" && (
                   <div>
-                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                    <label className="text-sm text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
                       <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none">
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none cursor-pointer appearance-none">
                         <option value="">{t("select", lang)}</option>
                         {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                       </select>
@@ -630,12 +630,12 @@ function SettingsPanel({
                   )}
                   {lang === "ur" && (
                   <div dir="rtl">
-                    <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                    <label className="text-sm text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
                       <Map className="w-3 h-3" />{t("pakistanCities", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectPakistanCity(Number(e.target.value)); e.target.value = ""; } }}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer appearance-none"
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none cursor-pointer appearance-none"
                         dir="rtl">
                         <option value="">{t("select", lang)}</option>
                         {PAKISTAN_CITIES.map(p => <option key={p.id} value={p.id}>{p.urdu}</option>)}
@@ -650,7 +650,7 @@ function SettingsPanel({
 
             {tab === "metot" && (
               <div className="space-y-2">
-                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
+                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
                   <Sparkles className="w-3.5 h-3.5" />{t("prayerMethod", lang)}
                 </h3>
                 {PRAYER_METHODS.map(m => (
@@ -658,7 +658,7 @@ function SettingsPanel({
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
                       <div className={`text-xs font-bold ${th.textPrimary}`}>{m.label[lang] || m.label.en}</div>
-                      <div className={`text-[10px] ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
+                      <div className={`text-sm ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
                     </div>
                     {prayerMethod === m.id && <Check className={`w-4 h-4 ${th.accent} shrink-0 ml-2`} />}
                   </button>
@@ -668,7 +668,7 @@ function SettingsPanel({
 
             {tab === "bildirim" && (
               <div className="space-y-4">
-                <h3 className="text-[11px] font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5" />{t("notificationHeader", lang)}
                 </h3>
                 <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
@@ -678,7 +678,7 @@ function SettingsPanel({
                       <div className={`text-sm font-bold ${notificationSettings.enabled ? "text-amber-400" : "text-slate-300"}`}>
                         {notificationSettings.enabled ? t("notificationsOn", lang) : t("notificationsOff", lang)}
                       </div>
-                      <div className="text-[10px] text-slate-500">{t("notificationHeader", lang)}</div>
+                      <div className="text-sm text-slate-500">{t("notificationHeader", lang)}</div>
                     </div>
                   </div>
                   <button
@@ -704,7 +704,7 @@ function SettingsPanel({
                 {notificationSettings.enabled && (
                   <>
                     <div>
-                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("minutesBefore", lang)}</div>
+                      <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("minutesBefore", lang)}</div>
                       <div className="flex gap-2 flex-wrap">
                         {[0, 5, 10, 15, 20, 30].map(min => (
                           <button key={min} onClick={async () => {
@@ -720,13 +720,13 @@ function SettingsPanel({
                         ))}
                       </div>
                       {notificationSettings.minutesBefore === 0 && !notificationSettings.notifyAtVakit && (
-                        <p className="text-[10px] text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
+                        <p className="text-sm text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
                       )}
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
                       <div>
                         <div className="text-xs font-bold text-slate-200">{t("notifyAtVakitLabel", lang)}</div>
-                        <div className="text-[10px] text-slate-500">{t("notifyAtVakitDesc", lang)}</div>
+                        <div className="text-sm text-slate-500">{t("notifyAtVakitDesc", lang)}</div>
                       </div>
                       <button onClick={async () => {
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
@@ -740,7 +740,7 @@ function SettingsPanel({
                     </div>
 
                     <div>
-                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("soundTypeLabel", lang)}</div>
+                      <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("soundTypeLabel", lang)}</div>
                       <div className="flex gap-2">
                         {(["default", "ezan"] as const).map(st => (
                           <button key={st} onClick={async () => {
@@ -755,12 +755,12 @@ function SettingsPanel({
                         ))}
                       </div>
                       {notificationSettings.soundType === "ezan" && (
-                        <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">{t("soundEzanCredit", lang)}</p>
+                        <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">{t("soundEzanCredit", lang)}</p>
                       )}
                     </div>
 
                     <div>
-                      <div className="text-[11px] font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
+                      <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
                       <div className="space-y-2">
                         {(Object.entries(notificationSettings.prayers) as [keyof typeof notificationSettings.prayers, boolean][]).map(([key, isOn]) => (
                           <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
@@ -785,7 +785,7 @@ function SettingsPanel({
                 )}
 
                 <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-[10px] text-blue-300 leading-relaxed">{t("infoNote", lang)}</p>
+                  <p className="text-sm text-blue-300 leading-relaxed">{t("infoNote", lang)}</p>
                 </div>
               </div>
             )}
@@ -795,21 +795,21 @@ function SettingsPanel({
               <div className="space-y-4">
                 <div className="flex flex-col items-center text-center py-4">
                   <img src="/meccanen-logo.png" alt="Meccanen" className="h-10 w-auto object-contain opacity-90 mb-3" />
-                  <p className="text-xs text-slate-400">{t("appName", lang)}</p>
-                  <p className="text-[10px] text-slate-600 mt-1">v{APP_VERSION}</p>
+                  <p className="text-sm text-slate-400">{t("appName", lang)}</p>
+                  <p className="text-sm text-slate-600 mt-1">v{APP_VERSION}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc1", lang)}
                   </p>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc2", lang)}
                   </p>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc3", lang)}
                   </p>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc4", lang)}
                   </p>
                 </div>
@@ -819,7 +819,7 @@ function SettingsPanel({
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
                     <span className="text-xs font-semibold text-slate-200">GitHub</span>
-                    <span className="text-[10px] text-slate-500">→</span>
+                    <span className="text-sm text-slate-500">→</span>
                   </a>
                   <a href="https://ko-fi.com/meccanen"
                     target="_blank" rel="noopener noreferrer"
@@ -827,22 +827,22 @@ function SettingsPanel({
                     <span className="text-xs font-semibold text-amber-400 flex items-center gap-2">
                       <Coffee className="w-3.5 h-3.5" />Ko-fi
                     </span>
-                    <span className="text-[10px] text-amber-500/70">→</span>
+                    <span className="text-sm text-amber-500/70">→</span>
                   </a>
                   <a href="https://paypal.me/bulentt"
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
                     <span className="text-xs font-semibold text-slate-200">PayPal</span>
-                    <span className="text-[10px] text-slate-500">→</span>
+                    <span className="text-sm text-slate-500">→</span>
                   </a>
                   <a href="mailto:meccanen@meccanen.xyz"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
                     <span className="text-xs font-semibold text-slate-200">{t("email", lang)}</span>
-                    <span className="text-[10px] text-slate-500">meccanen@meccanen.xyz</span>
+                    <span className="text-sm text-slate-500">meccanen@meccanen.xyz</span>
                   </a>
                 </div>
 
-                <p className="text-center text-[10px] text-slate-600">© 2026 Meccanen</p>
+                <p className="text-center text-sm text-slate-600">© 2026 Meccanen</p>
               </div>
             )}
           </div>
@@ -1260,12 +1260,12 @@ export default function App() {
             <span className={`text-xs sm:text-sm ${tTheme.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
             {prayerTimes.map((item, idx) => (
               <div key={item.key}
-                className={`flex flex-col items-center py-4 sm:py-5 px-2 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-base sm:text-lg font-semibold tracking-wide mb-2 ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{t(`prayer_${item.key}`, lang) || item.name}</div>
-                <div className={`text-xl sm:text-2xl font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
+                className={`flex flex-col items-center py-5 sm:py-6 px-3 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
+                <div className={`text-lg sm:text-xl font-semibold tracking-wide mb-2 text-center leading-tight ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{t(`prayer_${item.key}`, lang) || item.name}</div>
+                <div className={`text-2xl sm:text-3xl font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
               </div>
             ))}
           </div>
