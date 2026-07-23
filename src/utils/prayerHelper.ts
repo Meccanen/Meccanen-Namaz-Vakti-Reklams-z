@@ -157,14 +157,27 @@ export function getPrayerTimesFallback(
   const fajrHA  = calcHA(-18.0, lat, decl);
   const ishaHA  = calcHA(-17.0, lat, decl);
 
+  // Yüksek enlem düzeltmesi (Kuzey Avrupa, Kanada gibi bölgeler için):
+  // 1) fajrHA/ishaHA hesaplanamıyorsa (güneş -18°'nin altına inmez) → 1/7 kuralı
+  // 2) Hesaplansa bile gün uzunluğuna göre makul sınır kontrolü yapılır:
+  //    Fajr, güneş doğuşundan en fazla (gün uzunluğu/7) önce olabilir.
+  //    Bu, 45°N üzerinde yaz aylarında gerçekçi olmayan saatleri önler.
+  const dayLength = 2 * sunHA; // saat cinsinden
+  const correction = dayLength / 7; // 1/7 kuralı
+
   let fajrT: number, ishaT: number;
   if (fajrHA !== null && ishaHA !== null) {
-    fajrT = noon - fajrHA;
-    ishaT = noon + ishaHA;
+    const rawFajr = noon - fajrHA;
+    const rawIsha = noon + ishaHA;
+    // Hesaplanan değer mantık sınırını aşıyorsa düzeltilmiş değeri kullan
+    const minFajr = sunrise - correction;
+    const maxIsha = sunset  + correction;
+    fajrT = rawFajr < minFajr ? minFajr : rawFajr;
+    ishaT = rawIsha > maxIsha ? maxIsha : rawIsha;
   } else {
-    const p = (24 - 2*sunHA) / 7;
-    fajrT = sunrise - p;
-    ishaT = sunset  + p;
+    // NULL → 1/7 kuralı doğrudan uygula
+    fajrT = sunrise - correction;
+    ishaT = sunset  + correction;
   }
 
   const fmt = (h: number) => {
