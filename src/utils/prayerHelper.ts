@@ -11,18 +11,46 @@ export interface PrayerTime {
 
 export interface PrayerMethod {
   id: number;
-  label: string;
-  description: string;
+  label: Record<string, string>;
+  description: Record<string, string>;
 }
 
 export const PRAYER_METHODS: PrayerMethod[] = [
-  { id: 13, label: "Diyanet İşleri",        description: "Türkiye resmi takvimi" },
-  { id: 3,  label: "Muslim World League",    description: "Avrupa ve dünya geneli" },
-  { id: 2,  label: "ISNA",                   description: "Kuzey Amerika" },
-  { id: 4,  label: "Ümmü'l-Kurâ",           description: "Suudi Arabistan / Hicaz" },
-  { id: 5,  label: "Mısır (EGAS)",           description: "Mısır ve Kuzey Afrika" },
-  { id: 1,  label: "Karachi (HEC)",          description: "Pakistan ve Güney Asya" },
-  { id: 99, label: "Matematiksel (Offline)", description: "İnternet gerektirmez" },
+  {
+    id: 13,
+    label:       { tr: "Diyanet İşleri",        en: "Diyanet (Turkey)",       de: "Diyanet (Türkei)",         ar: "ديانت (تركيا)",             ur: "دیانت (ترکیہ)"          },
+    description: { tr: "Türkiye resmi takvimi", en: "Official Turkey calendar",de: "Offizieller Türkei-Kalender",ar: "التقويم الرسمي لتركيا",    ur: "ترکیہ کا سرکاری کیلنڈر"  },
+  },
+  {
+    id: 3,
+    label:       { tr: "Muslim World League",   en: "Muslim World League",     de: "Muslim World League",      ar: "رابطة العالم الإسلامي",    ur: "مسلم ورلڈ لیگ"          },
+    description: { tr: "Avrupa ve dünya geneli",en: "Europe and worldwide",    de: "Europa und weltweit",      ar: "أوروبا وعالمياً",           ur: "یورپ اور عالمی سطح"     },
+  },
+  {
+    id: 2,
+    label:       { tr: "ISNA",                  en: "ISNA",                    de: "ISNA",                     ar: "ISNA",                      ur: "ISNA"                    },
+    description: { tr: "Kuzey Amerika",         en: "North America",           de: "Nordamerika",              ar: "أمريكا الشمالية",           ur: "شمالی امریکہ"           },
+  },
+  {
+    id: 4,
+    label:       { tr: "Ümmü'l-Kurâ",          en: "Umm al-Qura",             de: "Umm al-Qura",              ar: "أم القرى",                  ur: "ام القری"               },
+    description: { tr: "Suudi Arabistan / Hicaz",en:"Saudi Arabia / Hijaz",   de: "Saudi-Arabien / Hedschas", ar: "المملكة العربية السعودية",   ur: "سعودی عرب / حجاز"      },
+  },
+  {
+    id: 5,
+    label:       { tr: "Mısır (EGAS)",          en: "Egypt (EGAS)",            de: "Ägypten (EGAS)",           ar: "مصر (هيئة المساحة)",        ur: "مصر (EGAS)"             },
+    description: { tr: "Mısır ve Kuzey Afrika", en: "Egypt and North Africa",  de: "Ägypten und Nordafrika",   ar: "مصر وشمال أفريقيا",         ur: "مصر اور شمالی افریقہ"  },
+  },
+  {
+    id: 1,
+    label:       { tr: "Karachi (HEC)",         en: "Karachi (HEC)",           de: "Karachi (HEC)",            ar: "كراتشي (HEC)",              ur: "کراچی (HEC)"            },
+    description: { tr: "Pakistan ve Güney Asya",en: "Pakistan and South Asia", de: "Pakistan und Südasien",    ar: "باكستان وجنوب آسيا",        ur: "پاکستان اور جنوبی ایشیا"},
+  },
+  {
+    id: 99,
+    label:       { tr: "Matematiksel (Offline)",en: "Mathematical (Offline)",  de: "Mathematisch (Offline)",   ar: "حسابي (بدون إنترنت)",       ur: "ریاضی (آف لائن)"        },
+    description: { tr: "İnternet gerektirmez",  en: "No internet required",    de: "Kein Internet erforderlich",ar: "لا يحتاج إنترنت",           ur: "انٹرنیٹ کی ضرورت نہیں" },
+  },
 ];
 
 // Cache: aynı gün + konum + metod için tekrar istek atma
