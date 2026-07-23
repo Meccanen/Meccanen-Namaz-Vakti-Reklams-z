@@ -5,8 +5,8 @@ ext {
     // ezan sesi özel bildirim sesi kesin çalışır.
     // Android 7.x payı zaten <%1 — pratikte sıfır kullanıcı kaybı.
     minSdkVersion    = 24
-    compileSdkVersion= 35
-    targetSdkVersion = 35
+    compileSdkVersion= 36
+    targetSdkVersion = 36
 
     // Google Play'in istediği o sihirli sürüm artışları tam olarak burası:
     versionCode = 2
