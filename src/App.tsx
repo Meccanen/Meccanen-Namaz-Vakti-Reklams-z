@@ -657,8 +657,8 @@ function SettingsPanel({
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
-                      <div className={`text-xs font-bold ${th.textPrimary}`}>{m.label}</div>
-                      <div className={`text-[10px] ${th.textMuted} mt-0.5`}>{m.description}</div>
+                      <div className={`text-xs font-bold ${th.textPrimary}`}>{m.label[lang] || m.label.en}</div>
+                      <div className={`text-[10px] ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
                     </div>
                     {prayerMethod === m.id && <Check className={`w-4 h-4 ${th.accent} shrink-0 ml-2`} />}
                   </button>
@@ -766,7 +766,7 @@ function SettingsPanel({
                           <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${isOn ? "bg-amber-400" : "bg-slate-600"}`} />
-                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>{PRAYER_LABELS[key]}</span>
+                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>{t(`prayer_${key}`, lang)}</span>
                             </div>
                             <button onClick={async () => {
                               const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
@@ -837,7 +837,7 @@ function SettingsPanel({
                   </a>
                   <a href="mailto:meccanen@meccanen.xyz"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className="text-xs font-semibold text-slate-200">E-posta</span>
+                    <span className="text-xs font-semibold text-slate-200">{t("email", lang)}</span>
                     <span className="text-[10px] text-slate-500">meccanen@meccanen.xyz</span>
                   </a>
                 </div>
@@ -1255,7 +1255,7 @@ export default function App() {
           <div className="flex justify-between items-center mb-5">
             <button onClick={() => { setSettingsInitialTab("metot"); setSettingsOpen(true); }}
               className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent} flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all`}>
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />{currentMethod.label}
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />{currentMethod.label[lang] || currentMethod.label.en}
             </button>
             <span className={`text-xs sm:text-sm ${tTheme.textMuted} font-mono`}>{location.name}, {location.country}</span>
           </div>
