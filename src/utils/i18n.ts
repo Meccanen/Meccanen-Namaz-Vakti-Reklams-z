@@ -563,7 +563,7 @@ const ur: Record<string, string> = {
   autoLocationOffDesc: "مقام خودکار اپ ڈیٹ نہیں ہو رہا۔ فعال کرنے کے لیے ٹچ کریں۔",
   esmaTitle: "اس وقت کا اسمِ حسنیٰ",
   esmaRecite: "ذکر",
-  esmaTimes: "{n} مرتبہ",
+  esmaTimes: "{n} بار",
   esmaSourceDocumented: "کلاسیکی ماخذ میں درج تعداد",
   esmaSourceDefault: "ماخذ میں تعداد نہیں دی گئی؛ معیاری تسبیح تعداد استعمال کی گئی",
   esmaCountUnknown: "ماخذ میں تعداد ناقابلِ پڑھ",
