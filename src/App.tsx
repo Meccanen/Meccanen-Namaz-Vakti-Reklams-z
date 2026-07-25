@@ -450,21 +450,20 @@ function SettingsPanel({
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
-            <div className="flex items-center gap-2">
-              <img src="/meccanen-logo.png" alt={t("appName", lang)} className="h-7 w-auto object-contain opacity-80" />
-              <h2 className={`text-xl font-bold ${th.accent}`}>{t("settings", lang)}</h2>
+            <div className="flex items-center gap-3">
+              <span className={`text-xl sm:text-2xl font-extrabold tracking-widest ${th.accent}`}>MECCANEN</span>
+              <span className={`text-base sm:text-lg font-bold ${th.textSecondary} opacity-60`}>·</span>
+              <h2 className={`text-base sm:text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer">
-                <X className="w-6 h-6 text-slate-400" />
-              </button>
-            </div>
+            <button onClick={onClose} className="p-2.5 rounded-full hover:bg-white/10 transition-all cursor-pointer">
+              <X className="w-6 h-6 text-slate-400" />
+            </button>
           </div>
 
-          <div className="flex gap-1 px-4 sm:px-6 pb-3 shrink-0 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 px-4 sm:px-6 pb-3 shrink-0 overflow-x-auto scrollbar-hide">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-3 sm:px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${tab === tb.key ? `bg-white/15 ${th.accent}` : "text-slate-500 hover:bg-white/5 hover:text-slate-300"}`}>
+                className={`px-4 sm:px-5 py-2.5 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 border ${tab === tb.key ? `${th.accent} border-current bg-white/10` : `border-transparent text-slate-400 hover:bg-white/8 hover:text-slate-200`}`}>
                 {tb.label}
               </button>
             ))}
@@ -796,9 +795,9 @@ function SettingsPanel({
             {tab === "hakkinda" && (
               <div className="space-y-4">
                 <div className="flex flex-col items-center text-center py-4">
-                  <img src="/meccanen-logo.png" alt="Meccanen" className="h-10 w-auto object-contain opacity-90 mb-3" />
-                  <p className="text-sm text-slate-400">{t("appName", lang)}</p>
-                  <p className="text-sm text-slate-600 mt-1">v{APP_VERSION}</p>
+                  <div className={`text-3xl sm:text-4xl font-extrabold tracking-widest ${th.accent} mb-2`}>MECCANEN</div>
+                  <p className={`text-base font-semibold ${th.textSecondary}`}>{t("appName", lang)}</p>
+                  <p className="text-sm text-slate-500 mt-1">v{APP_VERSION}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
@@ -1170,64 +1169,74 @@ export default function App() {
       <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-5 relative z-10 animate-fadeIn">
 
         <header className="flex flex-col gap-2 pb-4">
-          {/* 1. Satır: Marka + Konum + Ayarlar */}
-          <div className="flex justify-between items-center">
-            <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-              className="cursor-pointer select-none hover:opacity-80 transition-opacity duration-200 text-left">
-              <div className={`text-2xl sm:text-3xl font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
-                MECCANEN
-              </div>
-            </button>
-            <div className="flex items-center gap-2">
-              {savedLocations.length > 1 ? (
-                <button onClick={() => {
-                  const idx = savedLocations.findIndex(l =>
-                    l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
-                    l.longitude.toFixed(3) === location.longitude.toFixed(3)
-                  );
-                  const next = savedLocations[(idx + 1) % savedLocations.length];
-                  setLocationAndSave(next);
-                }}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 bg-black/30 border ${tTheme.header} rounded-full text-sm font-semibold ${tTheme.accent} hover:bg-white/10 transition-all cursor-pointer`}>
-                  <MapPin className="w-4 h-4" />{location.name}<ChevronsDown className="w-3.5 h-3.5 -rotate-90" />
-                </button>
-              ) : (
-                <span className={`inline-flex items-center gap-1.5 px-4 py-2 bg-black/30 border ${tTheme.header} rounded-full text-sm font-semibold ${tTheme.accent}`}>
-                  <MapPin className="w-4 h-4" />{location.name}
-                </span>
-              )}
-              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                className={`p-2.5 text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          {/* Açık/koyu tema için buton stilleri */}
+          {(() => {
+            const btnBg   = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
+            const btnText = isLight ? "text-slate-700 hover:text-slate-900" : "text-slate-300 hover:text-white";
+            const btnTextSm = isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white";
+            return (
+              <>
+                {/* 1. Satır: Marka + Konum + Ayarlar */}
+                <div className="flex justify-between items-center">
+                  <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                    className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 text-left">
+                    <div className={`text-2xl sm:text-3xl font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
+                      MECCANEN
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {savedLocations.length > 1 ? (
+                      <button onClick={() => {
+                        const idx = savedLocations.findIndex(l =>
+                          l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
+                          l.longitude.toFixed(3) === location.longitude.toFixed(3)
+                        );
+                        const next = savedLocations[(idx + 1) % savedLocations.length];
+                        setLocationAndSave(next);
+                      }}
+                        className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${btnBg} transition-all cursor-pointer`}>
+                        <MapPin className="w-4 h-4" />{location.name}<ChevronsDown className="w-3.5 h-3.5 -rotate-90" />
+                      </button>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${btnBg}`}>
+                        <MapPin className="w-4 h-4" />{location.name}
+                      </span>
+                    )}
+                    <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                      className={`p-2.5 border rounded-full transition-all cursor-pointer ${btnBg} ${btnText}`}>
+                      <Settings className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
 
-          {/* 2. Satır: Uygulama adı + Dil + Tema */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
-              <span className="text-slate-600">·</span>
-              <span className="text-xs sm:text-sm text-slate-500 flex items-center gap-1.5">
-                {t("adFree", lang)}
-                {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-400" />}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => {
-                  const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
-                  const next = order[(order.indexOf(lang) + 1) % order.length];
-                  setLang(next);
-                }}
-                className={`px-4 py-1.5 text-sm font-bold text-slate-300 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-                {lang.toUpperCase()}
-              </button>
-              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-slate-400 hover:text-white bg-black/30 border ${tTheme.header} rounded-full hover:bg-white/10 transition-all cursor-pointer`}>
-                <Palette className="w-3.5 h-3.5" />{t("theme", lang)}
-              </button>
-            </div>
-          </div>
+                {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
+                    <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
+                    <span className={`text-sm sm:text-base font-bold flex items-center gap-1.5 ${tTheme.accent}`}>
+                      {t("adFree", lang)}
+                      {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => {
+                        const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
+                        const next = order[(order.indexOf(lang) + 1) % order.length];
+                        setLang(next);
+                      }}
+                      className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${btnBg} ${btnText}`}>
+                      {lang.toUpperCase()}
+                    </button>
+                    <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold border rounded-full transition-all cursor-pointer ${btnBg} ${btnTextSm}`}>
+                      <Palette className="w-3.5 h-3.5" />{t("theme", lang)}
+                    </button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </header>
 
         <section className={`${tTheme.card} border rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-2xl`}>
