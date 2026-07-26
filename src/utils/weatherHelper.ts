@@ -289,4 +289,7 @@ export const PAKISTAN_CITIES = [
   { id: 26, name: "Nawabshah",       urdu: "نواب شاہ",         latitude: 26.2442,  longitude: 68.4100  },
   { id: 27, name: "Sheikhupura",     urdu: "شیخوپورہ",         latitude: 31.7130,  longitude: 73.9850  },
   { id: 28, name: "Jhang",           urdu: "جھنگ",             latitude: 31.2780,  longitude: 72.3210  },
-].sort((a, b) => a.urdu.localeCompare(b.urdu, "ur"));
+].sort((a, b) => {
+  try { return a.urdu.localeCompare(b.urdu, "ur"); }
+  catch { return a.name.localeCompare(b.name); }
+});
