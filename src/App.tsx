@@ -905,6 +905,11 @@ export default function App() {
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
   const tTheme = THEMES[themeKey];
 
+  // Header buton stilleri — IIFE yerine burada tanımlanıyor
+  const hdrBtnBg   = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
+  const hdrBtnText = isLight ? "text-slate-700 hover:text-slate-900" : "text-slate-300 hover:text-white";
+  const hdrBtnTextSm = isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white";
+
   const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
   const setNotificationSettings = (s: NotificationSettings) => { setNotificationSettingsState(s); saveNotificationSettings(s); };
   const setLocationAndSave = (loc: Location) => { setLocation(loc); localStorage.setItem("mnv_location", JSON.stringify(loc)); };
@@ -1169,74 +1174,64 @@ export default function App() {
       <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-5 relative z-10 animate-fadeIn">
 
         <header className="flex flex-col gap-2 pb-4">
-          {/* Açık/koyu tema için buton stilleri */}
-          {(() => {
-            const btnBg   = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
-            const btnText = isLight ? "text-slate-700 hover:text-slate-900" : "text-slate-300 hover:text-white";
-            const btnTextSm = isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white";
-            return (
-              <>
-                {/* 1. Satır: Marka + Konum + Ayarlar */}
-                <div className="flex justify-between items-center">
-                  <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                    className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 text-left">
-                    <div className={`text-2xl sm:text-3xl font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
-                      MECCANEN
-                    </div>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    {savedLocations.length > 1 ? (
-                      <button onClick={() => {
-                        const idx = savedLocations.findIndex(l =>
-                          l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
-                          l.longitude.toFixed(3) === location.longitude.toFixed(3)
-                        );
-                        const next = savedLocations[(idx + 1) % savedLocations.length];
-                        setLocationAndSave(next);
-                      }}
-                        className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${btnBg} transition-all cursor-pointer`}>
-                        <MapPin className="w-4 h-4" />{location.name}<ChevronsDown className="w-3.5 h-3.5 -rotate-90" />
-                      </button>
-                    ) : (
-                      <span className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${btnBg}`}>
-                        <MapPin className="w-4 h-4" />{location.name}
-                      </span>
-                    )}
-                    <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                      className={`p-2.5 border rounded-full transition-all cursor-pointer ${btnBg} ${btnText}`}>
-                      <Settings className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+          {/* 1. Satır: Marka + Konum + Ayarlar */}
+          <div className="flex justify-between items-center">
+            <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+              className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 text-left">
+              <div className={`text-2xl sm:text-3xl font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
+                MECCANEN
+              </div>
+            </button>
+            <div className="flex items-center gap-2">
+              {savedLocations.length > 1 ? (
+                <button onClick={() => {
+                  const idx = savedLocations.findIndex(l =>
+                    l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
+                    l.longitude.toFixed(3) === location.longitude.toFixed(3)
+                  );
+                  const next = savedLocations[(idx + 1) % savedLocations.length];
+                  setLocationAndSave(next);
+                }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${hdrBtnBg} transition-all cursor-pointer`}>
+                  <MapPin className="w-4 h-4" />{location.name}<ChevronsDown className="w-3.5 h-3.5 -rotate-90" />
+                </button>
+              ) : (
+                <span className={`inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${hdrBtnBg}`}>
+                  <MapPin className="w-4 h-4" />{location.name}
+                </span>
+              )}
+              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                className={`p-2.5 border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
 
-                {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
-                    <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
-                    <span className={`text-sm sm:text-base font-bold flex items-center gap-1.5 ${tTheme.accent}`}>
-                      {t("adFree", lang)}
-                      {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => {
-                        const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
-                        const next = order[(order.indexOf(lang) + 1) % order.length];
-                        setLang(next);
-                      }}
-                      className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${btnBg} ${btnText}`}>
-                      {lang.toUpperCase()}
-                    </button>
-                    <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                      className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold border rounded-full transition-all cursor-pointer ${btnBg} ${btnTextSm}`}>
-                      <Palette className="w-3.5 h-3.5" />{t("theme", lang)}
-                    </button>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
+          {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
+              <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
+              <span className={`text-sm sm:text-base font-bold flex items-center gap-1.5 ${tTheme.accent}`}>
+                {t("adFree", lang)}
+                {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {
+                  const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
+                  const next = order[(order.indexOf(lang) + 1) % order.length];
+                  setLang(next);
+                }}
+                className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
+                {lang.toUpperCase()}
+              </button>
+              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnTextSm}`}>
+                <Palette className="w-3.5 h-3.5" />{t("theme", lang)}
+              </button>
+            </div>
+          </div>
         </header>
 
         <section className={`${tTheme.card} border rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-2xl`}>
