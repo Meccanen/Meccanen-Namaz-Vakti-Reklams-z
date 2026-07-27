@@ -904,10 +904,11 @@ export default function App() {
 
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
   const tTheme = THEMES[themeKey];
+  const isLight = ["seher","gul","nane"].includes(themeKey);
 
-  // Header buton stilleri — IIFE yerine burada tanımlanıyor
-  const hdrBtnBg   = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
-  const hdrBtnText = isLight ? "text-slate-700 hover:text-slate-900" : "text-slate-300 hover:text-white";
+  // Header buton stilleri
+  const hdrBtnBg     = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
+  const hdrBtnText   = isLight ? "text-slate-700 hover:text-slate-900" : "text-slate-300 hover:text-white";
   const hdrBtnTextSm = isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white";
 
   const setTheme = (key: ThemeKey) => { setThemeKey(key); localStorage.setItem("mnv_theme", key); };
