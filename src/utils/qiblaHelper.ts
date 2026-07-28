@@ -60,23 +60,26 @@ export function getCompassHeading(e: DeviceOrientationEvent): number | null {
     return e.webkitCompassHeading;
   }
 
-  // Android / standart DeviceOrientationEvent: alpha tek başına yeterli değil,
-  // telefon dik (yan) tutulduğunda beta/gamma'yı da hesaba katmak gerekir (tilt compensation)
+  // Android / standart DeviceOrientationEvent.
   if (e.alpha === null || e.beta === null || e.gamma === null) return null;
 
   const alphaRad = (e.alpha * Math.PI) / 180;
   const betaRad = (e.beta * Math.PI) / 180;
-  const gammaRad = (e.gamma * Math.PI) / 180;
 
   const cA = Math.cos(alphaRad), sA = Math.sin(alphaRad);
-  const cB = Math.cos(betaRad), sB = Math.sin(betaRad);
-  const cG = Math.cos(gammaRad), sG = Math.sin(gammaRad);
+  const cB = Math.cos(betaRad);
 
-  // Cihazın yer çekimine göre normalize edilmiş yön vektörü (W3C tilt-compensated formula)
-  const Vx = -cA * sG - sA * sB * cG;
-  const Vy = -sA * sG + cA * sB * cG;
+  // Kıble pusulası telefon DÜZ tutularak (masada gibi, ekran yukarı bakacak şekilde)
+  // kullanılır. Bu yüzden ekrana dik eksen (kamera/ekran normali) değil, telefonun
+  // ÜST KENARININ yatay düzlemdeki izdüşümü esas alınmalı — önceki formül ekrana dik
+  // ekseni kullanıyordu, bu da telefon düz tutulduğunda (yani tam da kıble pusulası
+  // kullanım şeklinde) sıfıra yaklaşıp kararsızlaşıyor, ibrenin açıya göre tutarsız
+  // davranmasına yol açıyordu. Üst kenar izdüşümü, telefon düz tutulduğunda matematiksel
+  // olarak kararlı ve gamma (sağa-sola yatırma) açısından bağımsızdır.
+  const east = -cB * sA;
+  const north = cA * cB;
 
-  let compassHeading = Math.atan2(Vx, Vy) * (180 / Math.PI);
+  let compassHeading = Math.atan2(east, north) * (180 / Math.PI);
   if (compassHeading < 0) compassHeading += 360;
 
   return compassHeading;
