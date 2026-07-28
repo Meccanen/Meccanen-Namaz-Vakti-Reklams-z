@@ -435,7 +435,7 @@ function SettingsPanel({
   const tabs = [
     { key: "genel" as const, label: t("general", lang) },
     { key: "konum" as const, label: t("location", lang) },
-    { key: "metot" as const, label: t("prayerMethod", lang) },
+    { key: "metot" as const, label: t("methodTab", lang) },
     { key: "bildirim" as const, label: t("notifications", lang) },
     { key: "dil" as const, label: t("language", lang) },
     { key: "hakkinda" as const, label: t("about", lang) },
@@ -461,10 +461,10 @@ function SettingsPanel({
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 px-4 sm:px-6 pb-3 shrink-0">
+          <div className="grid grid-cols-3 gap-2 px-4 sm:px-6 pb-3 shrink-0">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-2 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer text-center truncate border ${tab === tb.key ? `${th.accent} border-current bg-white/10` : `border-transparent text-slate-400 hover:bg-white/10 hover:text-slate-200`}`}>
+                className={`px-2 py-3.5 rounded-2xl text-base sm:text-lg font-extrabold transition-all duration-200 cursor-pointer text-center leading-tight border-2 ${tab === tb.key ? `${th.accent} border-current bg-white/15 shadow-md` : `border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100`}`}>
                 {tb.label}
               </button>
             ))}
@@ -513,10 +513,10 @@ function SettingsPanel({
                 <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5" />{t("language", lang)}
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {LANGUAGES.map(l => (
                     <button key={l.code} onClick={() => setLang(l.code)}
-                      className={`py-3 rounded-xl border text-sm font-semibold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-white/30 bg-white/10 text-slate-100" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                      className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-current bg-white/15 text-slate-100 shadow-md" : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"}`}>
                       {l.label}
                     </button>
                   ))}
