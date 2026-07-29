@@ -56,7 +56,7 @@ export async function getCurrentPosition(): Promise<{ latitude: number; longitud
     try {
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 20000,
       });
       console.log("[Meccanen] Got position:", pos.coords.latitude, pos.coords.longitude);
       return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
