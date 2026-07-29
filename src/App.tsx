@@ -1044,20 +1044,29 @@ export default function App() {
         return;
       }
 
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&accept-language=${lang === "ur" ? "ar" : lang}`,
-        { headers: { "Accept": "application/json" } }
-      );
-      const data = await res.json();
+      // Koordinatları HEMEN kaydet — böylece şehir adı sorgusu (reverse geocoding) başarısız
+      // olsa bile (ağ hatası, zaman aşımı, DNS engeli vb.) namaz vakitleri ve kıble doğru
+      // koordinatlara göre güncellenir. Önceden bu sorgu başarısız olduğunda tüm konum
+      // güncellemesi sessizce iptal oluyordu — GPS'ten doğru koordinat alınmasına rağmen.
       let name = `${coords.latitude.toFixed(2)}°N ${coords.longitude.toFixed(2)}°E`;
-      let country = "";
-      if (data?.address) {
-        const addr = data.address;
-        name = addr.city || addr.town || addr.village || addr.county || addr.state || name;
-        country = addr.country || "";
+      let country = t("unknown", lang);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&accept-language=${lang === "ur" ? "ar" : lang}`,
+          { headers: { "Accept": "application/json" } }
+        );
+        const data = await res.json();
+        if (data?.address) {
+          const addr = data.address;
+          name = addr.city || addr.town || addr.village || addr.county || addr.state || name;
+          country = addr.country || country;
+        }
+      } catch (geoErr) {
+        console.log("[Meccanen] Reverse geocoding failed, koordinatlarla devam ediliyor:", geoErr);
       }
+
       const newLoc: Location = {
-        name, country: country || t("unknown", lang),
+        name, country,
         latitude: coords.latitude, longitude: coords.longitude,
         timezone: guessTimezone(coords.longitude),
       };
