@@ -895,11 +895,7 @@ export default function App() {
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [qiblaDir, setQiblaDir] = useState(0);
   const [compassListening, setCompassListening] = useState(false);
-  const [compassDebug, setCompassDebug] = useState<{
-    absoluteCount: number; relativeCount: number;
-    alpha: number | null; beta: number | null; gamma: number | null;
-    webkit: number | null;
-  }>({ absoluteCount: 0, relativeCount: 0, alpha: null, beta: null, gamma: null, webkit: null });
+  const [compassUnsupported, setCompassUnsupported] = useState(false);
   const [showLocationPrompt, setShowLocationPrompt] = useState(
     () => !localStorage.getItem("mnv_location_prompted")
   );
@@ -957,30 +953,24 @@ export default function App() {
   useEffect(() => {
     if (!compassListening) return;
     requestCompassPermission();
+    setCompassUnsupported(false);
     const detach = attachCompassListener((h) => setCompassHeading(h));
 
-    // Geçici tanı paneli: hangi sensör olaylarının GERÇEKTEN geldiğini,
-    // ham alpha/beta/gamma değerlerini ekranda görünür kılmak için (bazı eski
-    // Android cihazlarda pusula hiç hareket etmiyor, sebebini anlamak için).
-    let absoluteCount = 0, relativeCount = 0;
-    const dbgAbs = (e: DeviceOrientationEvent) => {
-      absoluteCount++;
-      setCompassDebug({ absoluteCount, relativeCount, alpha: e.alpha, beta: e.beta, gamma: e.gamma,
-        webkit: (e as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ?? null });
-    };
-    const dbgRel = (e: DeviceOrientationEvent) => {
-      relativeCount++;
-      setCompassDebug({ absoluteCount, relativeCount, alpha: e.alpha, beta: e.beta, gamma: e.gamma,
-        webkit: (e as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ?? null });
-    };
-    window.addEventListener("deviceorientationabsolute", dbgAbs as EventListener);
-    window.addEventListener("deviceorientation", dbgRel as EventListener);
+    // Bazı cihazlarda (manyetometre çipi olmayan veya sisteme erişilemeyen eski/bütçe
+    // Android telefon ve tabletler) yön sensörü hiç veri döndürmez — tarayıcı bunu
+    // belirtmek için tek seferlik, tüm alanları boş bir olay gönderir ve bir daha
+    // hiç tetiklenmez. Bu durumda ibreyi sonsuza dek "bekleniyor" gösterip kullanıcıyı
+    // yanıltmak yerine, birkaç saniye içinde gerçek veri gelmezse uyarı gösteriyoruz.
+    const unsupportedTimer = setTimeout(() => {
+      setCompassHeading(prev => {
+        if (prev === null) setCompassUnsupported(true);
+        return prev;
+      });
+    }, 2500);
 
     return () => {
       detach();
-      window.removeEventListener("deviceorientationabsolute", dbgAbs as EventListener);
-      window.removeEventListener("deviceorientation", dbgRel as EventListener);
-      setCompassDebug({ absoluteCount: 0, relativeCount: 0, alpha: null, beta: null, gamma: null, webkit: null });
+      clearTimeout(unsupportedTimer);
     };
   }, [compassListening]);
 
@@ -1414,9 +1404,9 @@ export default function App() {
               className={`text-sm sm:text-base font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
               {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
             </button>
-            {compassListening && (
-              <div className="text-[10px] sm:text-xs text-slate-500 font-mono text-center leading-tight">
-                mutlak:{compassDebug.absoluteCount} göreli:{compassDebug.relativeCount} · α:{compassDebug.alpha !== null ? Math.round(compassDebug.alpha) : "-"} β:{compassDebug.beta !== null ? Math.round(compassDebug.beta) : "-"} γ:{compassDebug.gamma !== null ? Math.round(compassDebug.gamma) : "-"} · webkit:{compassDebug.webkit !== null ? Math.round(compassDebug.webkit) : "-"}
+            {compassListening && compassUnsupported && (
+              <div className={`text-xs sm:text-sm text-center leading-snug px-2 ${tTheme.textMuted}`}>
+                {t("compassNoSensor", lang)}
               </div>
             )}
           </div>
