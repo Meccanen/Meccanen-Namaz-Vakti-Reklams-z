@@ -1387,17 +1387,58 @@ export default function App() {
             <Compass className={`w-6 h-6 sm:w-7 sm:h-7 ${tTheme.accent}`} />{t("qibla", lang)}
           </div>
           <div className="flex flex-col items-center gap-4">
-            <div className="relative w-32 h-32 sm:w-36 sm:h-36">
-              <div className="absolute inset-0 rounded-full border-2 border-white/10 flex items-center justify-center">
-                <div className="text-sm sm:text-base text-slate-500">{t("qibla", lang)}</div>
-              </div>
-              <div
-                className="absolute top-1/2 left-1/2 w-1 h-16 sm:h-[4.5rem] bg-amber-500 origin-bottom transition-transform duration-300"
-                style={{
-                  transform: `translate(-50%, -100%) rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
-                }}
-              />
-              <div className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-amber-500 -translate-x-1/2 -translate-y-1/2" />
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48">
+              <svg viewBox="0 0 200 200" className="w-full h-full">
+                <defs>
+                  <radialGradient id="compassBg" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.07)" />
+                    <stop offset="75%" stopColor="rgba(255,255,255,0.02)" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0.00)" />
+                  </radialGradient>
+                  <linearGradient id="needleTip" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#d97706" />
+                    <stop offset="100%" stopColor="#fbbf24" />
+                  </linearGradient>
+                </defs>
+
+                {/* Dış çerçeve + zemin */}
+                <circle cx="100" cy="100" r="94" fill="url(#compassBg)" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" />
+                <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+
+                {/* Derece çentikleri (dekoratif) */}
+                {Array.from({ length: 24 }).map((_, i) => {
+                  const angle = i * 15;
+                  const isMajor = angle % 90 === 0;
+                  const isMid = angle % 30 === 0;
+                  const len = isMajor ? 15 : isMid ? 9 : 4;
+                  const rad = ((angle - 90) * Math.PI) / 180;
+                  const r1 = 94, r2 = 94 - len;
+                  return (
+                    <line key={i}
+                      x1={100 + r1 * Math.cos(rad)} y1={100 + r1 * Math.sin(rad)}
+                      x2={100 + r2 * Math.cos(rad)} y2={100 + r2 * Math.sin(rad)}
+                      stroke={isMajor ? "#f59e0b" : isMid ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)"}
+                      strokeWidth={isMajor ? 2.5 : isMid ? 1.5 : 1} strokeLinecap="round" opacity={isMajor ? 0.9 : 1} />
+                  );
+                })}
+
+                {/* Kıble ibresi — hesaplama App'in geri kalanıyla birebir aynı, sadece görsel değişti */}
+                <g style={{
+                  transform: `rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
+                  transformOrigin: "100px 100px",
+                  transition: "transform 0.3s ease-out",
+                }}>
+                  <polygon points="100,22 109,100 100,88 91,100" fill="url(#needleTip)" />
+                  <polygon points="100,155 109,100 100,112 91,100" fill="rgba(255,255,255,0.22)" />
+                  <g transform="translate(100,22)">
+                    <rect x="-9" y="-17" width="18" height="15" rx="1.5" fill="#1c1917" stroke="#f59e0b" strokeWidth="1.2" />
+                    <rect x="-9" y="-17" width="18" height="4.5" fill="#f59e0b" />
+                  </g>
+                </g>
+
+                <circle cx="100" cy="100" r="10" fill="rgba(15,23,42,0.85)" stroke="#f59e0b" strokeWidth="1.5" />
+                <circle cx="100" cy="100" r="3.5" fill="#f59e0b" />
+              </svg>
             </div>
             <button
               onClick={() => setCompassListening(!compassListening)}
