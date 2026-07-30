@@ -758,10 +758,7 @@ function SettingsPanel({
                           </button>
                         ))}
                       </div>
-                      {notificationSettings.soundType === "ezan" && (
-                        <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">{t("soundEzanCredit", lang)}</p>
-                      )}
-                    </div>
+                  </div>
 
                     <div>
                       <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
@@ -812,9 +809,6 @@ function SettingsPanel({
                   </p>
                   <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc3", lang)}
-                  </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    {t("aboutDesc4", lang)}
                   </p>
                 </div>
 
