@@ -6,7 +6,7 @@ export interface NotificationSettings {
   enabled: boolean;           // Global açma/kapama
   minutesBefore: number;      // Kaç dk önce: 5/10/15/20/30 (0 = sadece vakit anında)
   notifyAtVakit: boolean;     // Vakit girdiği anda da AYRICA bildirim gönder
-  soundType: SoundType;       // "default": sistem bildirim sesi, "ezan": ezan sesi (tam, 3:47)
+  soundType: SoundType;       // "default": sistem bildirim sesi, "ezan": vaktine özel ezan sesi
   prayers: {                  // Her vakit için toggle
     imsak: boolean;
     gunes: boolean;
@@ -42,15 +42,27 @@ export const PRAYER_LABELS: Record<string, string> = {
 };
 
 // Android bildirim kanalları (Android 8+ / API 26+ için ses, kanal oluşturulurken sabitlenir).
-// Kanal bir kere oluşturulduktan sonra sesi DEĞİŞTİRİLEMEZ — bu yüzden olası iki ses seçeneği
-// için (varsayılan / ezan) iki ayrı sabit kanal tanımlıyoruz ve bildirim hangi kanala
-// gönderilecekse o kanalın id'sini kullanıyoruz.
+// Kanal bir kere oluşturulduktan sonra sesi DEĞİŞTİRİLEMEZ — bu yüzden her vakit için ayrı
+// bir ezan sesi kullanabilmek adına her vakte özel bir kanal tanımlıyoruz. Güneş (şuruk)
+// vaktinde ezan okunmadığı için o vakit her zaman varsayılan kanalı kullanır.
 const CHANNEL_DEFAULT = "prayer_default";
-const CHANNEL_EZAN = "prayer_ezan";
+const EZAN_CHANNELS: Partial<Record<keyof NotificationSettings["prayers"], string>> = {
+  imsak: "prayer_ezan_imsak",
+  ogle: "prayer_ezan_ogle",
+  ikindi: "prayer_ezan_ikindi",
+  aksam: "prayer_ezan_aksam",
+  yatsi: "prayer_ezan_yatsi",
+};
 
-// res/raw içine konacak ses dosyasının adı (Capacitor Local Notifications Android'de
-// uzantılı dosya adını bekliyor; dosya android/app/src/main/res/raw/ezan_sesi.mp3'te olmalı).
-const EZAN_SOUND_FILE = "ezan_sesi.mp3";
+// res/raw içine konan, vakte özel ezan ses dosyaları (Capacitor Local Notifications Android'de
+// uzantılı dosya adını bekliyor; dosyalar android/app/src/main/res/raw/ içinde olmalı).
+const EZAN_SOUND_FILES: Partial<Record<keyof NotificationSettings["prayers"], string>> = {
+  imsak: "ezan_imsak.mp3",
+  ogle: "ezan_ogle.mp3",
+  ikindi: "ezan_ikindi.mp3",
+  aksam: "ezan_aksam.mp3",
+  yatsi: "ezan_yatsi.mp3",
+};
 
 let channelsEnsured = false;
 
@@ -65,14 +77,18 @@ async function ensureChannels(): Promise<void> {
       visibility: 1,
       sound: undefined,
     });
-    await LocalNotifications.createChannel({
-      id: CHANNEL_EZAN,
-      name: "Namaz Vakti Bildirimleri (Ezan Sesi)",
-      description: "Namaz vakti hatırlatmaları (ezan sesi ile, tam 3:47)",
-      importance: 5,
-      visibility: 1,
-      sound: EZAN_SOUND_FILE,
-    });
+    for (const [prayerKey, channelId] of Object.entries(EZAN_CHANNELS)) {
+      const soundFile = EZAN_SOUND_FILES[prayerKey as keyof NotificationSettings["prayers"]];
+      const prayerLabel = PRAYER_LABELS[prayerKey] || prayerKey;
+      await LocalNotifications.createChannel({
+        id: channelId,
+        name: `Namaz Vakti Bildirimleri (${prayerLabel} Ezanı)`,
+        description: `${prayerLabel} vakti hatırlatması, ezan sesi ile`,
+        importance: 5,
+        visibility: 1,
+        sound: soundFile,
+      });
+    }
     channelsEnsured = true;
   } catch (e) {
     console.error("Bildirim kanalları oluşturulamadı:", e);
@@ -159,7 +175,6 @@ export async function schedulePrayerNotifications(
     return s;
   };
 
-  const channelId = settings.soundType === "ezan" ? CHANNEL_EZAN : CHANNEL_DEFAULT;
   const notifications: any[] = [];
   const now = new Date();
 
@@ -167,6 +182,14 @@ export async function schedulePrayerNotifications(
     const prayerKey = prayer.key as keyof typeof settings.prayers;
     if (!settings.prayers[prayerKey]) return;
     const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
+
+    // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
+    // Diğer vakitlerde, kullanıcı "ezan" seçtiyse o vakte özel ezan kanalı/sesi kullanılır.
+    const ezanChannelId = EZAN_CHANNELS[prayerKey];
+    const ezanSoundFile = EZAN_SOUND_FILES[prayerKey];
+    const useEzan = settings.soundType === "ezan" && ezanChannelId && ezanSoundFile;
+    const channelId = useEzan ? ezanChannelId! : CHANNEL_DEFAULT;
+    const soundFile = useEzan ? ezanSoundFile! : "default";
 
     const [hour, min] = prayer.time.split(":").map(Number);
 
@@ -186,7 +209,7 @@ export async function schedulePrayerNotifications(
             body: tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) }),
             schedule: { at: beforeDate },
             channelId,
-            sound: settings.soundType === "ezan" ? EZAN_SOUND_FILE : "default",
+            sound: soundFile,
             smallIcon: "ic_stat_icon_config_sample",
             iconColor: "#f59e0b",
           });
@@ -207,7 +230,7 @@ export async function schedulePrayerNotifications(
             body: tx("atBody", { name: prayerName }),
             schedule: { at: atDate },
             channelId,
-            sound: settings.soundType === "ezan" ? EZAN_SOUND_FILE : "default",
+            sound: soundFile,
             smallIcon: "ic_stat_icon_config_sample",
             iconColor: "#f59e0b",
           });

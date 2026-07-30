@@ -108,7 +108,6 @@ const en: Record<string, string> = {
   aboutDesc1: "Meccanen Prayer Times is an ad-free, minimal prayer times app. Track prayer times from anywhere in the world, the Qibla direction, the Hijri calendar, and prayer reminders, all in one place.",
   aboutDesc2: "We show no ads and do not collect personal data. All themes, locations, and features are completely free and equally available to everyone — there is no premium tier. Your location is only used to calculate prayer times and is stored on your device.",
   aboutDesc3: "The Qibla compass uses your device's magnetic sensor to show the direction of the Kaaba. We also show one of the 99 Names of Allah (Esma-ul Husna), following İbn-i Îsâ-yı Saruhânî's classical 7-planet/7-time-segment system (1541) — the name shown changes by weekday and time of day, exactly as the source describes, independent of prayer times.",
-  aboutDesc4: "If you choose the adhan sound for notifications, the full 3:47 recording used is a self-performed, self-recorded field recording by \"bagustris\" (Freesound/Pixabay), used under its stated free-use terms.",
   esmaSourceDocumented: "Count recorded in the classical source",
   esmaSourceDefault: "No count given in the source; standard tasbih count used",
   esmaCountUnknown: "count illegible in the source",
@@ -126,8 +125,7 @@ const en: Record<string, string> = {
   notifyAtVakitDesc: "In addition to the \"X minutes before\" reminder, send a separate notification right when the prayer time begins",
   soundTypeLabel: "Notification sound",
   soundDefault: "Default",
-  soundEzan: "Adhan (full, 3:47)",
-  soundEzanCredit: "Adhan recording: bagustris (Freesound/Pixabay), self-performed and self-recorded field recording, used under its stated free-use terms.",
+  soundEzan: "Adhan",
 };
 
 const de: Record<string, string> = {
@@ -193,8 +191,7 @@ const de: Record<string, string> = {
   notifyAtVakitDesc: "Zusaetzlich zur Erinnerung 'X Minuten vorher' eine separate Benachrichtigung senden",
   soundTypeLabel: "Benachrichtigungston",
   soundDefault: "Standard",
-  soundEzan: "Adhan (vollständig, 3:47)",
-  soundEzanCredit: "Adhan-Aufnahme: bagustris (Freesound/Pixabay), selbst aufgenommen und gesungen.",
+  soundEzan: "Adhan",
   whichPrayers: "Für welche Gebete?",
   minutesBefore: "Minuten vorher",
   minutesOff: "Aus",
@@ -212,7 +209,6 @@ const de: Record<string, string> = {
   aboutDesc1: "Meccanen Gebetszeiten ist eine werbefreie, minimalistische Gebetszeiten-App. Verfolgen Sie Gebetszeiten aus der ganzen Welt, die Qibla-Richtung, den islamischen Kalender und Gebetserinnerungen – alles an einem Ort.",
   aboutDesc2: "Wir zeigen keine Werbung und erheben keine persönlichen Daten. Alle Themen, Standorte und Funktionen sind völlig kostenlos und für alle gleich verfügbar. Ihr Standort wird nur zur Berechnung der Gebetszeiten verwendet.",
   aboutDesc3: "Der Qibla-Kompass nutzt den Magnetsensor Ihres Geräts. Wir zeigen außerdem einen der 99 Namen Allahs nach dem klassischen System von İbn-i Îsâ-yı Saruhânî (1541) – der angezeigte Name wechselt täglich nach Wochentag und Tageszeit.",
-  aboutDesc4: "Falls Sie den Adhan-Ton für Benachrichtigungen wählen, ist die 3:47-Aufnahme eine Eigenaufnahme von bagustris (Freesound/Pixabay), verwendet gemäß den angegebenen Nutzungsbedingungen.",
   supportUs: "Unterstützen Sie uns mit einem Kaffee",
   email: "E-Mail",
   theme: "Thema",
@@ -345,7 +341,6 @@ const tr: Record<string, string> = {
   aboutDesc1: "Meccanen Namaz Vakti, reklamsız ve sade bir namaz vakti uygulamasıdır. Dünyanın her yerinden namaz vakitlerini, kıble yönünü, Hicri takvimi ve namaz hatırlatıcılarını tek bir yerden takip edebilirsiniz.",
   aboutDesc2: "Hiçbir reklam göstermiyoruz, kişisel verilerinizi toplamıyoruz. Tüm temalar, konumlar ve özellikler tamamen ücretsiz ve herkese eşit şekilde açıktır — premium katman yoktur. Konum bilginiz sadece namaz vakitlerini hesaplamak için kullanılır ve cihazınızda saklanır.",
   aboutDesc3: "Kıble pusulası, cihazınızın mıknatıs sensörü ile Kâbe yönünü gösterir. Ayrıca, İbn-i Îsâ-yı Saruhânî'nin klasik 7 gezegen / 7 gün-bölümü sistemine (1541) dayanan bir Esmaül Hüsna ismi sunuyoruz — gösterilen isim, kaynakta tarif edildiği gibi haftanın gününe ve saatine göre değişir, namaz vakitlerinden bağımsızdır.",
-  aboutDesc4: "Bildirimlerde ezan sesini seçerseniz, kullanılan tam 3:47 dakikalık kayıt, \"bagustris\" (Freesound/Pixabay) tarafından kendi okuyuşu ve kendi kaydı olarak yapılmış bir doğa kaydıdır; belirtilen ücretsiz kullanım şartlarıyla kullanılmıştır.",
   esmaSourceDocumented: "Klasik kaynakta belirtilen sayı",
   esmaSourceDefault: "Kaynakta sayı belirtilmemiş, standart tesbih sayısı kullanıldı",
   esmaCountUnknown: "kaynakta sayı okunaksız",
@@ -363,8 +358,7 @@ const tr: Record<string, string> = {
   notifyAtVakitDesc: "\"X dakika önce\" hatırlatmasına ek olarak, vakit girdiği anda da ayrıca bir bildirim gönder",
   soundTypeLabel: "Bildirim sesi",
   soundDefault: "Varsayılan",
-  soundEzan: "Ezan (tam, 3:47)",
-  soundEzanCredit: "Ezan kaydı: bagustris (Freesound/Pixabay) — kendi okuyuşu ve kendi kaydı, belirtilen ücretsiz kullanım şartlarıyla kullanılmıştır.",
+  soundEzan: "Ezan",
 };
 
 const ar: Record<string, string> = {
@@ -475,7 +469,6 @@ const ar: Record<string, string> = {
   aboutDesc1: "صلوات مكانن هو تطبيق مواقيت صلاة بسيط وخالٍ من الإعلانات. تتبع مواقيت الصلاة من أي مكان في العالم، واتجاه القبلة، والتقويم الهجري، وتذكيرات الصلاة، كل ذلك في مكان واحد.",
   aboutDesc2: "لا نعرض أي إعلانات ولا نجمع بيانات شخصية. جميع السمات والمواقع والميزات مجانية تمامًا ومتاحة بالتساوي لجميع المستخدمين — لا توجد فئة مميزة (premium). يُستخدم موقعك فقط لحساب مواقيت الصلاة ويُخزَّن على جهازك.",
   aboutDesc3: "تستخدم بوصلة القبلة مستشعر الجهاز المغناطيسي لإظهار اتجاه الكعبة. كما نعرض اسمًا من أسماء الله الحسنى بناءً على نظام ابن عيسى الساروخاني الكلاسيكي القائم على 7 كواكب و7 أقسام زمنية (1541) — يتغير الاسم المعروض حسب يوم الأسبوع والوقت، بشكل مستقل عن مواقيت الصلاة.",
-  aboutDesc4: "إذا اخترت صوت الأذان للتنبيهات، فإن التسجيل الكامل (3:47) المستخدم هو أداء وتسجيل شخصي من \"bagustris\" (Freesound/Pixabay)، يُستخدم بموجب شروط الاستخدام المجاني المذكورة.",
   esmaSourceDocumented: "عدد مذكور في المصدر الكلاسيكي",
   esmaSourceDefault: "لم يُذكر عدد في المصدر؛ استُخدم عدد التسبيح المعتاد",
   esmaCountUnknown: "العدد غير واضح في المصدر",
@@ -493,8 +486,7 @@ const ar: Record<string, string> = {
   notifyAtVakitDesc: "بالإضافة إلى تنبيه \"قبل X دقيقة\"، يُرسل تنبيه منفصل عند دخول وقت الصلاة مباشرة",
   soundTypeLabel: "صوت التنبيه",
   soundDefault: "افتراضي",
-  soundEzan: "الأذان (كامل، 3:47)",
-  soundEzanCredit: "تسجيل الأذان: bagustris (Freesound/Pixabay) — أداء وتسجيل شخصي، يُستخدم بموجب شروط الاستخدام المجاني المذكورة.",
+  soundEzan: "الأذان",
 };
 
 // ===================== URDUCA (ur) =====================
@@ -562,8 +554,7 @@ const ur: Record<string, string> = {
   notifyAtVakitDesc: "\"X منٹ پہلے\" یاددہانی کے علاوہ، نماز کا وقت شروع ہوتے ہی الگ اطلاع بھیجیں",
   soundTypeLabel: "اطلاع کی آواز",
   soundDefault: "ڈیفالٹ",
-  soundEzan: "اذان (مکمل، 3:47)",
-  soundEzanCredit: "اذان کی ریکارڈنگ: bagustris (Freesound/Pixabay) — خود پڑھی اور خود ریکارڈ کی ہوئی، مذکورہ مفت استعمال کی شرائط کے تحت استعمال کی گئی۔",
+  soundEzan: "اذان",
   whichPrayers: "کن نمازوں کے لیے؟",
   minutesBefore: "پہلے منٹ",
   minutesOff: "بند",
@@ -581,7 +572,6 @@ const ur: Record<string, string> = {
   aboutDesc1: "مکّانن نماز اوقات ایک اشتہار سے پاک، سادہ نماز وقت ایپ ہے۔ دنیا بھر سے نماز کے اوقات، قبلہ کی سمت، ہجری تقویم اور نماز کی یاددہانیاں ایک جگہ دیکھیں۔",
   aboutDesc2: "ہم کوئی اشتہار نہیں دکھاتے اور ذاتی ڈیٹا اکٹھا نہیں کرتے۔ تمام تھیمز، مقامات اور خصوصیات سب کے لیے مکمل مفت اور یکساں دستیاب ہیں۔",
   aboutDesc3: "قبلہ نما آپ کے آلے کے مقناطیسی سینسر سے کعبہ کی سمت دکھاتا ہے۔ ہم ابنِ عیسیٰ سارخانی کے 7 سیارے / 7 وقت کے نظام (1541) کے مطابق اسمائے حسنیٰ میں سے ایک نام بھی دکھاتے ہیں۔",
-  aboutDesc4: "اگر آپ اطلاعات کے لیے اذان کی آواز منتخب کرتے ہیں، تو استعمال شدہ 3:47 کی ریکارڈنگ bagustris (Freesound/Pixabay) کی خود پڑھی اور خود ریکارڈ کی ہوئی ہے۔",
   supportUs: "ایک کافی سے ہماری مدد کریں",
   email: "ای میل",
   theme: "تھیم",
