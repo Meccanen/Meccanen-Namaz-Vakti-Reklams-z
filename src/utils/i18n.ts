@@ -126,6 +126,7 @@ const en: Record<string, string> = {
   soundTypeLabel: "Notification sound",
   soundDefault: "Default",
   soundEzan: "Adhan",
+  listenEzan: "Listen",
 };
 
 const de: Record<string, string> = {
@@ -192,6 +193,7 @@ const de: Record<string, string> = {
   soundTypeLabel: "Benachrichtigungston",
   soundDefault: "Standard",
   soundEzan: "Adhan",
+  listenEzan: "Anhören",
   whichPrayers: "Für welche Gebete?",
   minutesBefore: "Minuten vorher",
   minutesOff: "Aus",
@@ -359,6 +361,7 @@ const tr: Record<string, string> = {
   soundTypeLabel: "Bildirim sesi",
   soundDefault: "Varsayılan",
   soundEzan: "Ezan",
+  listenEzan: "Dinle",
 };
 
 const ar: Record<string, string> = {
@@ -487,6 +490,7 @@ const ar: Record<string, string> = {
   soundTypeLabel: "صوت التنبيه",
   soundDefault: "افتراضي",
   soundEzan: "الأذان",
+  listenEzan: "استماع",
 };
 
 // ===================== URDUCA (ur) =====================
@@ -555,6 +559,7 @@ const ur: Record<string, string> = {
   soundTypeLabel: "اطلاع کی آواز",
   soundDefault: "ڈیفالٹ",
   soundEzan: "اذان",
+  listenEzan: "سنیں",
   whichPrayers: "کن نمازوں کے لیے؟",
   minutesBefore: "پہلے منٹ",
   minutesOff: "بند",
