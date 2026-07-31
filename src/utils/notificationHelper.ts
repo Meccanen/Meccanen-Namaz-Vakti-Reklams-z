@@ -92,6 +92,7 @@ async function ensureChannels(): Promise<void> {
     channelsEnsured = true;
   } catch (e) {
     console.error("Bildirim kanalları oluşturulamadı:", e);
+    throw e;
   }
 }
 
@@ -138,20 +139,30 @@ export async function cancelAllNotifications(): Promise<void> {
   } catch {}
 }
 
+export interface ScheduleResult {
+  success: boolean;
+  scheduledCount: number;
+  error?: string;
+}
+
 // Namaz vakitleri için bildirimleri planla
 export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
   settings: NotificationSettings,
   locationName: string,
   lang: "tr" | "en" | "ar" = "tr",
-): Promise<void> {
-  if (!isNativeAvailable()) return;
-  if (!settings.enabled) { await cancelAllNotifications(); return; }
+): Promise<ScheduleResult> {
+  if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
+  if (!settings.enabled) { await cancelAllNotifications(); return { success: true, scheduledCount: 0 }; }
 
   const hasPermission = await checkNotificationPermission();
-  if (!hasPermission) return;
+  if (!hasPermission) return { success: false, scheduledCount: 0, error: "permission-denied" };
 
-  await ensureChannels();
+  try {
+    await ensureChannels();
+  } catch (e) {
+    return { success: false, scheduledCount: 0, error: `channel-error: ${e instanceof Error ? e.message : String(e)}` };
+  }
   await cancelAllNotifications();
 
   // Bildirim metinleri (çok dilli)
@@ -210,7 +221,7 @@ export async function schedulePrayerNotifications(
             schedule: { at: beforeDate },
             channelId,
             sound: soundFile,
-            smallIcon: "ic_stat_icon_config_sample",
+            smallIcon: "ic_stat_notify",
             iconColor: "#f59e0b",
           });
         }
@@ -231,7 +242,7 @@ export async function schedulePrayerNotifications(
             schedule: { at: atDate },
             channelId,
             sound: soundFile,
-            smallIcon: "ic_stat_icon_config_sample",
+            smallIcon: "ic_stat_notify",
             iconColor: "#f59e0b",
           });
         }
@@ -243,9 +254,11 @@ export async function schedulePrayerNotifications(
     try {
       await LocalNotifications.schedule({ notifications });
     } catch (e) {
-      console.error("Bildirim planlanamadı:", e);
+      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)}` };
     }
   }
+
+  return { success: true, scheduledCount: notifications.length };
 }
 
 // Ayarları localStorage'a kaydet/yükle
