@@ -696,8 +696,12 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
-                        notify(t("notifyActive", lang));
+                        const result = await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        if (result.success) {
+                          notify(`${t("notifyActive", lang)} (${result.scheduledCount} bildirim planlandı)`);
+                        } else {
+                          notify(`Bildirim planlanamadı: ${result.error}`);
+                        }
                       } else { notify(t("notifyOff", lang)); }
                     }}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
@@ -933,7 +937,8 @@ export default function App() {
 
   useEffect(() => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
-      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang);
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang)
+        .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
     }
   }, [prayerTimes, notificationSettings.enabled]);
 
