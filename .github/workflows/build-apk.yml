@@ -115,6 +115,26 @@ jobs:
               print(">>> GPS donanım özelliği 'required=false' olarak override edildi.")
           else:
               print(">>> GPS donanım özelliği zaten override edilmiş, dokunulmadı.")
+
+          # KRİTİK: Namaz vakti bildirimleri belirli bir dakikada tetiklenmesi gereken
+          # ZAMANLI (kesin/exact) alarmlardır. Android 12+ (API 31+) bu izin manifestte
+          # olmadan "kesin olmayan" (inexact) bir alarma düşüyor — bildirim dakikalarca/
+          # saatlerce gecikebiliyor ya da pil optimizasyonu yüzünden hiç gelmiyor.
+          # SCHEDULE_EXACT_ALARM: API 31-32'de otomatik verilir. USE_EXACT_ALARM: API 33+'te
+          # kullanıcıya sormadan otomatik verilir (namaz vakti gibi zaman-kritik uygulamalar
+          # için Google'ın öngördüğü meşru kullanım alanı). İkisini birlikte ekleyerek
+          # minSdk 24'ten targetSdk 36'ya kadar tüm sürümlerde kesin alarm çalışmasını sağlıyoruz.
+          alarm_perms = (
+              '    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n'
+              '    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n'
+          )
+          if "SCHEDULE_EXACT_ALARM" not in content:
+              content = content.replace("</manifest>", alarm_perms + "</manifest>")
+              with open(path, "w") as f:
+                  f.write(content)
+              print(">>> Kesin alarm izinleri eklendi.")
+          else:
+              print(">>> Kesin alarm izinleri zaten mevcut, dokunulmadı.")
           PYEOF
           python3 /tmp/add_perms.py
           echo "--- AndroidManifest.xml (izin eklendikten sonra) ---"
