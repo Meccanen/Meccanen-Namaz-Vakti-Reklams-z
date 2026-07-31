@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -348,6 +348,31 @@ function SettingsPanel({
   initialTab?: "genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda";
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda">(initialTab || "genel");
+  const [playingEzanPreview, setPlayingEzanPreview] = useState<string | null>(null);
+  const ezanPreviewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggleEzanPreview = (prayerKey: string) => {
+    const current = ezanPreviewAudioRef.current;
+    if (current) {
+      current.pause();
+      current.currentTime = 0;
+      ezanPreviewAudioRef.current = null;
+    }
+    if (playingEzanPreview === prayerKey) {
+      setPlayingEzanPreview(null);
+      return;
+    }
+    const audio = new Audio(`/sounds/ezan_${prayerKey}.mp3`);
+    audio.onended = () => setPlayingEzanPreview(null);
+    audio.onerror = () => setPlayingEzanPreview(null);
+    ezanPreviewAudioRef.current = audio;
+    audio.play().catch(() => setPlayingEzanPreview(null));
+    setPlayingEzanPreview(prayerKey);
+  };
+
+  useEffect(() => {
+    return () => { ezanPreviewAudioRef.current?.pause(); };
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -494,15 +519,24 @@ function SettingsPanel({
                   })}
                 </div>
 
-                <div className={`border-t ${th.header} pt-4`}>
+                <div className={`border-t ${th.header} pt-4 flex gap-2`}>
                   <a
                     href="https://ko-fi.com/meccanen"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
                   >
                     <Coffee className="w-4 h-4" />
                     Ko-fi
+                  </a>
+                  <a
+                    href="https://paypal.me/bulentt"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400 font-semibold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4" />
+                    PayPal
                   </a>
                 </div>
               </div>
@@ -696,12 +730,8 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        const result = await schedulePrayerNotifications(prayerTimes, updated, "", lang);
-                        if (result.success) {
-                          notify(`${t("notifyActive", lang)} (${result.scheduledCount} bildirim planlandı)`);
-                        } else {
-                          notify(`Bildirim planlanamadı: ${result.error}`);
-                        }
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        notify(t("notifyActive", lang));
                       } else { notify(t("notifyOff", lang)); }
                     }}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
@@ -773,15 +803,24 @@ function SettingsPanel({
                               <div className={`w-2 h-2 rounded-full ${isOn ? "bg-amber-400" : "bg-slate-600"}`} />
                               <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>{t(`prayer_${key}`, lang)}</span>
                             </div>
-                            <button onClick={async () => {
-                              const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
-                              setNotificationSettings(updated);
-                              saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang);
-                            }}
-                              className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
-                              <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {key !== "gunes" && (
+                                <button onClick={() => toggleEzanPreview(key)}
+                                  title={t("listenEzan", lang)}
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 ${playingEzanPreview === key ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"}`}>
+                                  {playingEzanPreview === key ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                                </button>
+                              )}
+                              <button onClick={async () => {
+                                const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
+                                setNotificationSettings(updated);
+                                saveNotificationSettings(updated);
+                                await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                              }}
+                                className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
+                                <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
