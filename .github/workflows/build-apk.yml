@@ -153,10 +153,11 @@ jobs:
           cat > /tmp/make_icons.py << 'PYEOF'
           from PIL import Image
           import os
-          def make_icon(size, out_path):
+
+          def make_icon(size, out_path, margin_ratio=0.80):
               img = Image.new('RGBA', (size, size), (2, 6, 23, 255))
               logo = Image.open('public/meccanen-logo.png').convert('RGBA')
-              target_w = int(size * 0.80)
+              target_w = int(size * margin_ratio)
               ratio = target_w / logo.width
               target_h = int(logo.height * ratio)
               logo = logo.resize((target_w, target_h), Image.LANCZOS)
@@ -165,11 +166,48 @@ jobs:
               img.paste(logo, (x, y), logo)
               img.save(out_path)
               print(f"OK {out_path}")
+
+          def make_foreground(size, out_path, margin_ratio=0.54):
+              # Adaptive icon foreground: şeffaf zemin (arka plan rengi ayrı katmandan gelir).
+              # Farklı launcher maske şekillerinde (daire, kare, damla) kenardan kırpılmaması
+              # için içerik güvenli bölgeye (~%60) sığdırılıyor — düz ikondaki %80'den daha dar.
+              img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+              logo = Image.open('public/meccanen-logo.png').convert('RGBA')
+              target_w = int(size * margin_ratio)
+              ratio = target_w / logo.width
+              target_h = int(logo.height * ratio)
+              logo = logo.resize((target_w, target_h), Image.LANCZOS)
+              x = (size - target_w) // 2
+              y = (size - target_h) // 2
+              img.paste(logo, (x, y), logo)
+              img.save(out_path)
+              print(f"OK {out_path}")
+
           base = 'android/app/src/main/res'
+          # Eski (API < 26) düz ikonlar — bu cihazlarda doğrudan görünür
           for d, s in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
               os.makedirs(f'{base}/mipmap-{d}', exist_ok=True)
               make_icon(s, f'{base}/mipmap-{d}/ic_launcher.png')
               make_icon(s, f'{base}/mipmap-{d}/ic_launcher_round.png')
+
+          # KRİTİK: Android 8+ (API 26+) — sistem düz ic_launcher.png'yi YOK SAYIP
+          # mipmap-anydpi-v26/ic_launcher.xml üzerinden bu foreground katmanını kullanır.
+          # Güncellenmezse Capacitor'ın varsayılan örnek ikonu (spark logosu) görünmeye devam eder.
+          for d, s in [('mdpi',108),('hdpi',162),('xhdpi',216),('xxhdpi',324),('xxxhdpi',432)]:
+              os.makedirs(f'{base}/mipmap-{d}', exist_ok=True)
+              make_foreground(s, f'{base}/mipmap-{d}/ic_launcher_foreground.png')
+
+          # Adaptive icon arka plan rengini (varsayılan beyaz) navy yap
+          bg_color_path = f'{base}/values/ic_launcher_background.xml'
+          if os.path.exists(bg_color_path):
+              with open(bg_color_path) as f:
+                  content = f.read()
+              content = content.replace('#FFFFFF', '#020617').replace('#ffffff', '#020617')
+              with open(bg_color_path, 'w') as f:
+                  f.write(content)
+              print(">>> ic_launcher_background rengi navy yapıldı.")
+          else:
+              print(">>> UYARI: ic_launcher_background.xml bulunamadı, arka plan rengi güncellenemedi.")
           PYEOF
           python3 /tmp/make_icons.py
       - name: Debug APK build et
