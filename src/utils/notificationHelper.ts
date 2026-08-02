@@ -4,9 +4,10 @@ export type SoundType = "default" | "ezan";
 
 export interface NotificationSettings {
   enabled: boolean;           // Global açma/kapama
-  minutesBefore: number;      // Kaç dk önce: 5/10/15/20/30 (0 = sadece vakit anında)
+  minutesBefore: number;      // Kaç dk önce: 5/10/15/20/30 (0 = "X dk önce" bildirimi kapalı)
   notifyAtVakit: boolean;     // Vakit girdiği anda da AYRICA bildirim gönder
-  soundType: SoundType;       // "default": sistem bildirim sesi, "ezan": vaktine özel ezan sesi
+  soundTypeBefore: SoundType; // "X dakika önce" bildiriminin sesi (default/ezan)
+  soundTypeAtVakit: SoundType;// "Vakit girdiğinde" bildiriminin sesi (default/ezan) — birbirinden bağımsız
   prayers: {                  // Her vakit için toggle
     imsak: boolean;
     gunes: boolean;
@@ -21,7 +22,8 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   enabled: false,
   minutesBefore: 10,
   notifyAtVakit: false,
-  soundType: "default",
+  soundTypeBefore: "default",
+  soundTypeAtVakit: "ezan",
   prayers: {
     imsak: true,
     gunes: false,
@@ -195,12 +197,19 @@ export async function schedulePrayerNotifications(
     const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
 
     // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
-    // Diğer vakitlerde, kullanıcı "ezan" seçtiyse o vakte özel ezan kanalı/sesi kullanılır.
+    // "X dakika önce" ve "vakit girdiğinde" bildirimleri artık birbirinden bağımsız ses
+    // seçimine sahip (biri ezan, diğeri varsayılan olabilir, ya da ikisi de aynı olabilir).
     const ezanChannelId = EZAN_CHANNELS[prayerKey];
     const ezanSoundFile = EZAN_SOUND_FILES[prayerKey];
-    const useEzan = settings.soundType === "ezan" && ezanChannelId && ezanSoundFile;
-    const channelId = useEzan ? ezanChannelId! : CHANNEL_DEFAULT;
-    const soundFile = useEzan ? ezanSoundFile! : "default";
+    const hasEzan = !!(ezanChannelId && ezanSoundFile);
+
+    const useEzanBefore = settings.soundTypeBefore === "ezan" && hasEzan;
+    const channelIdBefore = useEzanBefore ? ezanChannelId! : CHANNEL_DEFAULT;
+    const soundFileBefore = useEzanBefore ? ezanSoundFile! : "default";
+
+    const useEzanAtVakit = settings.soundTypeAtVakit === "ezan" && hasEzan;
+    const channelIdAtVakit = useEzanAtVakit ? ezanChannelId! : CHANNEL_DEFAULT;
+    const soundFileAtVakit = useEzanAtVakit ? ezanSoundFile! : "default";
 
     const [hour, min] = prayer.time.split(":").map(Number);
 
@@ -219,8 +228,8 @@ export async function schedulePrayerNotifications(
             title: `🕌 ${tx("beforeTitle")}`,
             body: tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) }),
             schedule: { at: beforeDate },
-            channelId,
-            sound: soundFile,
+            channelId: channelIdBefore,
+            sound: soundFileBefore,
             smallIcon: "ic_stat_notify",
             iconColor: "#f59e0b",
           });
@@ -240,8 +249,8 @@ export async function schedulePrayerNotifications(
             title: `🕌 ${tx("atTitle")}`,
             body: tx("atBody", { name: prayerName }),
             schedule: { at: atDate },
-            channelId,
-            sound: soundFile,
+            channelId: channelIdAtVakit,
+            sound: soundFileAtVakit,
             smallIcon: "ic_stat_notify",
             iconColor: "#f59e0b",
           });
@@ -269,7 +278,17 @@ export function saveNotificationSettings(s: NotificationSettings): void {
 export function loadNotificationSettings(): NotificationSettings {
   try {
     const s = localStorage.getItem("mnv_notification_settings");
-    if (s) return { ...DEFAULT_NOTIFICATION_SETTINGS, ...JSON.parse(s) };
+    if (s) {
+      const parsed = JSON.parse(s);
+      // Geriye dönük uyumluluk: eski tek "soundType" alanı vardı, artık iki bağımsız
+      // alana ("soundTypeBefore" / "soundTypeAtVakit") bölündü. Eski ayarı olan
+      // kullanıcılar için önceki tercihini ikisine de uygulayarak yumuşak geçiş sağlıyoruz.
+      if (parsed.soundType && !parsed.soundTypeBefore && !parsed.soundTypeAtVakit) {
+        parsed.soundTypeBefore = parsed.soundType;
+        parsed.soundTypeAtVakit = parsed.soundType;
+      }
+      return { ...DEFAULT_NOTIFICATION_SETTINGS, ...parsed };
+    }
   } catch {}
   return { ...DEFAULT_NOTIFICATION_SETTINGS };
 }
