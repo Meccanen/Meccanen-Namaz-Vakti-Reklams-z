@@ -706,8 +706,8 @@ function SettingsPanel({
 
             {tab === "bildirim" && (
               <div className="space-y-4">
-                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5" />{t("notificationHeader", lang)}
+                <h3 className="text-xl sm:text-2xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2">
+                  <Bell className="w-6 h-6 sm:w-7 sm:h-7" />{t("notificationHeader", lang)}
                 </h3>
                 <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                   <div className="flex items-center gap-3">
@@ -742,7 +742,7 @@ function SettingsPanel({
                 {notificationSettings.enabled && (
                   <>
                     <div>
-                      <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("minutesBefore", lang)}</div>
+                      <div className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 mb-2">{t("minutesBefore", lang)}</div>
                       <div className="flex gap-2 flex-wrap">
                         {[0, 5, 10, 15, 20, 30].map(min => (
                           <button key={min} onClick={async () => {
@@ -757,9 +757,6 @@ function SettingsPanel({
                           </button>
                         ))}
                       </div>
-                      {notificationSettings.minutesBefore > 0 && (
-                        <p className="text-lg sm:text-xl font-bold text-slate-200 mt-3 leading-snug">{t("minutesBeforeSoundNote", lang)}</p>
-                      )}
                       {notificationSettings.minutesBefore === 0 && !notificationSettings.notifyAtVakit && (
                         <p className="text-sm text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
                       )}
@@ -796,7 +793,7 @@ function SettingsPanel({
                     )}
 
                     <div>
-                      <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("whichPrayers", lang)}</div>
+                      <div className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 mb-2">{t("whichPrayers", lang)}</div>
                       <div className="space-y-2">
                         {(Object.entries(notificationSettings.prayers) as [keyof typeof notificationSettings.prayers, boolean][]).map(([key, isOn]) => (
                           <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
