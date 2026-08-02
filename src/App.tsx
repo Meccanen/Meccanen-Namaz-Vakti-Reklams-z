@@ -757,6 +757,9 @@ function SettingsPanel({
                           </button>
                         ))}
                       </div>
+                      {notificationSettings.minutesBefore > 0 && (
+                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">{t("minutesBeforeSoundNote", lang)}</p>
+                      )}
                       {notificationSettings.minutesBefore === 0 && !notificationSettings.notifyAtVakit && (
                         <p className="text-sm text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
                       )}
@@ -776,25 +779,6 @@ function SettingsPanel({
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
                       </button>
                     </div>
-
-                    {notificationSettings.minutesBefore > 0 && (
-                      <div>
-                        <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("soundTypeBeforeLabel", lang)}</div>
-                        <div className="flex gap-2">
-                          {(["default", "ezan"] as const).map(st => (
-                            <button key={st} onClick={async () => {
-                              const updated = { ...notificationSettings, soundTypeBefore: st };
-                              setNotificationSettings(updated);
-                              saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang);
-                            }}
-                              className={`flex-1 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeBefore === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
-                              {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {notificationSettings.notifyAtVakit && (
                       <div>
