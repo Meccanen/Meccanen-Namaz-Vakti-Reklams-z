@@ -363,7 +363,7 @@ const tr: Record<string, string> = {
   minutesOffWarning: "\"X dakika önce\" hatırlatması kapalı. Yine de bir hatırlatma almak istiyorsan, aşağıdaki \"Tam vakit girdiğinde de bildir\" seçeneğini aç.",
   minutesBeforeSoundNote: "Sadece varsayılan sesle bildirim gelecektir.",
   esmaSourceCitation: "Kaynak: İbn-i Îsâ-yı Saruhânî'nin Şerh-i Esmâ-i Hüsnâ'sı (1541) — klasik 7 gezegen / 7 gün-bölümü sistemi; gösterilen isim, kaynağa göre haftanın gününe ve günün saatine bağlı olarak değişir.",
-  notifyAtVakitLabel: "Tam vakit girdiğinde de bildir",
+  notifyAtVakitLabel: "Tam namaz vakti girdiğinde bildir",
   notifyAtVakitDesc: "\"X dakika önce\" hatırlatmasına ek olarak, vakit girdiği anda da ayrıca bir bildirim gönder",
   soundTypeLabel: "Bildirim sesi",
   soundTypeBeforeLabel: "Hatırlatma sesi (vakitten önce)",
