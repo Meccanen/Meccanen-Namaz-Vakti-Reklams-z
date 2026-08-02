@@ -6,8 +6,10 @@ export interface NotificationSettings {
   enabled: boolean;           // Global açma/kapama
   minutesBefore: number;      // Kaç dk önce: 5/10/15/20/30 (0 = "X dk önce" bildirimi kapalı)
   notifyAtVakit: boolean;     // Vakit girdiği anda da AYRICA bildirim gönder
-  soundTypeBefore: SoundType; // "X dakika önce" bildiriminin sesi (default/ezan)
-  soundTypeAtVakit: SoundType;// "Vakit girdiğinde" bildiriminin sesi (default/ezan) — birbirinden bağımsız
+  soundTypeAtVakit: SoundType;// Sadece "vakit girdiğinde" bildirimi için ses seçimi (default/ezan).
+                              // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan
+                              // sesle çalışır — ezan yalnızca tam vaktinde duyulmalı, aksi halde
+                              // özellikle yaşlı kullanıcılar için kafa karıştırıcı olur.
   prayers: {                  // Her vakit için toggle
     imsak: boolean;
     gunes: boolean;
@@ -22,7 +24,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   enabled: false,
   minutesBefore: 10,
   notifyAtVakit: false,
-  soundTypeBefore: "default",
   soundTypeAtVakit: "ezan",
   prayers: {
     imsak: true,
@@ -197,15 +198,15 @@ export async function schedulePrayerNotifications(
     const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
 
     // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
-    // "X dakika önce" ve "vakit girdiğinde" bildirimleri artık birbirinden bağımsız ses
-    // seçimine sahip (biri ezan, diğeri varsayılan olabilir, ya da ikisi de aynı olabilir).
+    // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan sesle çalışır (bkz.
+    // NotificationSettings.soundTypeAtVakit açıklaması). Sadece "vakit girdiğinde" bildirimi
+    // kullanıcının seçimine göre ezan sesi kullanabilir.
     const ezanChannelId = EZAN_CHANNELS[prayerKey];
     const ezanSoundFile = EZAN_SOUND_FILES[prayerKey];
     const hasEzan = !!(ezanChannelId && ezanSoundFile);
 
-    const useEzanBefore = settings.soundTypeBefore === "ezan" && hasEzan;
-    const channelIdBefore = useEzanBefore ? ezanChannelId! : CHANNEL_DEFAULT;
-    const soundFileBefore = useEzanBefore ? ezanSoundFile! : "default";
+    const channelIdBefore = CHANNEL_DEFAULT;
+    const soundFileBefore = "default";
 
     const useEzanAtVakit = settings.soundTypeAtVakit === "ezan" && hasEzan;
     const channelIdAtVakit = useEzanAtVakit ? ezanChannelId! : CHANNEL_DEFAULT;
@@ -280,13 +281,15 @@ export function loadNotificationSettings(): NotificationSettings {
     const s = localStorage.getItem("mnv_notification_settings");
     if (s) {
       const parsed = JSON.parse(s);
-      // Geriye dönük uyumluluk: eski tek "soundType" alanı vardı, artık iki bağımsız
-      // alana ("soundTypeBefore" / "soundTypeAtVakit") bölündü. Eski ayarı olan
-      // kullanıcılar için önceki tercihini ikisine de uygulayarak yumuşak geçiş sağlıyoruz.
-      if (parsed.soundType && !parsed.soundTypeBefore && !parsed.soundTypeAtVakit) {
-        parsed.soundTypeBefore = parsed.soundType;
-        parsed.soundTypeAtVakit = parsed.soundType;
+      // Geriye dönük uyumluluk: eski sürümlerde "soundType" (tek, global) ya da
+      // "soundTypeAtVakit" ile birlikte "soundTypeBefore" alanı vardı. "Önce" hatırlatması
+      // artık her zaman varsayılan sesle çalıştığından sadece "vakit girdiğinde" sesi
+      // taşınıyor; eski tercih varsa (soundTypeAtVakit yoksa) ona göre ayarlanıyor.
+      if (!parsed.soundTypeAtVakit) {
+        parsed.soundTypeAtVakit = parsed.soundType || "ezan";
       }
+      delete parsed.soundTypeBefore;
+      delete parsed.soundType;
       return { ...DEFAULT_NOTIFICATION_SETTINGS, ...parsed };
     }
   } catch {}
