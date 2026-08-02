@@ -758,17 +758,14 @@ function SettingsPanel({
                         ))}
                       </div>
                       {notificationSettings.minutesBefore > 0 && (
-                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">{t("minutesBeforeSoundNote", lang)}</p>
+                        <p className="text-lg sm:text-xl font-bold text-slate-200 mt-3 leading-snug">{t("minutesBeforeSoundNote", lang)}</p>
                       )}
                       {notificationSettings.minutesBefore === 0 && !notificationSettings.notifyAtVakit && (
                         <p className="text-sm text-amber-500/80 mt-2 leading-relaxed">{t("minutesOffWarning", lang)}</p>
                       )}
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
-                      <div>
-                        <div className="text-xs font-bold text-slate-200">{t("notifyAtVakitLabel", lang)}</div>
-                        <div className="text-sm text-slate-500">{t("notifyAtVakitDesc", lang)}</div>
-                      </div>
+                      <div className="text-base sm:text-lg font-bold text-slate-200">{t("notifyAtVakitLabel", lang)}</div>
                       <button onClick={async () => {
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
@@ -782,7 +779,6 @@ function SettingsPanel({
 
                     {notificationSettings.notifyAtVakit && (
                       <div>
-                        <div className="text-sm font-bold tracking-wide text-slate-400 mb-2">{t("soundTypeAtVakitLabel", lang)}</div>
                         <div className="flex gap-2">
                           {(["default", "ezan"] as const).map(st => (
                             <button key={st} onClick={async () => {
@@ -791,7 +787,7 @@ function SettingsPanel({
                               saveNotificationSettings(updated);
                               await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             }}
-                              className={`flex-1 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                              className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
                             </button>
                           ))}
