@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -19,7 +19,7 @@ import {
 import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
-import { calcMoonPhase, MoonPhase } from "./utils/astronomyHelper";
+import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
 
 export const THEMES = {
@@ -461,7 +461,7 @@ function SettingsPanel({
     { key: "genel" as const, label: t("general", lang) },
     { key: "konum" as const, label: t("location", lang) },
     { key: "metot" as const, label: t("methodTab", lang) },
-    { key: "bildirim" as const, label: t("notifications", lang) },
+    { key: "bildirim" as const, label: t("notificationsTab", lang) },
     { key: "dil" as const, label: t("language", lang) },
     { key: "hakkinda" as const, label: t("about", lang) },
   ];
@@ -499,8 +499,8 @@ function SettingsPanel({
 
             {tab === "genel" && (
               <div className="space-y-4">
-                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5" />{t("themeSelection", lang)}
+                <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2">
+                  <Palette className="w-6 h-6 sm:w-7 sm:h-7" />{t("themeSelection", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([key, th]) => {
@@ -512,7 +512,7 @@ function SettingsPanel({
                         <div className="flex gap-0.5 shrink-0">
                           {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
-                        <span className="text-sm font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
+                        <span className="text-base sm:text-lg font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
                         {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
                       </button>
                     );
@@ -565,7 +565,7 @@ function SettingsPanel({
                   <div className="flex items-center gap-2">
                     <Navigation className={`w-4 h-4 shrink-0 ${autoLocationEnabled ? "text-sky-400" : "text-slate-500"}`} />
                     <div>
-                      <div className={`text-xs font-bold ${autoLocationEnabled ? "text-sky-400" : "text-slate-400"}`}>
+                      <div className={`text-base sm:text-lg font-extrabold ${autoLocationEnabled ? "text-sky-400" : "text-slate-300"}`}>
                         {t("autoLocationToggleLabel", lang)}
                       </div>
                       <div className="text-sm text-slate-500">
@@ -618,8 +618,8 @@ function SettingsPanel({
                 )}
 
                 <div>
-                  <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
-                    <Search className="w-3.5 h-3.5" />{t("searchCity", lang)}
+                  <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2 mb-2">
+                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />{t("searchCity", lang)}
                   </h3>
                   <div className="relative mb-2">
                     <input type="text" value={searchQuery}
@@ -688,15 +688,15 @@ function SettingsPanel({
 
             {tab === "metot" && (
               <div className="space-y-2">
-                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-3">
-                  <Sparkles className="w-3.5 h-3.5" />{t("prayerMethod", lang)}
+                <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2 mb-3">
+                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />{t("prayerMethod", lang)}
                 </h3>
                 {PRAYER_METHODS.map(m => (
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
-                      <div className={`text-xs font-bold ${th.textPrimary}`}>{m.label[lang] || m.label.en}</div>
-                      <div className={`text-sm ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
+                      <div className={`text-base sm:text-lg font-extrabold ${th.textPrimary}`}>{m.label[lang] || m.label.en}</div>
+                      <div className={`text-sm sm:text-base ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
                     </div>
                     {prayerMethod === m.id && <Check className={`w-4 h-4 ${th.accent} shrink-0 ml-2`} />}
                   </button>
@@ -851,6 +851,9 @@ function SettingsPanel({
                   <p className="text-sm text-slate-300 leading-relaxed">
                     {t("aboutDesc3", lang)}
                   </p>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    {t("esmaSourceCitation", lang)}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -942,6 +945,10 @@ export default function App() {
   );
 
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
+  const solarTimes = useMemo(
+    () => calcSolarTimes(location.latitude, location.longitude, date, location.timezone || "Europe/Istanbul"),
+    [location.latitude, location.longitude, date, location.timezone]
+  );
   const tTheme = THEMES[themeKey];
   const isLight = ["seher","gul","nane"].includes(themeKey);
 
@@ -1342,6 +1349,53 @@ export default function App() {
         </section>
 
         <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
+          <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent2} mb-4 flex items-center gap-2`}>
+            <Sun className="w-4 h-4 sm:w-5 sm:h-5" />{t("kerahatTitle", lang)}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center mb-4">
+            <div className="flex flex-col items-center gap-1">
+              <Sunrise className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.textMuted}`} />
+              <div className="text-[11px] sm:text-xs text-slate-500 leading-tight">{t("sunriseLabel", lang)}</div>
+              <div className={`text-lg sm:text-xl font-bold font-mono ${tTheme.textPrimary}`}>{solarTimes.sunrise}</div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
+              <div className="text-[11px] sm:text-xs text-red-400/80 leading-tight">{t("solarNoonLabel", lang)}</div>
+              <div className="text-lg sm:text-xl font-bold font-mono text-red-400">{solarTimes.solarNoon}</div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Sunset className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.textMuted}`} />
+              <div className="text-[11px] sm:text-xs text-slate-500 leading-tight">{t("sunsetLabel", lang)}</div>
+              <div className={`text-lg sm:text-xl font-bold font-mono ${tTheme.textPrimary}`}>{solarTimes.sunset}</div>
+            </div>
+          </div>
+
+          {(() => {
+            const total = solarTimes.sunsetMinutes - solarTimes.sunriseMinutes;
+            const noonPct = Math.min(100, Math.max(0, ((solarTimes.solarNoonMinutes - solarTimes.sunriseMinutes) / total) * 100));
+            const parts = new Intl.DateTimeFormat("en-US", {
+              timeZone: location.timezone || "Europe/Istanbul", hour: "2-digit", minute: "2-digit", hour12: false,
+            }).formatToParts(date);
+            const nowMin = parseInt(parts.find(p => p.type === "hour")?.value || "0") * 60 +
+                           parseInt(parts.find(p => p.type === "minute")?.value || "0");
+            const nowPct = Math.min(100, Math.max(0, ((nowMin - solarTimes.sunriseMinutes) / total) * 100));
+            const isDaytime = nowMin >= solarTimes.sunriseMinutes && nowMin <= solarTimes.sunsetMinutes;
+            return (
+              <div className="relative h-2.5 rounded-full bg-white/10 overflow-visible">
+                <div className="absolute inset-y-0 left-0 right-0 rounded-full bg-gradient-to-r from-amber-500/30 via-amber-300/50 to-amber-500/30" />
+                <div className="absolute top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-red-500" style={{ left: `calc(${noonPct}% - 2px)` }} title={t("solarNoonLabel", lang)} />
+                {isDaytime && (
+                  <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow ring-2 ring-black/20" style={{ left: `calc(${nowPct}% - 6px)` }} />
+                )}
+              </div>
+            );
+          })()}
+
+          <p className={`text-xs sm:text-sm ${tTheme.textMuted} mt-3 leading-relaxed`}>{t("kerahatDesc", lang)}</p>
+        </section>
+
+        <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
           <div className="flex justify-between items-center mb-5">
             <button onClick={() => { setSettingsInitialTab("metot"); setSettingsOpen(true); }}
               className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent} flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all`}>
@@ -1387,9 +1441,6 @@ export default function App() {
               </div>
               <div className={`text-base sm:text-lg font-bold px-5 py-2.5 rounded-full border border-white/10 ${tTheme.accent} mt-1`}>
                 {t("esmaRecite", lang)}: {esmaSaati.item.count !== null ? t("esmaTimes", lang, { n: String(esmaSaati.item.count) }) : t("esmaCountUnknown", lang)}
-              </div>
-              <div className={`text-sm sm:text-base ${tTheme.textMuted} opacity-70 mt-2 max-w-md leading-relaxed`}>
-                {t("esmaSourceCitation", lang)}
               </div>
             </div>
           </section>
