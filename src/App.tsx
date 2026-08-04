@@ -1404,7 +1404,7 @@ export default function App() {
             );
           })()}
 
-          <p className={`text-sm sm:text-base ${tTheme.textMuted} mt-2 leading-snug text-center`}>{t("kerahatDesc", lang)}</p>
+          <p className={`text-base sm:text-lg ${tTheme.textMuted} mt-2 leading-snug text-center`}>{t("kerahatDesc", lang)}</p>
         </section>
 
         <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
