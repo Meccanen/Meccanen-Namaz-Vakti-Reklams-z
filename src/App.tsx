@@ -1365,12 +1365,14 @@ export default function App() {
             // 0 (doğuş) -> 180°(sol), 0.5 (istiva) -> 90°(tepe), 1 (batış) -> 0°(sağ)
             const angleDeg = 180 * (1 - frac);
             const angleRad = (angleDeg * Math.PI) / 180;
-            const cx = 150, cy = 148, r = 122, needleR = 100;
+            const cx = 175, cy = 190, r = 110, needleR = 88;
             const needleX = cx + needleR * Math.cos(angleRad);
             const needleY = cy - needleR * Math.sin(angleRad);
+            const needleColor = isLight ? "#1e293b" : "#f8fafc";
+            const needleRing = isLight ? "#f8fafc" : "#0f172a";
 
             return (
-              <svg viewBox="0 0 300 195" className="w-full h-auto">
+              <svg viewBox="0 0 350 235" className="w-full h-auto">
                 <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
                   fill="none" stroke="currentColor" className={tTheme.textMuted} strokeOpacity={0.15} strokeWidth={14} strokeLinecap="round" />
                 <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
@@ -1385,18 +1387,18 @@ export default function App() {
 
                 {isDaytime && (
                   <g>
-                    <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke="#f8fafc" strokeWidth={3} strokeLinecap="round" />
-                    <circle cx={needleX} cy={needleY} r={7} fill="#f8fafc" stroke="#0f172a" strokeWidth={2} />
+                    <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke={needleColor} strokeWidth={3} strokeLinecap="round" />
+                    <circle cx={needleX} cy={needleY} r={7} fill={needleColor} stroke={needleRing} strokeWidth={2} />
                   </g>
                 )}
-                <circle cx={cx} cy={cy} r={6} fill="#f8fafc" />
+                <circle cx={cx} cy={cy} r={6} fill={needleColor} />
 
-                <Sunrise className={tTheme.textMuted} x={cx - r - 14} y={cy - 32} width={28} height={28} />
-                <Sun className="text-red-400" x={cx - 14} y={cy - r - 32} width={28} height={28} />
-                <Sunset className={tTheme.textMuted} x={cx + r - 14} y={cy - 32} width={28} height={28} />
+                <Sunrise className={tTheme.textMuted} x={cx - r - 45} y={cy - 60} width={36} height={36} />
+                <Sun className="text-red-400" x={cx - 20} y={2} width={40} height={40} />
+                <Sunset className={tTheme.textMuted} x={cx + r + 9} y={cy - 60} width={36} height={36} />
 
                 <text x={cx - r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunrise}</text>
-                <text x={cx} y={cy - r - 12} textAnchor="middle" className="font-mono font-extrabold" fill="#ef4444" fontSize={22}>{solarTimes.solarNoon}</text>
+                <text x={cx} y={68} textAnchor="middle" className="font-mono font-extrabold" fill="#ef4444" fontSize={22}>{solarTimes.solarNoon}</text>
                 <text x={cx + r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunset}</text>
               </svg>
             );
