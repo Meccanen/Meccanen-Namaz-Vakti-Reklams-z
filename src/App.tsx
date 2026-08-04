@@ -1371,36 +1371,78 @@ export default function App() {
             const needleColor = isLight ? "#1e293b" : "#f8fafc";
             const needleRing = isLight ? "#f8fafc" : "#0f172a";
 
+            // Kerahat (namazın mekruh olduğu) bantları — yaygın kabul gören yaklaşık süreler:
+            // güneş doğuşundan ~45 dk sonrasına kadar, istivanın birkaç dk öncesi/sonrası,
+            // ve batıştan ~45 dk öncesinden batışa kadar.
+            const minToAngle = (m: number) =>
+              180 * (1 - Math.min(1, Math.max(0, (m - solarTimes.sunriseMinutes) / total)));
+            const bands = [
+              { start: solarTimes.sunriseMinutes, end: solarTimes.sunriseMinutes + 45 },
+              { start: solarTimes.solarNoonMinutes - 5, end: solarTimes.solarNoonMinutes + 5 },
+              { start: solarTimes.sunsetMinutes - 45, end: solarTimes.sunsetMinutes },
+            ];
+            const activeBand = isDaytime && bands.some(b => nowMin >= b.start && nowMin <= b.end);
+
+            const outerR = r + 7, innerR = r - 7;
+            const pt = (rr: number, a: number) => {
+              const rad = (a * Math.PI) / 180;
+              return [cx + rr * Math.cos(rad), cy - rr * Math.sin(rad)];
+            };
+            const bandPath = (startMin: number, endMin: number) => {
+              const a1 = minToAngle(startMin), a2 = minToAngle(endMin);
+              const [ox1, oy1] = pt(outerR, a1), [ox2, oy2] = pt(outerR, a2);
+              const [ix2, iy2] = pt(innerR, a2), [ix1, iy1] = pt(innerR, a1);
+              return `M ${ox1},${oy1} A ${outerR},${outerR} 0 0 1 ${ox2},${oy2} L ${ix2},${iy2} A ${innerR},${innerR} 0 0 0 ${ix1},${iy1} Z`;
+            };
+
             return (
-              <svg viewBox="0 0 350 235" className="w-full h-auto">
-                <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
-                  fill="none" stroke="currentColor" className={tTheme.textMuted} strokeOpacity={0.15} strokeWidth={14} strokeLinecap="round" />
-                <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
-                  fill="none" stroke="url(#kerahatArcGrad)" strokeWidth={14} strokeLinecap="round" opacity={0.9} />
-                <defs>
-                  <linearGradient id="kerahatArcGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#fbbf24" />
-                    <stop offset="50%" stopColor="#ef4444" />
-                    <stop offset="100%" stopColor="#f97316" />
-                  </linearGradient>
-                </defs>
+              <>
+                <svg viewBox="0 0 350 235" className="w-full h-auto">
+                  <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
+                    fill="none" stroke="currentColor" className={tTheme.textMuted} strokeOpacity={0.15} strokeWidth={14} strokeLinecap="round" />
+                  <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
+                    fill="none" stroke="url(#kerahatArcGrad)" strokeWidth={14} strokeLinecap="round" opacity={0.9} />
+                  <defs>
+                    <linearGradient id="kerahatArcGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="50%" stopColor="#ef4444" />
+                      <stop offset="100%" stopColor="#f97316" />
+                    </linearGradient>
+                    <pattern id="kerahatHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                      <rect width="6" height="6" fill="rgba(15,23,42,0.45)" />
+                      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" strokeWidth="3" />
+                    </pattern>
+                  </defs>
 
-                {isDaytime && (
-                  <g>
-                    <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke={needleColor} strokeWidth={3} strokeLinecap="round" />
-                    <circle cx={needleX} cy={needleY} r={7} fill={needleColor} stroke={needleRing} strokeWidth={2} />
-                  </g>
+                  {bands.map((b, i) => (
+                    <path key={i} d={bandPath(b.start, b.end)} fill="url(#kerahatHatch)" />
+                  ))}
+
+                  {isDaytime && (
+                    <g>
+                      <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke={needleColor} strokeWidth={3} strokeLinecap="round" />
+                      <circle cx={needleX} cy={needleY} r={7} fill={needleColor} stroke={needleRing} strokeWidth={2} />
+                    </g>
+                  )}
+                  <circle cx={cx} cy={cy} r={6} fill={needleColor} />
+
+                  <Sunrise className={tTheme.textMuted} x={cx - r - 45} y={cy - 60} width={36} height={36} />
+                  <Sun className="text-red-400" x={cx - 20} y={2} width={40} height={40} />
+                  <Sunset className={tTheme.textMuted} x={cx + r + 9} y={cy - 60} width={36} height={36} />
+
+                  <text x={cx - r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunrise}</text>
+                  <text x={cx} y={68} textAnchor="middle" className="font-mono font-extrabold" fill="#ef4444" fontSize={22}>{solarTimes.solarNoon}</text>
+                  <text x={cx + r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunset}</text>
+                </svg>
+
+                {activeBand && (
+                  <div className="flex justify-center -mt-1 mb-1">
+                    <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/20 border-2 border-red-500/50 text-red-400 font-extrabold text-base sm:text-lg animate-pulse">
+                      {t("kerahatActive", lang)}
+                    </span>
+                  </div>
                 )}
-                <circle cx={cx} cy={cy} r={6} fill={needleColor} />
-
-                <Sunrise className={tTheme.textMuted} x={cx - r - 45} y={cy - 60} width={36} height={36} />
-                <Sun className="text-red-400" x={cx - 20} y={2} width={40} height={40} />
-                <Sunset className={tTheme.textMuted} x={cx + r + 9} y={cy - 60} width={36} height={36} />
-
-                <text x={cx - r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunrise}</text>
-                <text x={cx} y={68} textAnchor="middle" className="font-mono font-extrabold" fill="#ef4444" fontSize={22}>{solarTimes.solarNoon}</text>
-                <text x={cx + r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunset}</text>
-              </svg>
+              </>
             );
           })()}
 
