@@ -1349,50 +1349,60 @@ export default function App() {
         </section>
 
         <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
-          <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent2} mb-4 flex items-center gap-2`}>
-            <Sun className="w-4 h-4 sm:w-5 sm:h-5" />{t("kerahatTitle", lang)}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center mb-4">
-            <div className="flex flex-col items-center gap-1">
-              <Sunrise className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.textMuted}`} />
-              <div className="text-[11px] sm:text-xs text-slate-500 leading-tight">{t("sunriseLabel", lang)}</div>
-              <div className={`text-lg sm:text-xl font-bold font-mono ${tTheme.textPrimary}`}>{solarTimes.sunrise}</div>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
-              <div className="text-[11px] sm:text-xs text-red-400/80 leading-tight">{t("solarNoonLabel", lang)}</div>
-              <div className="text-lg sm:text-xl font-bold font-mono text-red-400">{solarTimes.solarNoon}</div>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <Sunset className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.textMuted}`} />
-              <div className="text-[11px] sm:text-xs text-slate-500 leading-tight">{t("sunsetLabel", lang)}</div>
-              <div className={`text-lg sm:text-xl font-bold font-mono ${tTheme.textPrimary}`}>{solarTimes.sunset}</div>
-            </div>
+          <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${tTheme.accent2} mb-4 flex items-center gap-2`}>
+            <Sun className="w-6 h-6 sm:w-7 sm:h-7" />{t("kerahatTitle", lang)}
           </div>
 
           {(() => {
             const total = solarTimes.sunsetMinutes - solarTimes.sunriseMinutes;
-            const noonPct = Math.min(100, Math.max(0, ((solarTimes.solarNoonMinutes - solarTimes.sunriseMinutes) / total) * 100));
             const parts = new Intl.DateTimeFormat("en-US", {
               timeZone: location.timezone || "Europe/Istanbul", hour: "2-digit", minute: "2-digit", hour12: false,
             }).formatToParts(date);
             const nowMin = parseInt(parts.find(p => p.type === "hour")?.value || "0") * 60 +
                            parseInt(parts.find(p => p.type === "minute")?.value || "0");
-            const nowPct = Math.min(100, Math.max(0, ((nowMin - solarTimes.sunriseMinutes) / total) * 100));
             const isDaytime = nowMin >= solarTimes.sunriseMinutes && nowMin <= solarTimes.sunsetMinutes;
+            const frac = Math.min(1, Math.max(0, (nowMin - solarTimes.sunriseMinutes) / total));
+            // 0 (doğuş) -> 180°(sol), 0.5 (istiva) -> 90°(tepe), 1 (batış) -> 0°(sağ)
+            const angleDeg = 180 * (1 - frac);
+            const angleRad = (angleDeg * Math.PI) / 180;
+            const cx = 150, cy = 148, r = 122, needleR = 100;
+            const needleX = cx + needleR * Math.cos(angleRad);
+            const needleY = cy - needleR * Math.sin(angleRad);
+
             return (
-              <div className="relative h-2.5 rounded-full bg-white/10 overflow-visible">
-                <div className="absolute inset-y-0 left-0 right-0 rounded-full bg-gradient-to-r from-amber-500/30 via-amber-300/50 to-amber-500/30" />
-                <div className="absolute top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-red-500" style={{ left: `calc(${noonPct}% - 2px)` }} title={t("solarNoonLabel", lang)} />
+              <svg viewBox="0 0 300 195" className="w-full h-auto">
+                <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
+                  fill="none" stroke="currentColor" className={tTheme.textMuted} strokeOpacity={0.15} strokeWidth={14} strokeLinecap="round" />
+                <path d={`M ${cx - r},${cy} A ${r},${r} 0 0 1 ${cx + r},${cy}`}
+                  fill="none" stroke="url(#kerahatArcGrad)" strokeWidth={14} strokeLinecap="round" opacity={0.9} />
+                <defs>
+                  <linearGradient id="kerahatArcGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="50%" stopColor="#ef4444" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </linearGradient>
+                </defs>
+
                 {isDaytime && (
-                  <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow ring-2 ring-black/20" style={{ left: `calc(${nowPct}% - 6px)` }} />
+                  <g>
+                    <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke="#f8fafc" strokeWidth={3} strokeLinecap="round" />
+                    <circle cx={needleX} cy={needleY} r={7} fill="#f8fafc" stroke="#0f172a" strokeWidth={2} />
+                  </g>
                 )}
-              </div>
+                <circle cx={cx} cy={cy} r={6} fill="#f8fafc" />
+
+                <Sunrise className={tTheme.textMuted} x={cx - r - 14} y={cy - 32} width={28} height={28} />
+                <Sun className="text-red-400" x={cx - 14} y={cy - r - 32} width={28} height={28} />
+                <Sunset className={tTheme.textMuted} x={cx + r - 14} y={cy - 32} width={28} height={28} />
+
+                <text x={cx - r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunrise}</text>
+                <text x={cx} y={cy - r - 12} textAnchor="middle" className="font-mono font-extrabold" fill="#ef4444" fontSize={22}>{solarTimes.solarNoon}</text>
+                <text x={cx + r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunset}</text>
+              </svg>
             );
           })()}
 
-          <p className={`text-xs sm:text-sm ${tTheme.textMuted} mt-3 leading-relaxed`}>{t("kerahatDesc", lang)}</p>
+          <p className={`text-sm sm:text-base ${tTheme.textMuted} mt-2 leading-snug text-center`}>{t("kerahatDesc", lang)}</p>
         </section>
 
         <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
