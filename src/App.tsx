@@ -504,14 +504,14 @@ function SettingsPanel({
               <h2 className={`text-base sm:text-lg font-bold ${th.accent}`}>{t("settings", lang)}</h2>
             </div>
             <button onClick={onClose} className="p-2.5 rounded-full hover:bg-white/10 transition-all cursor-pointer">
-              <X className="w-6 h-6 text-slate-400" />
+              <X className={`w-6 h-6 ${th.textMuted}`} />
             </button>
           </div>
 
           <div className="grid grid-cols-3 gap-2 px-4 sm:px-6 pb-3 shrink-0">
             {tabs.map(tb => (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className={`px-2 py-3.5 rounded-2xl text-base sm:text-lg font-extrabold transition-all duration-200 cursor-pointer text-center leading-tight border-2 ${tab === tb.key ? `${th.accent} border-current bg-white/15 shadow-md` : `border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100`}`}>
+                className={`px-2 py-3.5 rounded-2xl text-base sm:text-lg font-extrabold transition-all duration-200 cursor-pointer text-center leading-tight border-2 ${tab === tb.key ? `${th.accent} border-current bg-white/15 shadow-md` : `border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 hover:${th.textPrimary}`}`}>
                 {tb.label}
               </button>
             ))}
@@ -521,7 +521,7 @@ function SettingsPanel({
 
             {tab === "genel" && (
               <div className="space-y-4">
-                <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2">
+                <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2`}>
                   <Palette className="w-6 h-6 sm:w-7 sm:h-7" />{t("themeSelection", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -534,7 +534,7 @@ function SettingsPanel({
                         <div className="flex gap-0.5 shrink-0">
                           {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
                         </div>
-                        <span className="text-base sm:text-lg font-bold text-slate-200 leading-tight">{t(`theme_${key}`, lang)}</span>
+                        <span className={`text-base sm:text-lg font-bold ${th.textPrimary} leading-tight`}>{t(`theme_${key}`, lang)}</span>
                         {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
                       </button>
                     );
@@ -566,13 +566,13 @@ function SettingsPanel({
 
             {tab === "dil" && (
               <div className="space-y-4">
-                <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5">
+                <h3 className={`text-sm font-bold tracking-wide ${th.textPrimary} flex items-center gap-1.5`}>
                   <Globe className="w-3.5 h-3.5" />{t("language", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
                   {LANGUAGES.map(l => (
                     <button key={l.code} onClick={() => setLang(l.code)}
-                      className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-current bg-white/15 text-slate-100 shadow-md" : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"}`}>
+                      className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-current bg-white/15 ${th.textPrimary} shadow-md" : "border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
                       {l.label}
                     </button>
                   ))}
@@ -585,12 +585,12 @@ function SettingsPanel({
                 {/* Otomatik konum toggle — her zaman görünür, tıklanınca açılır/kapanır */}
                 <div className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${autoLocationEnabled ? "bg-sky-500/10 border-sky-500/20" : "bg-white/5 border-white/5"}`}>
                   <div className="flex items-center gap-2">
-                    <Navigation className={`w-4 h-4 shrink-0 ${autoLocationEnabled ? "text-sky-400" : "text-slate-500"}`} />
+                    <Navigation className={`w-4 h-4 shrink-0 ${autoLocationEnabled ? "text-sky-400" : th.textMuted}`} />
                     <div>
-                      <div className={`text-base sm:text-lg font-extrabold ${autoLocationEnabled ? "text-sky-400" : "text-slate-300"}`}>
+                      <div className={`text-base sm:text-lg font-extrabold ${autoLocationEnabled ? "text-sky-400" : th.textPrimary}`}>
                         {t("autoLocationToggleLabel", lang)}
                       </div>
-                      <div className="text-sm text-slate-500">
+                      <div className={`text-sm ${th.textMuted}`}>
                         {autoLocationEnabled ? t("autoLocationDesc", lang) : t("autoLocationOffDesc", lang)}
                       </div>
                     </div>
@@ -613,7 +613,7 @@ function SettingsPanel({
 
                 {savedLocations.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-bold tracking-wide text-slate-400 flex items-center gap-1.5 mb-2">
+                    <h3 className={`text-sm font-bold tracking-wide ${th.textPrimary} flex items-center gap-1.5 mb-2`}>
                       <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{MAX_LOCATIONS})
                     </h3>
                     <div className="space-y-1.5">
@@ -624,12 +624,12 @@ function SettingsPanel({
                             <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
                               <div className="flex items-center gap-2">
                                 {isActive && <div className={`w-2 h-2 rounded-full ${th.accent.replace("text-","bg-")} shrink-0`} />}
-                                <span className={`text-sm font-bold ${isActive ? th.accent : "text-slate-200"}`}>{loc.name}</span>
-                                <span className="text-sm text-slate-500">{loc.country}</span>
+                                <span className={`text-sm font-bold ${isActive ? th.accent : th.textPrimary}`}>{loc.name}</span>
+                                <span className={`text-sm ${th.textMuted}`}>{loc.country}</span>
                               </div>
-                              <div className="text-sm text-slate-600 font-mono mt-0.5">{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
+                              <div className={`text-sm ${th.textMuted} font-mono mt-0.5`}>{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
                             </button>
-                            <button onClick={() => deleteSaved(idx)} className="p-1.5 text-slate-600 hover:text-red-400 transition-all cursor-pointer shrink-0">
+                            <button onClick={() => deleteSaved(idx)} className={`p-1.5 ${th.textMuted} hover:text-red-400 transition-all cursor-pointer shrink-0`}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -640,7 +640,7 @@ function SettingsPanel({
                 )}
 
                 <div>
-                  <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2 mb-2">
+                  <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2 mb-2`}>
                     <Search className="w-5 h-5 sm:w-6 sm:h-6" />{t("searchCity", lang)}
                   </h3>
                   <div className="relative mb-2">
@@ -648,8 +648,8 @@ function SettingsPanel({
                       onChange={e => setSearchQuery(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && performSearch()}
                       placeholder={t("searchCity", lang)}
-                      className="w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all duration-200" />
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      className={`w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-sm ${th.textPrimary} placeholder:${th.textMuted} focus:outline-none transition-all duration-200`} />
+                    <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${th.textMuted}`} />
                     <button onClick={performSearch} disabled={isSearching}
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-xs font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
                       {isSearching ? t("updating", lang) : t("search", lang)}
@@ -659,14 +659,14 @@ function SettingsPanel({
                     <div className="bg-black/40 border border-white/10 rounded-2xl p-2 max-h-44 overflow-y-auto space-y-1 mb-2">
                       {searchResults.map((r, i) => (
                         <button key={i} onClick={() => addAndSelectCity(r)}
-                          className="w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-sm text-slate-300 flex justify-between items-center transition-all cursor-pointer">
+                          className={`w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-sm ${th.textPrimary} flex justify-between items-center transition-all cursor-pointer`}>
                           <div>
-                            <span className="font-bold text-slate-100">{r.name}</span>
-                            {r.admin1 && <span className="text-slate-500 ml-1.5 text-sm">({r.admin1})</span>}
+                            <span className={`font-bold ${th.textPrimary}`}>{r.name}</span>
+                            {r.admin1 && <span className={`${th.textMuted} ml-1.5 text-sm`}>({r.admin1})</span>}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
-                            <Plus className="w-3.5 h-3.5 text-slate-500" />
+                            <Plus className={`w-3.5 h-3.5 ${th.textMuted}`} />
                           </div>
                         </button>
                       ))}
@@ -675,32 +675,32 @@ function SettingsPanel({
                   {searchError && <p className="text-sm text-amber-500 mb-2">{searchError}</p>}
                   {lang === "tr" && (
                   <div>
-                    <label className="text-sm text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                    <label className={`text-sm ${th.textMuted} font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5`}>
                       <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none cursor-pointer appearance-none">
+                        className={`w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm ${th.textPrimary} focus:outline-none cursor-pointer appearance-none`}>
                         <option value="">{t("select", lang)}</option>
                         {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                       </select>
-                      <ChevronsDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                      <ChevronsDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${th.textMuted} pointer-events-none`} />
                     </div>
                   </div>
                   )}
                   {lang === "ur" && (
                   <div dir="rtl">
-                    <label className="text-sm text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5">
+                    <label className={`text-sm ${th.textMuted} font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5`}>
                       <Map className="w-3 h-3" />{t("pakistanCities", lang)}
                     </label>
                     <div className="relative">
                       <select onChange={e => { if (e.target.value) { selectPakistanCity(Number(e.target.value)); e.target.value = ""; } }}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none cursor-pointer appearance-none"
+                        className={`w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm ${th.textPrimary} focus:outline-none cursor-pointer appearance-none`}
                         dir="rtl">
                         <option value="">{t("select", lang)}</option>
                         {PAKISTAN_CITIES.map(p => <option key={p.id} value={p.id}>{p.urdu}</option>)}
                       </select>
-                      <ChevronsDown className="absolute left-3 right-auto top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                      <ChevronsDown className={`absolute left-3 right-auto top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${th.textMuted} pointer-events-none`} />
                     </div>
                   </div>
                   )}
@@ -710,7 +710,7 @@ function SettingsPanel({
 
             {tab === "metot" && (
               <div className="space-y-2">
-                <h3 className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2 mb-3">
+                <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2 mb-3`}>
                   <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />{t("prayerMethod", lang)}
                 </h3>
                 {PRAYER_METHODS.map(m => (
@@ -728,17 +728,17 @@ function SettingsPanel({
 
             {tab === "bildirim" && (
               <div className="space-y-4">
-                <h3 className="text-xl sm:text-2xl font-extrabold tracking-wide text-slate-200 flex items-center gap-2">
+                <h3 className={`text-xl sm:text-2xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2`}>
                   <Bell className="w-6 h-6 sm:w-7 sm:h-7" />{t("notificationHeader", lang)}
                 </h3>
                 <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${notificationSettings.enabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                   <div className="flex items-center gap-3">
-                    {notificationSettings.enabled ? <Bell className="w-5 h-5 text-amber-400" /> : <BellOff className="w-5 h-5 text-slate-500" />}
+                    {notificationSettings.enabled ? <Bell className="w-5 h-5 text-amber-400" /> : <BellOff className={`w-5 h-5 ${th.textMuted}`} />}
                     <div>
-                      <div className={`text-sm font-bold ${notificationSettings.enabled ? "text-amber-400" : "text-slate-300"}`}>
+                      <div className={`text-sm font-bold ${notificationSettings.enabled ? "text-amber-400" : th.textPrimary}`}>
                         {notificationSettings.enabled ? t("notificationsOn", lang) : t("notificationsOff", lang)}
                       </div>
-                      <div className="text-sm text-slate-500">{t("notificationHeader", lang)}</div>
+                      <div className={`text-sm ${th.textMuted}`}>{t("notificationHeader", lang)}</div>
                     </div>
                   </div>
                   <button
@@ -764,7 +764,7 @@ function SettingsPanel({
                 {notificationSettings.enabled && (
                   <>
                     <div>
-                      <div className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 mb-2">{t("minutesBefore", lang)}</div>
+                      <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("minutesBefore", lang)}</div>
                       <div className="flex gap-2 flex-wrap">
                         {[0, 5, 10, 15, 20, 30].map(min => (
                           <button key={min} onClick={async () => {
@@ -774,7 +774,7 @@ function SettingsPanel({
                             await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
-                            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
                             {min === 0 ? t("minutesOff", lang) : t("minutes", lang, { min: String(min) })}
                           </button>
                         ))}
@@ -784,7 +784,7 @@ function SettingsPanel({
                       )}
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
-                      <div className="text-base sm:text-lg font-bold text-slate-200">{t("notifyAtVakitLabel", lang)}</div>
+                      <div className={`text-base sm:text-lg font-bold ${th.textPrimary}`}>{t("notifyAtVakitLabel", lang)}</div>
                       <button onClick={async () => {
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
@@ -806,7 +806,7 @@ function SettingsPanel({
                               saveNotificationSettings(updated);
                               await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             }}
-                              className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+                              className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
                             </button>
                           ))}
@@ -815,19 +815,19 @@ function SettingsPanel({
                     )}
 
                     <div>
-                      <div className="text-lg sm:text-xl font-extrabold tracking-wide text-slate-200 mb-2">{t("whichPrayers", lang)}</div>
+                      <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("whichPrayers", lang)}</div>
                       <div className="space-y-2">
                         {(Object.entries(notificationSettings.prayers) as [keyof typeof notificationSettings.prayers, boolean][]).map(([key, isOn]) => (
                           <div key={key} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isOn ? "border-amber-500/20 bg-amber-500/8" : "border-white/5 bg-white/5"}`}>
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${isOn ? "bg-amber-400" : "bg-slate-600"}`} />
-                              <span className={`text-sm font-bold ${isOn ? "text-slate-100" : "text-slate-500"}`}>{t(`prayer_${key}`, lang)}</span>
+                              <span className={`text-sm font-bold ${isOn ? th.textPrimary : th.textMuted}`}>{t(`prayer_${key}`, lang)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               {key !== "gunes" && (
                                 <button onClick={() => toggleEzanPreview(key)}
                                   title={t("listenEzan", lang)}
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 ${playingEzanPreview === key ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"}`}>
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 ${playingEzanPreview === key ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 hover:${th.textPrimary}"}`}>
                                   {playingEzanPreview === key ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
                                 </button>
                               )}
@@ -860,25 +860,25 @@ function SettingsPanel({
                 <div className="flex flex-col items-center text-center py-4">
                   <div className={`text-3xl sm:text-4xl font-extrabold tracking-widest ${th.accent} mb-2`}>MECCANEN</div>
                   <p className={`text-base font-semibold ${th.textSecondary}`}>{t("appName", lang)}</p>
-                  <p className="text-sm text-slate-500 mt-1">v{APP_VERSION}</p>
+                  <p className={`text-sm ${th.textMuted} mt-1`}>v{APP_VERSION}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>
                     {t("aboutDesc1", lang)}
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>
                     {t("aboutDesc2", lang)}
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>
                     {t("aboutDesc3", lang)}
                   </p>
-                  <p className="text-sm text-slate-500 leading-relaxed">
+                  <p className={`text-sm ${th.textMuted} leading-relaxed`}>
                     {t("esmaSourceCitation", lang)}
                   </p>
                 </div>
 
-                <p className="text-sm text-slate-400 leading-relaxed px-1">
+                <p className={`text-sm ${th.textSecondary} leading-relaxed px-1`}>
                   {t("aboutDesc4", lang)}
                 </p>
 
@@ -886,8 +886,8 @@ function SettingsPanel({
                   <a href="https://github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z"
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className="text-xs font-semibold text-slate-200">GitHub</span>
-                    <span className="text-sm text-slate-500">→</span>
+                    <span className={`text-xs font-semibold ${th.textPrimary}`}>GitHub</span>
+                    <span className={`text-sm ${th.textMuted}`}>→</span>
                   </a>
                   <a href="https://ko-fi.com/meccanen"
                     target="_blank" rel="noopener noreferrer"
@@ -900,17 +900,17 @@ function SettingsPanel({
                   <a href="https://paypal.me/bulentt"
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className="text-xs font-semibold text-slate-200">PayPal</span>
-                    <span className="text-sm text-slate-500">→</span>
+                    <span className={`text-xs font-semibold ${th.textPrimary}`}>PayPal</span>
+                    <span className={`text-sm ${th.textMuted}`}>→</span>
                   </a>
                   <a href="mailto:meccanen@meccanen.xyz"
                     className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className="text-xs font-semibold text-slate-200">{t("email", lang)}</span>
-                    <span className="text-sm text-slate-500">meccanen@meccanen.xyz</span>
+                    <span className={`text-xs font-semibold ${th.textPrimary}`}>{t("email", lang)}</span>
+                    <span className={`text-sm ${th.textMuted}`}>meccanen@meccanen.xyz</span>
                   </a>
                 </div>
 
-                <p className="text-center text-sm text-slate-600">© 2026 Meccanen</p>
+                <p className={`text-center text-sm ${th.textMuted}`}>© 2026 Meccanen</p>
               </div>
             )}
           </div>
