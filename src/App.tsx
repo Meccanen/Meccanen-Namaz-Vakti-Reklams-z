@@ -525,17 +525,21 @@ function SettingsPanel({
                   <Palette className="w-6 h-6 sm:w-7 sm:h-7" />{t("themeSelection", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([key, th]) => {
+                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([key, cardTh]) => {
                     const isActive = theme === key;
                     return (
                       <button key={key} onClick={() => handleThemeClick(key)}
-                        className={`relative flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden
-                          ${isActive ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
+                        className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden ${cardTh.bg} ${isActive ? "" : "border-transparent opacity-90 hover:opacity-100"}`}
+                        style={isActive ? { borderColor: cardTh.preview[1] } : undefined}>
                         <div className="flex gap-0.5 shrink-0">
-                          {th.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ backgroundColor: c }} />)}
+                          {cardTh.preview.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c }} />)}
                         </div>
-                        <span className={`text-base sm:text-lg font-bold ${th.textPrimary} leading-tight`}>{t(`theme_${key}`, lang)}</span>
-                        {isActive && <Check className="w-3.5 h-3.5 text-white absolute right-2.5 top-1/2 -translate-y-1/2" />}
+                        <span className={`text-base sm:text-lg font-bold ${cardTh.textPrimary} leading-tight`}>{t(`theme_${key}`, lang)}</span>
+                        {isActive && (
+                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 shadow">
+                            <Check className="w-3 h-3 text-slate-900" />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
