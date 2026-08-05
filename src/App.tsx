@@ -166,6 +166,28 @@ export const THEMES = {
     textPrimary: "text-green-950", textSecondary: "text-green-700", textMuted: "text-green-500",
     hijriAccent: "text-emerald-700", settingsCard: "bg-white/98 border-green-200",
   },
+  vaha: {
+    label: "Yeşil Vaha", preview: ["#e6fbf5","#0f766e","#3730a3"],
+    bg: "bg-[#e6fbf5]", card: "bg-white/70 border-teal-200/80",
+    cardHover: "hover:border-teal-300/60", header: "border-teal-200/60",
+    accent: "text-indigo-700", accent2: "text-teal-600", accent3: "text-indigo-900",
+    prayerActive: "bg-gradient-to-b from-indigo-400/20 to-indigo-400/35 border-indigo-500/40 text-indigo-800 ring-indigo-400/30",
+    clockGrad: "from-indigo-900 to-teal-800", secColor: "text-indigo-600",
+    blob1: "bg-teal-300/20", blob2: "bg-indigo-200/20",
+    textPrimary: "text-teal-950", textSecondary: "text-teal-800", textMuted: "text-teal-600",
+    hijriAccent: "text-indigo-700", settingsCard: "bg-white/98 border-teal-200",
+  },
+  nilufer: {
+    label: "Nilüfer Bahçesi", preview: ["#e6fbf5","#0f766e","#e11d48"],
+    bg: "bg-[#e6fbf5]", card: "bg-white/70 border-teal-200/80",
+    cardHover: "hover:border-teal-300/60", header: "border-teal-200/60",
+    accent: "text-rose-600", accent2: "text-teal-600", accent3: "text-rose-800",
+    prayerActive: "bg-gradient-to-b from-rose-400/20 to-rose-400/35 border-rose-500/40 text-rose-700 ring-rose-400/30",
+    clockGrad: "from-rose-800 to-teal-800", secColor: "text-rose-500",
+    blob1: "bg-teal-300/20", blob2: "bg-rose-200/20",
+    textPrimary: "text-teal-950", textSecondary: "text-teal-800", textMuted: "text-teal-600",
+    hijriAccent: "text-rose-600", settingsCard: "bg-white/98 border-teal-200",
+  },
 };
 export type ThemeKey = keyof typeof THEMES;
 
@@ -198,7 +220,7 @@ const DEFAULT_LOCATION: Location = {
 
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const th = THEMES[themeKey];
-  const isLight = ["seher","gul","nane"].includes(themeKey);
+  const isLight = ["seher","gul","nane","vaha","nilufer"].includes(themeKey);
   const prayers = [
     { name:"İmsak", time:"04:32" }, { name:"Güneş", time:"06:10" }, { name:"Öğle", time:"13:15" },
     { name:"İkindi", time:"17:02" }, { name:"Akşam", time:"20:18" }, { name:"Yatsı", time:"22:01" },
@@ -856,6 +878,10 @@ function SettingsPanel({
                   </p>
                 </div>
 
+                <p className="text-sm text-slate-400 leading-relaxed px-1">
+                  {t("aboutDesc4", lang)}
+                </p>
+
                 <div className="space-y-2">
                   <a href="https://github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z"
                     target="_blank" rel="noopener noreferrer"
@@ -904,7 +930,7 @@ export default function App() {
   const [themeKey, setThemeKey] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem("mnv_theme") as ThemeKey;
     if (saved && THEMES[saved]) return saved;
-    return "nane";
+    return "vaha";
   });
   const [lang, setLangState] = useState<LangCode>(() => {
     return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
@@ -950,7 +976,7 @@ export default function App() {
     [location.latitude, location.longitude, date, location.timezone]
   );
   const tTheme = THEMES[themeKey];
-  const isLight = ["seher","gul","nane"].includes(themeKey);
+  const isLight = ["seher","gul","nane","vaha","nilufer"].includes(themeKey);
 
   // Header buton stilleri
   const hdrBtnBg     = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
