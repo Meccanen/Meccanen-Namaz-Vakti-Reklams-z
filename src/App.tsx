@@ -576,7 +576,7 @@ function SettingsPanel({
                 <div className="grid grid-cols-2 gap-2.5">
                   {LANGUAGES.map(l => (
                     <button key={l.code} onClick={() => setLang(l.code)}
-                      className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? "border-current bg-white/15 ${th.textPrimary} shadow-md" : "border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
+                      className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? `border-current bg-white/15 ${th.textPrimary} shadow-md` : `border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                       {l.label}
                     </button>
                   ))}
@@ -778,7 +778,7 @@ function SettingsPanel({
                             await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
-                            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
+                            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                             {min === 0 ? t("minutesOff", lang) : t("minutes", lang, { min: String(min) })}
                           </button>
                         ))}
@@ -810,13 +810,29 @@ function SettingsPanel({
                               saveNotificationSettings(updated);
                               await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             }}
-                              className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10"}`}>
+                              className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
                             </button>
                           ))}
                         </div>
                       </div>
                     )}
+
+                    <div className="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
+                      <div>
+                        <div className={`text-base sm:text-lg font-bold ${th.textPrimary}`}>{t("statusNotifLabel", lang)}</div>
+                        <div className={`text-sm ${th.textMuted} mt-0.5`}>{t("statusNotifDesc", lang)}</div>
+                      </div>
+                      <button onClick={async () => {
+                        const updated = { ...notificationSettings, showStatusNotification: !notificationSettings.showStatusNotification };
+                        setNotificationSettings(updated);
+                        saveNotificationSettings(updated);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                      }}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.showStatusNotification ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.showStatusNotification ? "left-6" : "left-0.5"}`} />
+                      </button>
+                    </div>
 
                     <div>
                       <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("whichPrayers", lang)}</div>
@@ -831,7 +847,7 @@ function SettingsPanel({
                               {key !== "gunes" && (
                                 <button onClick={() => toggleEzanPreview(key)}
                                   title={t("listenEzan", lang)}
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 ${playingEzanPreview === key ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 hover:${th.textPrimary}"}`}>
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 ${playingEzanPreview === key ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 hover:${th.textPrimary}`}`}>
                                   {playingEzanPreview === key ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
                                 </button>
                               )}
