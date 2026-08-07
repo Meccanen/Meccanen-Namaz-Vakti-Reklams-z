@@ -24,6 +24,42 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Bagımlılıkları yükle
         run: npm install
+      - name: "Local Notifications eklentisini yama: durum bildirimi zinciri (cancelPreviousId)"
+        run: |
+          cat > /tmp/patch_notif.py << 'PYEOF'
+          import os
+
+          path = "node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java"
+          if not os.path.exists(path):
+              raise SystemExit(f">>> HATA: {path} bulunamadı, @capacitor/local-notifications kurulu mu kontrol et.")
+
+          with open(path) as f:
+              content = f.read()
+
+          marker = "        notificationManager.notify(id, notification);"
+          if marker not in content:
+              raise SystemExit(">>> HATA: Beklenen native kod satırı bulunamadı, eklenti sürümü değişmiş olabilir.")
+
+          if "cancelPreviousId" in content:
+              print(">>> Yama zaten uygulanmış, tekrar uygulanmadı.")
+          else:
+              patch = (
+                  "        try {\n"
+                  "            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");\n"
+                  "            if (extra != null && extra.has(\"cancelPreviousId\")) {\n"
+                  "                notificationManager.cancel(extra.getInt(\"cancelPreviousId\"));\n"
+                  "            }\n"
+                  "        } catch (Exception e) {\n"
+                  "            Logger.error(Logger.tags(\"LN\"), \"cancelPreviousId patch failed\", e);\n"
+                  "        }\n"
+                  + marker
+              )
+              content = content.replace(marker, patch)
+              with open(path, "w") as f:
+                  f.write(content)
+              print(">>> Durum bildirimi zinciri yaması uygulandı.")
+          PYEOF
+          python3 /tmp/patch_notif.py
       - name: Web build al
         run: npm run build
       - name: Capacitor Android ekle
@@ -153,6 +189,13 @@ jobs:
           cat > /tmp/make_icons.py << 'PYEOF'
           from PIL import Image
           import os
+
+          if not os.path.exists('public/meccanen-logo.png'):
+              raise SystemExit(
+                  ">>> HATA: public/meccanen-logo.png bulunamadı. "
+                  "Logo dosyasının GitHub'a repo kökündeki public/ klasörüne "
+                  "yüklendiğinden emin ol (dosya adı ve yol birebir aynı olmalı)."
+              )
 
           def make_icon(size, out_path, margin_ratio=0.80):
               img = Image.new('RGBA', (size, size), (2, 6, 23, 255))
