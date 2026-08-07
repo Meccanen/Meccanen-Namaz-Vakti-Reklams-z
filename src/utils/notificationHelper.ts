@@ -18,6 +18,8 @@ export interface NotificationSettings {
     aksam: boolean;
     yatsi: boolean;
   };
+  showStatusNotification: boolean; // "Şu an X vakti — sonraki Y saat:xx" şeklinde sessiz,
+                                    // tek ve sürekli güncellenen bir durum bildirimi göster
 }
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -33,6 +35,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     aksam: true,
     yatsi: true,
   },
+  showStatusNotification: false,
 };
 
 export const PRAYER_LABELS: Record<string, string> = {
@@ -49,12 +52,24 @@ export const PRAYER_LABELS: Record<string, string> = {
 // bir ezan sesi kullanabilmek adına her vakte özel bir kanal tanımlıyoruz. Güneş (şuruk)
 // vaktinde ezan okunmadığı için o vakit her zaman varsayılan kanalı kullanır.
 const CHANNEL_DEFAULT = "prayer_default";
+const CHANNEL_STATUS = "prayer_status_silent";
 const EZAN_CHANNELS: Partial<Record<keyof NotificationSettings["prayers"], string>> = {
   imsak: "prayer_ezan_imsak",
   ogle: "prayer_ezan_ogle",
   ikindi: "prayer_ezan_ikindi",
   aksam: "prayer_ezan_aksam",
   yatsi: "prayer_ezan_yatsi",
+};
+
+// "Şu an hangi vakitteyiz" durum bildirimi için sabit ID'ler ve zincir sırası.
+// Her biri, native tarafta (TimedNotificationPublisher yaması ile) kendisinden hemen
+// önceki ID'yi otomatik olarak iptal eder — böylece gün boyunca HER ZAMAN tek bir
+// bildirim görünür, birikme olmaz. Sadece BUGÜN için planlanır (yarın için değil),
+// çünkü aynı ID'yi iki farklı güne planlamak birbirini iptal eder; uygulama her
+// açıldığında / ayarlar değiştiğinde otomatik tazelenir.
+const STATUS_ORDER: (keyof NotificationSettings["prayers"])[] = ["imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"];
+const STATUS_IDS: Record<keyof NotificationSettings["prayers"], number> = {
+  imsak: 9000, gunes: 9001, ogle: 9002, ikindi: 9003, aksam: 9004, yatsi: 9005,
 };
 
 // res/raw içine konan, vakte özel ezan ses dosyaları (Capacitor Local Notifications Android'de
@@ -79,6 +94,16 @@ async function ensureChannels(): Promise<void> {
       importance: 5,
       visibility: 1,
       sound: undefined,
+    });
+    await LocalNotifications.createChannel({
+      id: CHANNEL_STATUS,
+      name: "Namaz Vakti Durumu",
+      description: "Şu an hangi vakitte olduğunuzu gösteren sessiz, tek durum bildirimi",
+      importance: 2,
+      visibility: 1,
+      sound: undefined,
+      vibration: false,
+      lights: false,
     });
     for (const [prayerKey, channelId] of Object.entries(EZAN_CHANNELS)) {
       const soundFile = EZAN_SOUND_FILES[prayerKey as keyof NotificationSettings["prayers"]];
@@ -259,6 +284,52 @@ export async function schedulePrayerNotifications(
       }
     }
   });
+
+  // "Şu an hangi vakitteyiz" durum bildirimi — sadece BUGÜN için, 6 sabit ID'lik zincir.
+  // Her biri tetiklendiğinde native yama (extra.cancelPreviousId) sayesinde kendinden
+  // önceki durumu otomatik siler, böylece her zaman tek bir bildirim görünür.
+  if (settings.showStatusNotification) {
+    const STATUS_TEXTS: Record<string, Record<string, string>> = {
+      title: { tr: "Şu An {name} Vakti", en: "Currently {name} Time", ar: "الآن وقت {name}" },
+      body:  { tr: "{next} Namazı Saat {time}", en: "{next} Prayer at {time}", ar: "صلاة {next} الساعة {time}" },
+    };
+    const stx = (key: string, vars: Record<string, string>) => {
+      let s = STATUS_TEXTS[key][lang] || STATUS_TEXTS[key].en;
+      Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, v); });
+      return s;
+    };
+    const timeByKey: Record<string, string> = {};
+    prayerTimes.forEach(p => { timeByKey[p.key] = p.time; });
+
+    STATUS_ORDER.forEach((key, i) => {
+      const timeStr = timeByKey[key];
+      if (!timeStr) return;
+      const [h, m] = timeStr.split(":").map(Number);
+      const triggerDate = new Date(now);
+      triggerDate.setHours(h, m, 0, 0);
+      if (triggerDate <= now) return; // bugün zaten geçmiş vakit, planlanmaz
+
+      const currentName = PRAYER_NAMES[key]?.[lang] || key;
+      const nextKey = STATUS_ORDER[(i + 1) % STATUS_ORDER.length];
+      const nextName = PRAYER_NAMES[nextKey]?.[lang] || nextKey;
+      const nextTime = timeByKey[nextKey] || "";
+      const prevKey = STATUS_ORDER[(i - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
+
+      notifications.push({
+        id: STATUS_IDS[key],
+        title: stx("title", { name: currentName }),
+        body: stx("body", { next: nextName, time: nextTime }),
+        schedule: { at: triggerDate },
+        channelId: CHANNEL_STATUS,
+        sound: "default",
+        smallIcon: "ic_stat_notify",
+        iconColor: "#f59e0b",
+        ongoing: false,
+        autoCancel: false,
+        extra: { cancelPreviousId: STATUS_IDS[prevKey] },
+      });
+    });
+  }
 
   if (notifications.length > 0) {
     try {
