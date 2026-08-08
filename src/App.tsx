@@ -188,6 +188,17 @@ export const THEMES = {
     textPrimary: "text-teal-950", textSecondary: "text-teal-800", textMuted: "text-teal-600",
     hijriAccent: "text-rose-600", settingsCard: "bg-white/98 border-teal-200",
   },
+  lavanta: {
+    label: "Lavanta Bahçesi", preview: ["#f5f3ff","#7c3aed","#b45309"],
+    bg: "bg-[#f5f3ff]", card: "bg-white/70 border-violet-200/80",
+    cardHover: "hover:border-violet-300/60", header: "border-violet-200/60",
+    accent: "text-violet-700", accent2: "text-amber-600", accent3: "text-violet-900",
+    prayerActive: "bg-gradient-to-b from-violet-400/20 to-violet-400/35 border-violet-500/40 text-violet-800 ring-violet-400/30",
+    clockGrad: "from-violet-900 to-amber-800", secColor: "text-violet-600",
+    blob1: "bg-violet-300/20", blob2: "bg-amber-200/20",
+    textPrimary: "text-violet-950", textSecondary: "text-violet-800", textMuted: "text-violet-600",
+    hijriAccent: "text-amber-700", settingsCard: "bg-white/98 border-violet-200",
+  },
 };
 export type ThemeKey = keyof typeof THEMES;
 
@@ -220,7 +231,7 @@ const DEFAULT_LOCATION: Location = {
 
 function ThemePreviewCard({ themeKey }: { themeKey: ThemeKey }) {
   const th = THEMES[themeKey];
-  const isLight = ["seher","gul","nane","vaha","nilufer"].includes(themeKey);
+  const isLight = ["seher","gul","nane","vaha","nilufer","lavanta"].includes(themeKey);
   const prayers = [
     { name:"İmsak", time:"04:32" }, { name:"Güneş", time:"06:10" }, { name:"Öğle", time:"13:15" },
     { name:"İkindi", time:"17:02" }, { name:"Akşam", time:"20:18" }, { name:"Yatsı", time:"22:01" },
@@ -996,7 +1007,7 @@ export default function App() {
     [location.latitude, location.longitude, date, location.timezone]
   );
   const tTheme = THEMES[themeKey];
-  const isLight = ["seher","gul","nane","vaha","nilufer"].includes(themeKey);
+  const isLight = ["seher","gul","nane","vaha","nilufer","lavanta"].includes(themeKey);
 
   // Header buton stilleri
   const hdrBtnBg     = isLight ? "bg-black/10 hover:bg-black/20 border-black/15" : "bg-black/30 hover:bg-white/10 border-white/10";
