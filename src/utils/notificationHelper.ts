@@ -1,4 +1,5 @@
 import { LocalNotifications, ScheduleEvery } from "@capacitor/local-notifications";
+import { LangCode } from "./i18n";
 
 export type SoundType = "default" | "ezan";
 
@@ -178,7 +179,7 @@ export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
   settings: NotificationSettings,
   locationName: string,
-  lang: "tr" | "en" | "ar" = "tr",
+  lang: LangCode = "tr",
 ): Promise<ScheduleResult> {
   if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
   if (!settings.enabled) { await cancelAllNotifications(); return { success: true, scheduledCount: 0 }; }
@@ -193,20 +194,47 @@ export async function schedulePrayerNotifications(
   }
   await cancelAllNotifications();
 
-  // Bildirim metinleri (çok dilli)
+  // Durum bildirimi zincirinin 6 sabit ID'sini, önceden ekranda görünüyor olsalar bile
+  // her çağrıda temizliyoruz. cancelAllNotifications() sadece HENÜZ TETİKLENMEMİŞ
+  // (pending) bildirimleri iptal eder — zaten ekranda görünen (fired) bir durum
+  // bildirimini kapsamaz. Bu satır olmadan, kullanıcı "Şu an vakit" bildirimini
+  // ayarlardan KAPATTIĞINDA bile eski bildirim ekranda takılı kalırdı.
+  if (isNativeAvailable()) {
+    try {
+      await LocalNotifications.cancel({
+        notifications: STATUS_ORDER.map(k => ({ id: STATUS_IDS[k] })),
+      });
+    } catch {}
+  }
+
+  // Bildirim metinleri (çok dilli — tr/en/ar/de/ur, uygulamanın desteklediği 5 dil)
   const PRAYER_NAMES: Record<string, Record<string, string>> = {
-    imsak:  { tr: "İmsak",   en: "Fajr",    ar: "الفجر"   },
-    gunes:  { tr: "Güneş",   en: "Sunrise",  ar: "الشروق"  },
-    ogle:   { tr: "Öğle",    en: "Dhuhr",   ar: "الظهر"   },
-    ikindi: { tr: "İkindi",  en: "Asr",     ar: "العصر"   },
-    aksam:  { tr: "Akşam",   en: "Maghrib", ar: "المغرب"  },
-    yatsi:  { tr: "Yatsı",   en: "Isha",    ar: "العشاء"  },
+    imsak:  { tr: "İmsak",   en: "Fajr",    ar: "الفجر",  de: "Fadschr", ur: "فجر"        },
+    gunes:  { tr: "Güneş",   en: "Sunrise", ar: "الشروق", de: "Aufgang", ur: "طلوع آفتاب" },
+    ogle:   { tr: "Öğle",    en: "Dhuhr",   ar: "الظهر",  de: "Dhuhr",   ur: "ظہر"        },
+    ikindi: { tr: "İkindi",  en: "Asr",     ar: "العصر",  de: "Asr",     ur: "عصر"        },
+    aksam:  { tr: "Akşam",   en: "Maghrib", ar: "المغرب", de: "Maghrib", ur: "مغرب"       },
+    yatsi:  { tr: "Yatsı",   en: "Isha",    ar: "العشاء", de: "Isha",    ur: "عشاء"       },
   };
   const TEXTS: Record<string, Record<string, string>> = {
-    beforeTitle: { tr: "Namaz Vakti",  en: "Prayer Time",    ar: "وقت الصلاة"   },
-    beforeBody:  { tr: "{name} namazına {min} dakika kaldı.", en: "{min} minutes until {name}.", ar: "تبقّى {min} دقيقة على صلاة {name}." },
-    atTitle:     { tr: "Namaz Vakti",  en: "Prayer Time",    ar: "وقت الصلاة"   },
-    atBody:      { tr: "{name} namazı vakti girdi.",          en: "It is time for {name}.",        ar: "حان وقت صلاة {name}."            },
+    beforeTitle: {
+      tr: "Namaz Vakti", en: "Prayer Time", ar: "وقت الصلاة",
+      de: "Gebetszeit", ur: "نماز کا وقت",
+    },
+    beforeBody: {
+      tr: "{name} namazına {min} dakika kaldı.", en: "{min} minutes until {name}.",
+      ar: "تبقّى {min} دقيقة على صلاة {name}.", de: "Noch {min} Minuten bis {name}.",
+      ur: "{name} میں {min} منٹ باقی ہیں۔",
+    },
+    atTitle: {
+      tr: "Namaz Vakti", en: "Prayer Time", ar: "وقت الصلاة",
+      de: "Gebetszeit", ur: "نماز کا وقت",
+    },
+    atBody: {
+      tr: "{name} namazı vakti girdi.", en: "It is time for {name}.",
+      ar: "حان وقت صلاة {name}.", de: "Es ist Zeit für {name}.",
+      ur: "{name} کا وقت ہو گیا ہے۔",
+    },
   };
   const tx = (key: string, vars: Record<string,string> = {}) => {
     let s = TEXTS[key][lang] || TEXTS[key].en;
@@ -286,49 +314,114 @@ export async function schedulePrayerNotifications(
   });
 
   // "Şu an hangi vakitteyiz" durum bildirimi — sadece BUGÜN için, 6 sabit ID'lik zincir.
-  // Her biri tetiklendiğinde native yama (extra.cancelPreviousId) sayesinde kendinden
-  // önceki durumu otomatik siler, böylece her zaman tek bir bildirim görünür.
+  // Her biri (ileride) tetiklendiğinde native yama (extra.cancelPreviousId) sayesinde
+  // kendinden önceki durumu otomatik siler.
+  //
+  // ÖNEMLİ: Bu fonksiyon her çağrıldığında (ayar açıldığında, uygulama her açılışında/
+  // konum-tarih değiştiğinde vb.) önce TÜM bekleyen bildirimleri iptal eder (yukarıdaki
+  // cancelAllNotifications). Eskiden burada SADECE gelecekteki vakit geçişleri planlanıyordu;
+  // bu yüzden (a) ayar açıldığı anda mevcut vakit için hiçbir bildirim gösterilmiyordu —
+  // ilk gösterim bir sonraki vakit geçişine kadar bekliyordu, ve (b) uygulama her
+  // açıldığında iptal edilen durum bildirimi de aynı sebeple hemen geri gelmiyordu.
+  // Çözüm: her çağrıda, "şu an" hangi vakitteysek onun bildirimini DERHAL (schedule
+  // olmadan, anında) gösteriyoruz; kalan gelecekteki geçişler eskisi gibi ileri tarihli
+  // planlanmaya devam ediyor.
   if (settings.showStatusNotification) {
     const STATUS_TEXTS: Record<string, Record<string, string>> = {
-      title: { tr: "Şu An {name} Vakti", en: "Currently {name} Time", ar: "الآن وقت {name}" },
-      body:  { tr: "{next} Namazı Saat {time}", en: "{next} Prayer at {time}", ar: "صلاة {next} الساعة {time}" },
+      title: {
+        tr: "Şu An {name} Vakti", en: "Currently {name} Time", ar: "الآن وقت {name}",
+        de: "Gerade {name}-Zeit", ur: "اس وقت {name} کا وقت ہے",
+      },
+      // Diğer vakitler için "namazı"/"prayer" ekiyle birlikte kullanılır.
+      bodyPrayer: {
+        tr: "{next} Namazı Saat {time}", en: "{next} Prayer at {time}", ar: "صلاة {next} الساعة {time}",
+        de: "{next}-Gebet um {time}", ur: "{next} کی نماز {time} پر",
+      },
+      // Güneş (şuruk) bir namaz vakti DEĞİL, sadece güneşin doğuş anıdır — "namazı"/"prayer"
+      // kelimesi eklenmemeli. Bu yüzden ayrı bir şablon kullanıyoruz (5 dilde de).
+      bodySunrise: {
+        tr: "Güneşin Doğuşu Saat {time}", en: "Sunrise at {time}", ar: "شروق الشمس الساعة {time}",
+        de: "Sonnenaufgang um {time}", ur: "طلوع آفتاب {time} پر",
+      },
     };
     const stx = (key: string, vars: Record<string, string>) => {
       let s = STATUS_TEXTS[key][lang] || STATUS_TEXTS[key].en;
       Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, v); });
       return s;
     };
+    const buildStatusBody = (nextKey: string, nextTime: string) => {
+      const nextName = PRAYER_NAMES[nextKey]?.[lang] || nextKey;
+      return nextKey === "gunes"
+        ? stx("bodySunrise", { time: nextTime })
+        : stx("bodyPrayer", { next: nextName, time: nextTime });
+    };
+
     const timeByKey: Record<string, string> = {};
     prayerTimes.forEach(p => { timeByKey[p.key] = p.time; });
 
-    STATUS_ORDER.forEach((key, i) => {
-      const timeStr = timeByKey[key];
-      if (!timeStr) return;
+    // "Şu an" hangi vakitteyiz? Bugünün saatleri arasında now'dan önceki SON vakti bul.
+    // Hiçbiri now'dan önce değilse (yani henüz imsak girmemiş), demek ki hâlâ dünün
+    // yatsı vaktindeyiz — zincirin son elemanını "şu an" kabul ediyoruz.
+    let currentIdx = -1;
+    for (let i = STATUS_ORDER.length - 1; i >= 0; i--) {
+      const timeStr = timeByKey[STATUS_ORDER[i]];
+      if (!timeStr) continue;
       const [h, m] = timeStr.split(":").map(Number);
-      const triggerDate = new Date(now);
-      triggerDate.setHours(h, m, 0, 0);
-      if (triggerDate <= now) return; // bugün zaten geçmiş vakit, planlanmaz
+      const d = new Date(now);
+      d.setHours(h, m, 0, 0);
+      if (d <= now) { currentIdx = i; break; }
+    }
+    if (currentIdx === -1) currentIdx = STATUS_ORDER.length - 1; // hâlâ dünün yatsı vakti
 
-      const currentName = PRAYER_NAMES[key]?.[lang] || key;
-      const nextKey = STATUS_ORDER[(i + 1) % STATUS_ORDER.length];
-      const nextName = PRAYER_NAMES[nextKey]?.[lang] || nextKey;
-      const nextTime = timeByKey[nextKey] || "";
-      const prevKey = STATUS_ORDER[(i - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
+    const currentKey = STATUS_ORDER[currentIdx];
+    const nextIdx = (currentIdx + 1) % STATUS_ORDER.length;
+    const nextKey = STATUS_ORDER[nextIdx];
+    const nextTime = timeByKey[nextKey] || "";
 
+    if (nextTime) {
+      // 1) "Şu an" için ANINDA göster (schedule alanı YOK → hemen tetiklenir).
       notifications.push({
-        id: STATUS_IDS[key],
-        title: stx("title", { name: currentName }),
-        body: stx("body", { next: nextName, time: nextTime }),
-        schedule: { at: triggerDate },
+        id: STATUS_IDS[currentKey],
+        title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
+        body: buildStatusBody(nextKey, nextTime),
         channelId: CHANNEL_STATUS,
         sound: "default",
         smallIcon: "ic_stat_notify",
         iconColor: "#f59e0b",
         ongoing: false,
         autoCancel: false,
-        extra: { cancelPreviousId: STATUS_IDS[prevKey] },
       });
-    });
+
+      // 2) Bugün kalan gelecekteki vakit geçişlerini eskisi gibi ileri tarihli planla.
+      //    Her biri tetiklendiğinde native yama, zincirdeki kendinden önceki ID'yi
+      //    (currentKey dahil) otomatik iptal eder.
+      STATUS_ORDER.forEach((key, i) => {
+        const timeStr = timeByKey[key];
+        if (!timeStr) return;
+        const [h, m] = timeStr.split(":").map(Number);
+        const triggerDate = new Date(now);
+        triggerDate.setHours(h, m, 0, 0);
+        if (triggerDate <= now) return; // geçmiş vakit, zaten yukarıda "şu an" olarak ele alındı
+
+        const thisNextKey = STATUS_ORDER[(i + 1) % STATUS_ORDER.length];
+        const thisNextTime = timeByKey[thisNextKey] || "";
+        const prevKey = STATUS_ORDER[(i - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
+
+        notifications.push({
+          id: STATUS_IDS[key],
+          title: stx("title", { name: PRAYER_NAMES[key]?.[lang] || key }),
+          body: buildStatusBody(thisNextKey, thisNextTime),
+          schedule: { at: triggerDate },
+          channelId: CHANNEL_STATUS,
+          sound: "default",
+          smallIcon: "ic_stat_notify",
+          iconColor: "#f59e0b",
+          ongoing: false,
+          autoCancel: false,
+          extra: { cancelPreviousId: STATUS_IDS[prevKey] },
+        });
+      });
+    }
   }
 
   if (notifications.length > 0) {
