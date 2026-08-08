@@ -14,6 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
+  checkExactAlarmPermission, openExactAlarmSettings,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -835,15 +836,46 @@ function SettingsPanel({
                         <div className={`text-sm ${th.textMuted} mt-0.5`}>{t("statusNotifDesc", lang)}</div>
                       </div>
                       <button onClick={async () => {
-                        const updated = { ...notificationSettings, showStatusNotification: !notificationSettings.showStatusNotification };
+                        const turningOn = !notificationSettings.showStatusNotification;
+                        const updated = { ...notificationSettings, showStatusNotification: turningOn };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        console.log("[Meccanen] Durum bildirimi planlama sonucu:", r);
+                        if (!r.success) {
+                          notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
+                        } else if (turningOn) {
+                          if (r.exactAlarmDenied) {
+                            setExactAlarmOk(false);
+                            notify(t("notifyExactAlarmOff", lang));
+                          } else {
+                            notify(t("notifyActive", lang));
+                          }
+                        } else {
+                          notify(t("notifyOff", lang));
+                        }
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.showStatusNotification ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.showStatusNotification ? "left-6" : "left-0.5"}`} />
                       </button>
                     </div>
+                    {notificationSettings.showStatusNotification && !exactAlarmOk && (
+                      <div className="flex items-start gap-2 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10">
+                        <div className="flex-1">
+                          <div className="text-sm font-bold text-amber-500">{t("exactAlarmWarningTitle", lang)}</div>
+                          <div className={`text-sm ${th.textMuted} mt-0.5`}>{t("exactAlarmWarningDesc", lang)}</div>
+                        </div>
+                        <button onClick={async () => {
+                          await openExactAlarmSettings();
+                          const r = await checkExactAlarmPermission();
+                          if (r.supported) setExactAlarmOk(r.granted);
+                          if (r.granted) await schedulePrayerNotifications(prayerTimes, notificationSettings, "", lang);
+                        }}
+                          className="shrink-0 px-3 py-2 rounded-xl text-xs font-bold border border-amber-500/50 bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 cursor-pointer">
+                          {t("exactAlarmOpenSettings", lang)}
+                        </button>
+                      </div>
+                    )}
 
                     <div>
                       <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("whichPrayers", lang)}</div>
@@ -1000,6 +1032,13 @@ export default function App() {
   const [autoLocationEnabled, setAutoLocationEnabled] = useState<boolean>(
     () => localStorage.getItem("mnv_auto_location") === "true"
   );
+  // Android 12+ "Kesin Alarmlar" izni kapalıysa, gelecekteki otomatik vakit geçiş
+  // bildirimleri (örn. yatsıdan sonra imsağa geçiş) sessizce çalışmayabilir. Bunu
+  // ayarlar ekranında kullanıcıya açıkça göstermek için takip ediyoruz.
+  const [exactAlarmOk, setExactAlarmOk] = useState<boolean>(true);
+  useEffect(() => {
+    checkExactAlarmPermission().then(r => { if (r.supported) setExactAlarmOk(r.granted); });
+  }, []);
 
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
   const solarTimes = useMemo(
