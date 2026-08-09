@@ -381,11 +381,18 @@ export async function schedulePrayerNotifications(
     const nextTime = timeByKey[nextKey] || "";
 
     if (nextTime) {
-      // 1) "Şu an" için ANINDA göster (schedule alanı YOK → hemen tetiklenir).
+      // 1) "Şu an" için ANINDA göster. NOT: `schedule` alanını tamamen boş bırakmak
+      //    (hiç zamanlama vermemek) native tarafta güvenilir şekilde ÇALIŞMIYOR —
+      //    plugin bazı Android sürümlerinde/cihazlarda bu tür "zamanlamasız"
+      //    bildirimleri sessizce hiç göstermiyor (schedule() başarıyla dönse bile).
+      //    Bunun yerine çok yakın bir gelecek an (1 saniye sonrası) veriyoruz; bu,
+      //    "kesin alarm" izni gerektirmeyen normal/inexact planlama olduğu için
+      //    hem güvenilir çalışıyor hem de pratikte anında görünüyor.
       notifications.push({
         id: STATUS_IDS[currentKey],
         title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
         body: buildStatusBody(nextKey, nextTime),
+        schedule: { at: new Date(now.getTime() + 1000) },
         channelId: CHANNEL_STATUS,
         sound: "default",
         smallIcon: "ic_stat_notify",
