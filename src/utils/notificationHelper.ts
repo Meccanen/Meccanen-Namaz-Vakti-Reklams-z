@@ -168,38 +168,10 @@ export async function cancelAllNotifications(): Promise<void> {
   } catch {}
 }
 
-// Android 12+ "Kesin Alarmlar" (exact alarm) sistem izni durumu. Bu izin kapatılırsa,
-// GELECEĞE planlanan (schedule.at ile) bildirimler ya hiç tetiklenmez ya da native
-// tarafından tamamen silinir — ama ANINDA gösterilen (schedule'sız) bildirimleri etkilemez.
-// Bu yüzden "durum bildirimi" ayarı açıldığında kullanıcı "şu an" bildirimini görür ama
-// bir sonraki vakit geçişinde hiçbir şey olmaz; kullanıcı bunu "bildirim hiç gelmiyor"
-// olarak yorumlayabilir. Bu fonksiyon, ayarlar ekranında kullanıcıyı uyarmak için kullanılır.
-export async function checkExactAlarmPermission(): Promise<{ granted: boolean; supported: boolean }> {
-  if (!isNativeAvailable()) return { granted: true, supported: false };
-  try {
-    const fn = (LocalNotifications as any).checkExactNotificationSetting;
-    if (typeof fn !== "function") return { granted: true, supported: false };
-    const result = await fn.call(LocalNotifications);
-    return { granted: result?.exact_alarm === "granted", supported: true };
-  } catch {
-    return { granted: true, supported: false };
-  }
-}
-
-// Kullanıcıyı doğrudan "Alarmlar ve Hatırlatıcılar" sistem ayar ekranına yönlendirir.
-export async function openExactAlarmSettings(): Promise<void> {
-  if (!isNativeAvailable()) return;
-  try {
-    const fn = (LocalNotifications as any).changeExactNotificationSetting;
-    if (typeof fn === "function") await fn.call(LocalNotifications);
-  } catch {}
-}
-
 export interface ScheduleResult {
   success: boolean;
   scheduledCount: number;
   error?: string;
-  exactAlarmDenied?: boolean; // true ise: gelecekteki otomatik vakit geçişleri ÇALIŞMAYABİLİR
 }
 
 // Namaz vakitleri için bildirimleri planla
@@ -460,16 +432,7 @@ export async function schedulePrayerNotifications(
     }
   }
 
-  // Gelecekteki (schedule.at ile planlanmış) bildirimlerden en az biri varsa, kesin alarm
-  // izninin açık olduğunu doğrula — kapalıysa çağıran taraf kullanıcıyı uyarabilsin.
-  const hasFutureSchedule = notifications.some(n => !!n.schedule);
-  let exactAlarmDenied = false;
-  if (hasFutureSchedule) {
-    const exactAlarm = await checkExactAlarmPermission();
-    exactAlarmDenied = exactAlarm.supported && !exactAlarm.granted;
-  }
-
-  return { success: true, scheduledCount: notifications.length, exactAlarmDenied };
+  return { success: true, scheduledCount: notifications.length };
 }
 
 // Ayarları localStorage'a kaydet/yükle
