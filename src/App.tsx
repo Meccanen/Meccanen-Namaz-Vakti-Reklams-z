@@ -1054,7 +1054,18 @@ export default function App() {
   useEffect(() => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
       schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang)
-        .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
+        .then(r => {
+          console.log("[Meccanen] Bildirim planlama sonucu (otomatik/app-açılış):", r);
+          // GEÇİCİ TEŞHİS: Bu effect, uygulama her açıldığında/prayerTimes her
+          // yenilendiğinde çalışıyor ve mevcut durum bildirimini iptal edip yeniden
+          // kuruyor. Sorunun tam olarak burada mı oluştuğunu görmek için sonucu
+          // ekranda da gösteriyoruz. Netleştikten sonra bu bloğu kaldıracağız.
+          if (notificationSettings.showStatusNotification) {
+            setNotification(`[OTOMATIK] ${r.scheduledCount} planlandı | ${r.debug || "-"}`);
+            window.clearTimeout((window as any).__mnvNotifTimer2);
+            (window as any).__mnvNotifTimer2 = window.setTimeout(() => setNotification(""), 15000);
+          }
+        });
     }
   }, [prayerTimes, notificationSettings.enabled]);
 
