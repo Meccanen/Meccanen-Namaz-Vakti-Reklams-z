@@ -172,6 +172,7 @@ export interface ScheduleResult {
   success: boolean;
   scheduledCount: number;
   error?: string;
+  debug?: string; // Teşhis amaçlı: durum bildiriminin neden dahil edilip/edilmediğini açıklar
 }
 
 // Namaz vakitleri için bildirimleri planla
@@ -326,6 +327,7 @@ export async function schedulePrayerNotifications(
   // Çözüm: her çağrıda, "şu an" hangi vakitteysek onun bildirimini DERHAL (schedule
   // olmadan, anında) gösteriyoruz; kalan gelecekteki geçişler eskisi gibi ileri tarihli
   // planlanmaya devam ediyor.
+  let statusDebug = "showStatusNotification=false";
   if (settings.showStatusNotification) {
     const STATUS_TEXTS: Record<string, Record<string, string>> = {
       title: {
@@ -421,6 +423,10 @@ export async function schedulePrayerNotifications(
           extra: { cancelPreviousId: STATUS_IDS[prevKey] },
         });
       });
+
+      statusDebug = `ok cur=${currentKey} next=${nextKey}@${nextTime}`;
+    } else {
+      statusDebug = `SKIPPED! nextTime bos. prayerTimes.length=${prayerTimes.length} cur=${currentKey} nextKey=${nextKey} timeByKeyKeys=${Object.keys(timeByKey).join(",")}`;
     }
   }
 
@@ -428,11 +434,11 @@ export async function schedulePrayerNotifications(
     try {
       await LocalNotifications.schedule({ notifications });
     } catch (e) {
-      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)}` };
+      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)}`, debug: statusDebug };
     }
   }
 
-  return { success: true, scheduledCount: notifications.length };
+  return { success: true, scheduledCount: notifications.length, debug: statusDebug };
 }
 
 // Ayarları localStorage'a kaydet/yükle
