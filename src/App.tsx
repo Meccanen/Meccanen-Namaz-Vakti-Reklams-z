@@ -844,7 +844,13 @@ function SettingsPanel({
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
                         } else if (turningOn) {
-                          notify(t("notifyActive", lang));
+                          // GEÇİCİ TEŞHİS: mesaja planlanan bildirim sayısını ve durum
+                          // bildiriminin neden dahil edilip/edilmediğini de ekliyoruz —
+                          // sorunun kesin nedenini görmek için. Netleştikten sonra bu
+                          // satırı tekrar sade "notifyActive" haline döndürebiliriz.
+                          setNotification(`${t("notifyActive", lang)} [${r.scheduledCount} planlandı | ${r.debug || "-"}]`);
+                          window.clearTimeout((window as any).__mnvNotifTimer);
+                          (window as any).__mnvNotifTimer = window.setTimeout(() => setNotification(""), 12000);
                         } else {
                           notify(t("notifyOff", lang));
                         }
