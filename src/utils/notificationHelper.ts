@@ -175,6 +175,36 @@ export interface ScheduleResult {
   debug?: string; // Teşhis amaçlı: durum bildiriminin neden dahil edilip/edilmediğini açıklar
 }
 
+// GEÇİCİ TEŞHİS FONKSİYONU: durum bildirimi kanalının (CHANNEL_STATUS) yakın-gelecek
+// bir bildirimi hiç gösterip gösteremediğini, tüm vakit/currentIdx hesaplamalarından
+// tamamen BAĞIMSIZ olarak test eder. Sorunun kanal/OS seviyesinde mi yoksa durum
+// bildirimi mantığında mı olduğunu netleştirmek için kullanılıyor.
+export async function sendTestStatusNotification(): Promise<ScheduleResult> {
+  if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
+  const hasPermission = await checkNotificationPermission();
+  if (!hasPermission) return { success: false, scheduledCount: 0, error: "permission-denied" };
+  try {
+    await ensureChannels();
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: 9999,
+        title: "TEST — Durum Bildirimi Kanalı",
+        body: `Bu bir test bildirimidir. Saat: ${new Date().toLocaleTimeString()}`,
+        schedule: { at: new Date(Date.now() + 3000) },
+        channelId: CHANNEL_STATUS,
+        sound: "default",
+        smallIcon: "ic_stat_notify",
+        iconColor: "#f59e0b",
+        ongoing: false,
+        autoCancel: false,
+      }],
+    });
+    return { success: true, scheduledCount: 1, debug: "test-notification-sent-id-9999" };
+  } catch (e) {
+    return { success: false, scheduledCount: 0, error: `test-error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 // Namaz vakitleri için bildirimleri planla
 export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
