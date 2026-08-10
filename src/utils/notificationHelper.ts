@@ -187,9 +187,9 @@ export async function sendTestStatusNotification(): Promise<ScheduleResult> {
     await ensureChannels();
     await LocalNotifications.schedule({
       notifications: [{
-        id: 9999,
-        title: "TEST — Durum Bildirimi Kanalı",
-        body: `Bu bir test bildirimidir. Saat: ${new Date().toLocaleTimeString()}`,
+        id: 9998,
+        title: "TEST2 — extra.cancelPreviousId ile",
+        body: `Bu bildirimde extra.cancelPreviousId VAR. Saat: ${new Date().toLocaleTimeString()}`,
         schedule: { at: new Date(Date.now() + 3000) },
         channelId: CHANNEL_STATUS,
         sound: "default",
@@ -197,9 +197,10 @@ export async function sendTestStatusNotification(): Promise<ScheduleResult> {
         iconColor: "#f59e0b",
         ongoing: false,
         autoCancel: false,
+        extra: { cancelPreviousId: 9997 }, // var olmayan bir ID — gerçek koddaki ile birebir aynı yapı
       }],
     });
-    return { success: true, scheduledCount: 1, debug: "test-notification-sent-id-9999" };
+    return { success: true, scheduledCount: 1, debug: "test2-with-extra-cancelPreviousId-sent-id-9998" };
   } catch (e) {
     return { success: false, scheduledCount: 0, error: `test-error: ${e instanceof Error ? e.message : String(e)}` };
   }
