@@ -14,6 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
+  sendTestStatusNotification,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -859,6 +860,21 @@ function SettingsPanel({
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.showStatusNotification ? "left-6" : "left-0.5"}`} />
                       </button>
                     </div>
+
+                    {/* GEÇİCİ TEŞHİS BUTONU — sorunu bulduktan sonra kaldırılacak.
+                        Tüm vakit hesaplama mantığından bağımsız, en yalın haliyle
+                        "bu kanal 3 saniye sonrasına bir bildirim gösterebiliyor mu?"
+                        sorusunu test eder. */}
+                    <button onClick={async () => {
+                      const r = await sendTestStatusNotification();
+                      console.log("[Meccanen] TEST bildirimi sonucu:", r);
+                      setNotification(`TEST: success=${r.success} count=${r.scheduledCount} err=${r.error || "-"} — 3sn içinde bildirim gelmeli!`);
+                      window.clearTimeout((window as any).__mnvTestTimer);
+                      (window as any).__mnvTestTimer = window.setTimeout(() => setNotification(""), 12000);
+                    }}
+                      className="w-full p-3 rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 text-amber-500 text-sm font-bold cursor-pointer">
+                      🧪 TEST: 3sn Sonra Bildirim Gönder (teşhis amaçlı)
+                    </button>
 
                     <div>
                       <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("whichPrayers", lang)}</div>
