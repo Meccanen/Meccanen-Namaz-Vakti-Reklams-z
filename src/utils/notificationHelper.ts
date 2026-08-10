@@ -195,12 +195,15 @@ export async function schedulePrayerNotifications(
   }
   await cancelAllNotifications();
 
-  // Durum bildirimi zincirinin 6 sabit ID'sini, önceden ekranda görünüyor olsalar bile
-  // her çağrıda temizliyoruz. cancelAllNotifications() sadece HENÜZ TETİKLENMEMİŞ
-  // (pending) bildirimleri iptal eder — zaten ekranda görünen (fired) bir durum
-  // bildirimini kapsamaz. Bu satır olmadan, kullanıcı "Şu an vakit" bildirimini
-  // ayarlardan KAPATTIĞINDA bile eski bildirim ekranda takılı kalırdı.
-  if (isNativeAvailable()) {
+  // "Durum bildirimi" ayarı KAPALIYSA, ekranda hâlâ görünüyor olabilecek eski durum
+  // bildirimlerini temizle (cancelAllNotifications() sadece HENÜZ TETİKLENMEMİŞ/pending
+  // olanları iptal eder, zaten ekranda görünen/fired olanı kapsamaz). Ayar AÇIKSA bu
+  // adımı BİLEREK atlıyoruz: aynı ID'yi iptal edip hemen ardından yeniden planlamak
+  // native tarafta bir yarış durumuna (race condition) yol açıp bildirimin hiç
+  // görünmemesine sebep olabiliyor. Açıkken zaten native `schedule()` çağrısı, aynı
+  // ID'ye sahip eski bildirimi otomatik olarak değiştiriyor; farklı ID'li önceki vakit
+  // bildirimini de aşağıdaki `extra.cancelPreviousId` yaması hallediyor.
+  if (!settings.showStatusNotification && isNativeAvailable()) {
     try {
       await LocalNotifications.cancel({
         notifications: STATUS_ORDER.map(k => ({ id: STATUS_IDS[k] })),
@@ -385,20 +388,26 @@ export async function schedulePrayerNotifications(
       //    (hiç zamanlama vermemek) native tarafta güvenilir şekilde ÇALIŞMIYOR —
       //    plugin bazı Android sürümlerinde/cihazlarda bu tür "zamanlamasız"
       //    bildirimleri sessizce hiç göstermiyor (schedule() başarıyla dönse bile).
-      //    Bunun yerine çok yakın bir gelecek an (1 saniye sonrası) veriyoruz; bu,
+      //    Bunun yerine çok yakın bir gelecek an (2 saniye sonrası) veriyoruz; bu,
       //    "kesin alarm" izni gerektirmeyen normal/inexact planlama olduğu için
       //    hem güvenilir çalışıyor hem de pratikte anında görünüyor.
+      //    ÖNEMLİ: extra.cancelPreviousId de eklendi — böylece BİR ÖNCEKİ vaktin
+      //    (farklı ID'li) bildirimi, bu tetiklendiğinde native yama tarafından
+      //    otomatik temizleniyor; ayrıca burada elle "önce iptal et" YAPMIYORUZ
+      //    (bu, aynı anda iptal+yeniden planlama yarış durumuna yol açıyordu).
+      const prevOfCurrentKey = STATUS_ORDER[(currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
       notifications.push({
         id: STATUS_IDS[currentKey],
         title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
         body: buildStatusBody(nextKey, nextTime),
-        schedule: { at: new Date(now.getTime() + 1000) },
+        schedule: { at: new Date(now.getTime() + 2000) },
         channelId: CHANNEL_STATUS,
         sound: "default",
         smallIcon: "ic_stat_notify",
         iconColor: "#f59e0b",
         ongoing: false,
         autoCancel: false,
+        extra: { cancelPreviousId: STATUS_IDS[prevOfCurrentKey] },
       });
 
       // 2) Bugün kalan gelecekteki vakit geçişlerini eskisi gibi ileri tarihli planla.
