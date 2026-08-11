@@ -206,6 +206,30 @@ export async function sendTestStatusNotification(): Promise<ScheduleResult> {
   }
 }
 
+// GEÇİCİ TEŞHİS TEST 3: GERÇEK schedulePrayerNotifications fonksiyonunu, GERÇEK
+// prayerTimes verisiyle çağırır ama diğer TÜM bildirim türlerini (X dakika önce,
+// vakit girdiğinde, tüm tekil vakit anahtarları) kapatarak SADECE durum bildirimi
+// bloğunun ürettiği bildirimleri tek başına (başka kanallarla karışmadan) gönderir.
+// Böylece "gerçek kod mu bozuk yoksa büyük/karışık toplu gönderim mi sorun" ayrımı
+// netleşiyor.
+export async function testStatusOnly(
+  prayerTimes: { key: string; name: string; time: string }[],
+  lang: LangCode = "tr",
+): Promise<ScheduleResult> {
+  const minimalSettings: NotificationSettings = {
+    ...DEFAULT_NOTIFICATION_SETTINGS,
+    enabled: true,
+    minutesBefore: 0,
+    notifyAtVakit: false,
+    showStatusNotification: true,
+    prayers: {
+      imsak: false, gunes: false, ogle: false, ikindi: false, aksam: false, yatsi: false,
+    },
+  };
+  const r = await schedulePrayerNotifications(prayerTimes, minimalSettings, "", lang);
+  return { ...r, debug: `[testStatusOnly] ${r.debug || ""}` };
+}
+
 // Namaz vakitleri için bildirimleri planla
 export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
