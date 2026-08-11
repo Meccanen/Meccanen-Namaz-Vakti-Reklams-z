@@ -14,7 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
-  sendTestStatusNotification,
+  testStatusOnly,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -862,18 +862,20 @@ function SettingsPanel({
                     </div>
 
                     {/* GEÇİCİ TEŞHİS BUTONU — sorunu bulduktan sonra kaldırılacak.
-                        Tüm vakit hesaplama mantığından bağımsız, en yalın haliyle
-                        "bu kanal 3 saniye sonrasına bir bildirim gösterebiliyor mu?"
-                        sorusunu test eder. */}
+                        GERÇEK kodu, GERÇEK prayerTimes verisiyle çalıştırır ama diğer
+                        tüm bildirim türlerini geçici olarak kapatır — böylece durum
+                        bildirimi TEK BAŞINA (başka kanallarla karışmadan) gönderilir.
+                        NOT: Bu test, mevcut gerçek bildirim planını da geçici olarak
+                        değiştirir; uygulamayı normal açtığında otomatik düzelir. */}
                     <button onClick={async () => {
-                      const r = await sendTestStatusNotification();
-                      console.log("[Meccanen] TEST bildirimi sonucu:", r);
-                      setNotification(`TEST: success=${r.success} count=${r.scheduledCount} err=${r.error || "-"} — 3sn içinde bildirim gelmeli!`);
+                      const r = await testStatusOnly(prayerTimes, lang);
+                      console.log("[Meccanen] TEST3 (sadece durum bildirimi) sonucu:", r);
+                      setNotification(`TEST3: ${r.scheduledCount} planlandı | ${r.debug || r.error || "-"}`);
                       window.clearTimeout((window as any).__mnvTestTimer);
-                      (window as any).__mnvTestTimer = window.setTimeout(() => setNotification(""), 12000);
+                      (window as any).__mnvTestTimer = window.setTimeout(() => setNotification(""), 15000);
                     }}
                       className="w-full p-3 rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 text-amber-500 text-sm font-bold cursor-pointer">
-                      🧪 TEST: 3sn Sonra Bildirim Gönder (teşhis amaçlı)
+                      🧪 TEST3: Sadece Durum Bildirimini Tek Başına Gönder
                     </button>
 
                     <div>
