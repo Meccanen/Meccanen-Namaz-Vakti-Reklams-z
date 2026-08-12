@@ -175,61 +175,6 @@ export interface ScheduleResult {
   debug?: string; // Teşhis amaçlı: durum bildiriminin neden dahil edilip/edilmediğini açıklar
 }
 
-// GEÇİCİ TEŞHİS FONKSİYONU: durum bildirimi kanalının (CHANNEL_STATUS) yakın-gelecek
-// bir bildirimi hiç gösterip gösteremediğini, tüm vakit/currentIdx hesaplamalarından
-// tamamen BAĞIMSIZ olarak test eder. Sorunun kanal/OS seviyesinde mi yoksa durum
-// bildirimi mantığında mı olduğunu netleştirmek için kullanılıyor.
-export async function sendTestStatusNotification(): Promise<ScheduleResult> {
-  if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
-  const hasPermission = await checkNotificationPermission();
-  if (!hasPermission) return { success: false, scheduledCount: 0, error: "permission-denied" };
-  try {
-    await ensureChannels();
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: 9998,
-        title: "TEST2 — extra.cancelPreviousId ile",
-        body: `Bu bildirimde extra.cancelPreviousId VAR. Saat: ${new Date().toLocaleTimeString()}`,
-        schedule: { at: new Date(Date.now() + 3000) },
-        channelId: CHANNEL_STATUS,
-        sound: "default",
-        smallIcon: "ic_stat_notify",
-        iconColor: "#f59e0b",
-        ongoing: false,
-        autoCancel: false,
-        extra: { cancelPreviousId: 9997 }, // var olmayan bir ID — gerçek koddaki ile birebir aynı yapı
-      }],
-    });
-    return { success: true, scheduledCount: 1, debug: "test2-with-extra-cancelPreviousId-sent-id-9998" };
-  } catch (e) {
-    return { success: false, scheduledCount: 0, error: `test-error: ${e instanceof Error ? e.message : String(e)}` };
-  }
-}
-
-// GEÇİCİ TEŞHİS TEST 3: GERÇEK schedulePrayerNotifications fonksiyonunu, GERÇEK
-// prayerTimes verisiyle çağırır ama diğer TÜM bildirim türlerini (X dakika önce,
-// vakit girdiğinde, tüm tekil vakit anahtarları) kapatarak SADECE durum bildirimi
-// bloğunun ürettiği bildirimleri tek başına (başka kanallarla karışmadan) gönderir.
-// Böylece "gerçek kod mu bozuk yoksa büyük/karışık toplu gönderim mi sorun" ayrımı
-// netleşiyor.
-export async function testStatusOnly(
-  prayerTimes: { key: string; name: string; time: string }[],
-  lang: LangCode = "tr",
-): Promise<ScheduleResult> {
-  const minimalSettings: NotificationSettings = {
-    ...DEFAULT_NOTIFICATION_SETTINGS,
-    enabled: true,
-    minutesBefore: 0,
-    notifyAtVakit: false,
-    showStatusNotification: true,
-    prayers: {
-      imsak: false, gunes: false, ogle: false, ikindi: false, aksam: false, yatsi: false,
-    },
-  };
-  const r = await schedulePrayerNotifications(prayerTimes, minimalSettings, "", lang);
-  return { ...r, debug: `[testStatusOnly] ${r.debug || ""}` };
-}
-
 // Namaz vakitleri için bildirimleri planla
 export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
