@@ -14,7 +14,6 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
-  testStatusOnly,
   PRAYER_LABELS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -845,13 +844,7 @@ function SettingsPanel({
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
                         } else if (turningOn) {
-                          // GEÇİCİ TEŞHİS: mesaja planlanan bildirim sayısını ve durum
-                          // bildiriminin neden dahil edilip/edilmediğini de ekliyoruz —
-                          // sorunun kesin nedenini görmek için. Netleştikten sonra bu
-                          // satırı tekrar sade "notifyActive" haline döndürebiliriz.
-                          setNotification(`${t("notifyActive", lang)} [${r.scheduledCount} planlandı | ${r.debug || "-"}]`);
-                          window.clearTimeout((window as any).__mnvNotifTimer);
-                          (window as any).__mnvNotifTimer = window.setTimeout(() => setNotification(""), 12000);
+                          notify(t("notifyActive", lang));
                         } else {
                           notify(t("notifyOff", lang));
                         }
@@ -860,23 +853,6 @@ function SettingsPanel({
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.showStatusNotification ? "left-6" : "left-0.5"}`} />
                       </button>
                     </div>
-
-                    {/* GEÇİCİ TEŞHİS BUTONU — sorunu bulduktan sonra kaldırılacak.
-                        GERÇEK kodu, GERÇEK prayerTimes verisiyle çalıştırır ama diğer
-                        tüm bildirim türlerini geçici olarak kapatır — böylece durum
-                        bildirimi TEK BAŞINA (başka kanallarla karışmadan) gönderilir.
-                        NOT: Bu test, mevcut gerçek bildirim planını da geçici olarak
-                        değiştirir; uygulamayı normal açtığında otomatik düzelir. */}
-                    <button onClick={async () => {
-                      const r = await testStatusOnly(prayerTimes, lang);
-                      console.log("[Meccanen] TEST3 (sadece durum bildirimi) sonucu:", r);
-                      setNotification(`TEST3: ${r.scheduledCount} planlandı | ${r.debug || r.error || "-"}`);
-                      window.clearTimeout((window as any).__mnvTestTimer);
-                      (window as any).__mnvTestTimer = window.setTimeout(() => setNotification(""), 15000);
-                    }}
-                      className="w-full p-3 rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 text-amber-500 text-sm font-bold cursor-pointer">
-                      🧪 TEST3: Sadece Durum Bildirimini Tek Başına Gönder
-                    </button>
 
                     <div>
                       <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("whichPrayers", lang)}</div>
@@ -1069,23 +1045,43 @@ export default function App() {
     } finally { setPrayerLoading(false); }
   };
 
-  useEffect(() => {
+  // Bildirimleri (varsa durum bildirimi dahil) yeniden planlayan ortak fonksiyon.
+  // Hem prayerTimes/enabled değiştiğinde hem de uygulama ön plana her geldiğinde
+  // çağrılır (aşağıya bakınız).
+  const rescheduleNotifications = useRef<() => void>(() => {});
+  rescheduleNotifications.current = () => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
       schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang)
-        .then(r => {
-          console.log("[Meccanen] Bildirim planlama sonucu (otomatik/app-açılış):", r);
-          // GEÇİCİ TEŞHİS: Bu effect, uygulama her açıldığında/prayerTimes her
-          // yenilendiğinde çalışıyor ve mevcut durum bildirimini iptal edip yeniden
-          // kuruyor. Sorunun tam olarak burada mı oluştuğunu görmek için sonucu
-          // ekranda da gösteriyoruz. Netleştikten sonra bu bloğu kaldıracağız.
-          if (notificationSettings.showStatusNotification) {
-            setNotification(`[OTOMATIK] ${r.scheduledCount} planlandı | ${r.debug || "-"}`);
-            window.clearTimeout((window as any).__mnvNotifTimer2);
-            (window as any).__mnvNotifTimer2 = window.setTimeout(() => setNotification(""), 15000);
-          }
-        });
+        .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
     }
+  };
+
+  useEffect(() => {
+    rescheduleNotifications.current();
   }, [prayerTimes, notificationSettings.enabled]);
+
+  // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
+  // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold
+  // start olmadan) bu referanslar değişmeyebilir, effect hiç tetiklenmez. Bu durumda
+  // "şu an hangi vakitteyiz" bildirimi güncel kalmaz/silinip geri gelmez. Bunu kesin
+  // çözmek için, tarayıcının kendi `visibilitychange` olayını dinleyip uygulama her
+  // görünür hale geldiğinde AÇIKÇA yeniden planlıyoruz — native bir eklentiye ihtiyaç
+  // duymadığı için ek bir çökme riski taşımıyor.
+  useEffect(() => {
+    const handleVisible = () => {
+      if (document.visibilityState === "visible") {
+        rescheduleNotifications.current();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisible);
+    // Bazı Capacitor/Cordova sürümleri ek olarak bu klasik olayı da yayınlar;
+    // varsa yakalarız, yoksa hiçbir şey değişmez (zararsız).
+    document.addEventListener("resume", handleVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisible);
+      document.removeEventListener("resume", handleVisible);
+    };
+  }, []);
 
   useEffect(() => { loadPrayerTimes(location, prayerMethod, date); }, [location.latitude, location.longitude, date.getDate(), date.getMonth(), prayerMethod]);
   const handleRefresh = () => { lastFetchKey.current = ""; loadPrayerTimes(location, prayerMethod, date, true); };
