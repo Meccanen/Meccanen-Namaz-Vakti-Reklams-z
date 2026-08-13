@@ -21,6 +21,11 @@ import { calcQiblaDirection, requestCompassPermission, attachCompassListener } f
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
+import {
+  getSupporterProducts, purchaseSupporterBadge, checkIsSupporter, restoreSupporterPurchases,
+  SUPPORTER_PRODUCT_IDS, type SupporterProductId,
+} from "./services/billingService";
+import type { BillingProduct } from "capacitor-play-billing";
 
 export const THEMES = {
   gece: {
@@ -415,6 +420,47 @@ function SettingsPanel({
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
+  // ── Destekçi Rozeti (Google Play Billing) ──
+  const [supporterProducts, setSupporterProducts] = useState<BillingProduct[]>([]);
+  const [isSupporterUser, setIsSupporterUser] = useState(false);
+  const [supporterLoading, setSupporterLoading] = useState(true);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setSupporterLoading(true);
+      const [products, ownedStatus] = await Promise.all([
+        getSupporterProducts(),
+        checkIsSupporter(),
+      ]);
+      if (!cancelled) {
+        setSupporterProducts(products);
+        setIsSupporterUser(ownedStatus);
+        setSupporterLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSupporterPurchase = async (productId: SupporterProductId) => {
+    setPurchasingId(productId);
+    const result = await purchaseSupporterBadge(productId);
+    setPurchasingId(null);
+    if (result.success) {
+      setIsSupporterUser(true);
+      notify(t("supporterThankYou", lang));
+    } else if (result.message) {
+      notify(result.message);
+    }
+  };
+
+  const handleSupporterRestore = async () => {
+    const restored = await restoreSupporterPurchases();
+    setIsSupporterUser(restored);
+    notify(restored ? t("supporterRestoredSuccess", lang) : t("supporterRestoredNone", lang));
+  };
+
   const performSearch = async () => {
     const q = searchQuery.trim();
     if (!q) return;
@@ -554,6 +600,43 @@ function SettingsPanel({
                       </button>
                     );
                   })}
+                </div>
+
+                <div className={`border-t ${th.header} pt-4 space-y-3`}>
+                  <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2`}>
+                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-rose-400" />{t("supporterTitle", lang)}
+                  </h3>
+                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>{t("supporterDesc", lang)}</p>
+
+                  {isSupporterUser ? (
+                    <div className="flex items-center gap-2 p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
+                      <Star className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <span className="text-sm font-bold text-emerald-400">{t("supporterOwned", lang)}</span>
+                    </div>
+                  ) : supporterLoading ? (
+                    <div className={`text-sm ${th.textMuted}`}>{t("updating", lang)}</div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {SUPPORTER_PRODUCT_IDS.map((pid) => {
+                        const product = supporterProducts.find(p => p.productId === pid);
+                        const isBusy = purchasingId === pid;
+                        return (
+                          <button key={pid}
+                            disabled={isBusy || purchasingId !== null}
+                            onClick={() => handleSupporterPurchase(pid)}
+                            className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50">
+                            <Heart className="w-4 h-4" />
+                            <span className="text-base">{isBusy ? t("updating", lang) : (product?.formattedPrice || "···")}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <button onClick={handleSupporterRestore}
+                    className={`text-xs ${th.textMuted} underline underline-offset-2 hover:${th.textPrimary} transition-all cursor-pointer`}>
+                    {t("supporterRestore", lang)}
+                  </button>
                 </div>
 
                 <div className={`border-t ${th.header} pt-4 flex gap-2`}>
