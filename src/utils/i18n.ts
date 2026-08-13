@@ -148,6 +148,13 @@ const en: Record<string, string> = {
   soundDefault: "Default",
   soundEzan: "Adhan",
   listenEzan: "Listen",
+  supporterTitle: "Become a Supporter",
+  supporterDesc: "If you'd like to help cover server and developer costs, you can get a one-time Supporter Badge — it doesn't unlock anything extra, it's just a way to say thanks.",
+  supporterOwned: "You're a Supporter — thank you! 💚",
+  supporterRestore: "Restore purchases",
+  supporterThankYou: "Thank you for your support! 💚",
+  supporterRestoredSuccess: "Your Supporter Badge has been restored.",
+  supporterRestoredNone: "No previous purchase found on this account.",
 };
 
 const de: Record<string, string> = {
@@ -276,6 +283,13 @@ const de: Record<string, string> = {
   waningGibbous: "Abnehmender Mond",
   thirdQuarter: "Letztes Viertel",
   waningCrescent: "Abnehmende Sichel",
+  supporterTitle: "Unterstützer werden",
+  supporterDesc: "Wenn Sie helfen möchten, Server- und Entwicklungskosten zu decken, können Sie ein einmaliges Unterstützer-Abzeichen erwerben — es schaltet nichts Zusätzliches frei, es ist einfach eine Art Dankeschön.",
+  supporterOwned: "Du bist Unterstützer — danke! 💚",
+  supporterRestore: "Käufe wiederherstellen",
+  supporterThankYou: "Danke für deine Unterstützung! 💚",
+  supporterRestoredSuccess: "Dein Unterstützer-Abzeichen wurde wiederhergestellt.",
+  supporterRestoredNone: "Auf diesem Konto wurde kein früherer Kauf gefunden.",
 };
 
 
@@ -428,6 +442,13 @@ const tr: Record<string, string> = {
   soundDefault: "Varsayılan",
   soundEzan: "Ezan",
   listenEzan: "Dinle",
+  supporterTitle: "Destekçi Ol",
+  supporterDesc: "Sunucu ve geliştirici masraflarını karşılamama yardımcı olmak istersen, tek seferlik bir Destekçi Rozeti alabilirsin — hiçbir ek özellik açmıyor, sadece bir teşekkür yöntemi.",
+  supporterOwned: "Destekçisin — teşekkürler! 💚",
+  supporterRestore: "Satın Almaları Geri Yükle",
+  supporterThankYou: "Desteğin için teşekkürler! 💚",
+  supporterRestoredSuccess: "Destekçi Rozeti geri yüklendi.",
+  supporterRestoredNone: "Bu hesapta önceden bir satın alma bulunamadı.",
 };
 
 const ar: Record<string, string> = {
@@ -578,6 +599,13 @@ const ar: Record<string, string> = {
   soundDefault: "افتراضي",
   soundEzan: "الأذان",
   listenEzan: "استماع",
+  supporterTitle: "كن داعمًا",
+  supporterDesc: "إذا كنت ترغب في المساعدة في تغطية تكاليف الخادم والتطوير، يمكنك الحصول على شارة داعم لمرة واحدة — لا تفتح أي ميزة إضافية، إنها فقط طريقة لقول شكرًا.",
+  supporterOwned: "أنت داعم — شكرًا لك! 💚",
+  supporterRestore: "استعادة المشتريات",
+  supporterThankYou: "شكرًا لدعمك! 💚",
+  supporterRestoredSuccess: "تمت استعادة شارة الداعم الخاصة بك.",
+  supporterRestoredNone: "لم يتم العثور على عملية شراء سابقة على هذا الحساب.",
 };
 
 // ===================== URDUCA (ur) =====================
@@ -707,6 +735,13 @@ const ur: Record<string, string> = {
   waningGibbous: "گھٹتا چاند",
   thirdQuarter: "آخری چوتھائی",
   waningCrescent: "گھٹتا ہلال",
+  supporterTitle: "معاون بنیں",
+  supporterDesc: "اگر آپ سرور اور ڈویلپر کے اخراجات پورا کرنے میں مدد کرنا چاہتے ہیں تو ایک بار کا معاون بیج حاصل کر سکتے ہیں — یہ کوئی اضافی خصوصیت نہیں کھولتا، بس شکریہ ادا کرنے کا ایک طریقہ ہے۔",
+  supporterOwned: "آپ معاون ہیں — شکریہ! 💚",
+  supporterRestore: "خریداری بحال کریں",
+  supporterThankYou: "آپ کے تعاون کا شکریہ! 💚",
+  supporterRestoredSuccess: "آپ کا معاون بیج بحال کر دیا گیا ہے۔",
+  supporterRestoredNone: "اس اکاؤنٹ پر پہلے کوئی خریداری نہیں ملی۔",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
