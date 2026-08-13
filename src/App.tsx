@@ -369,6 +369,12 @@ function SettingsPanel({
   autoLocationEnabled,
   onToggleAutoLocation,
   initialTab,
+  supporterProducts,
+  isSupporterUser,
+  supporterLoading,
+  purchasingId,
+  onSupporterPurchase,
+  onSupporterRestore,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
@@ -384,6 +390,12 @@ function SettingsPanel({
   autoLocationEnabled: boolean;
   onToggleAutoLocation: (val: boolean) => void;
   initialTab?: "genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda";
+  supporterProducts: BillingProduct[];
+  isSupporterUser: boolean;
+  supporterLoading: boolean;
+  purchasingId: string | null;
+  onSupporterPurchase: (productId: SupporterProductId) => void;
+  onSupporterRestore: () => void;
 }) {
   const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda">(initialTab || "genel");
   const [playingEzanPreview, setPlayingEzanPreview] = useState<string | null>(null);
@@ -419,47 +431,6 @@ function SettingsPanel({
   const MAX_LOCATIONS = 33;
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
-
-  // ── Destekçi Rozeti (Google Play Billing) ──
-  const [supporterProducts, setSupporterProducts] = useState<BillingProduct[]>([]);
-  const [isSupporterUser, setIsSupporterUser] = useState(false);
-  const [supporterLoading, setSupporterLoading] = useState(true);
-  const [purchasingId, setPurchasingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setSupporterLoading(true);
-      const [products, ownedStatus] = await Promise.all([
-        getSupporterProducts(),
-        checkIsSupporter(),
-      ]);
-      if (!cancelled) {
-        setSupporterProducts(products);
-        setIsSupporterUser(ownedStatus);
-        setSupporterLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleSupporterPurchase = async (productId: SupporterProductId) => {
-    setPurchasingId(productId);
-    const result = await purchaseSupporterBadge(productId);
-    setPurchasingId(null);
-    if (result.success) {
-      setIsSupporterUser(true);
-      notify(t("supporterThankYou", lang));
-    } else if (result.message) {
-      notify(result.message);
-    }
-  };
-
-  const handleSupporterRestore = async () => {
-    const restored = await restoreSupporterPurchases();
-    setIsSupporterUser(restored);
-    notify(restored ? t("supporterRestoredSuccess", lang) : t("supporterRestoredNone", lang));
-  };
 
   const performSearch = async () => {
     const q = searchQuery.trim();
@@ -623,7 +594,7 @@ function SettingsPanel({
                         return (
                           <button key={pid}
                             disabled={isBusy || purchasingId !== null}
-                            onClick={() => handleSupporterPurchase(pid)}
+                            onClick={() => onSupporterPurchase(pid)}
                             className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50">
                             <Heart className="w-4 h-4" />
                             <span className="text-base">{isBusy ? t("updating", lang) : (product?.formattedPrice || "···")}</span>
@@ -633,7 +604,7 @@ function SettingsPanel({
                     </div>
                   )}
 
-                  <button onClick={handleSupporterRestore}
+                  <button onClick={onSupporterRestore}
                     className={`text-xs ${th.textMuted} underline underline-offset-2 hover:${th.textPrimary} transition-all cursor-pointer`}>
                     {t("supporterRestore", lang)}
                   </button>
@@ -1093,6 +1064,51 @@ export default function App() {
     () => localStorage.getItem("mnv_auto_location") === "true"
   );
 
+  // ── Destekçi Rozeti (Google Play Billing) ── App seviyesinde, çünkü hem
+  // Ayarlar panelinde hem de ana sayfanın altındaki footer'da gösteriliyor.
+  const [supporterProducts, setSupporterProducts] = useState<BillingProduct[]>([]);
+  const [isSupporterUser, setIsSupporterUser] = useState(false);
+  const [supporterLoading, setSupporterLoading] = useState(true);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [supporterNotice, setSupporterNotice] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setSupporterLoading(true);
+      const [products, ownedStatus] = await Promise.all([
+        getSupporterProducts(),
+        checkIsSupporter(),
+      ]);
+      if (!cancelled) {
+        setSupporterProducts(products);
+        setIsSupporterUser(ownedStatus);
+        setSupporterLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const notifySupporter = (msg: string) => { setSupporterNotice(msg); setTimeout(() => setSupporterNotice(""), 3000); };
+
+  const handleSupporterPurchase = async (productId: SupporterProductId) => {
+    setPurchasingId(productId);
+    const result = await purchaseSupporterBadge(productId);
+    setPurchasingId(null);
+    if (result.success) {
+      setIsSupporterUser(true);
+      notifySupporter(t("supporterThankYou", lang));
+    } else if (result.message) {
+      notifySupporter(result.message);
+    }
+  };
+
+  const handleSupporterRestore = async () => {
+    const restored = await restoreSupporterPurchases();
+    setIsSupporterUser(restored);
+    notifySupporter(restored ? t("supporterRestoredSuccess", lang) : t("supporterRestoredNone", lang));
+  };
+
   const moonPhase = useMemo(() => calcMoonPhase(date), [date]);
   const solarTimes = useMemo(
     () => calcSolarTimes(location.latitude, location.longitude, date, location.timezone || "Europe/Istanbul"),
@@ -1422,6 +1438,12 @@ export default function App() {
           autoLocationEnabled={autoLocationEnabled}
           onToggleAutoLocation={handleToggleAutoLocation}
           initialTab={settingsInitialTab}
+          supporterProducts={supporterProducts}
+          isSupporterUser={isSupporterUser}
+          supporterLoading={supporterLoading}
+          purchasingId={purchasingId}
+          onSupporterPurchase={handleSupporterPurchase}
+          onSupporterRestore={handleSupporterRestore}
         />
       )}
 
@@ -1778,7 +1800,26 @@ export default function App() {
           <div>&copy; {date.getFullYear()} Meccanen Bilişim — {t("appName", lang)}</div>
           <div className="flex flex-col items-center gap-2">
             <div className={`text-[11px] sm:text-xs ${tTheme.textMuted}`}>{t("supportUs", lang)}</div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              {isSupporterUser ? (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                  <Star className="w-3.5 h-3.5" />{t("supporterOwned", lang)}
+                </span>
+              ) : !supporterLoading && (
+                SUPPORTER_PRODUCT_IDS.map((pid) => {
+                  const product = supporterProducts.find(p => p.productId === pid);
+                  const isBusy = purchasingId === pid;
+                  return (
+                    <button key={pid}
+                      disabled={isBusy || purchasingId !== null}
+                      onClick={() => handleSupporterPurchase(pid)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-50">
+                      <Heart className="w-3.5 h-3.5" />
+                      {isBusy ? t("updating", lang) : `${t("supporterTitle", lang)} · ${product?.formattedPrice || "···"}`}
+                    </button>
+                  );
+                })
+              )}
               <a href="https://ko-fi.com/meccanen" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all cursor-pointer">
                 <Coffee className="w-3.5 h-3.5" />Ko-fi
@@ -1788,6 +1829,9 @@ export default function App() {
                 <Heart className="w-3.5 h-3.5" />PayPal
               </a>
             </div>
+            {supporterNotice && (
+              <div className="text-[11px] text-emerald-400 font-semibold">{supporterNotice}</div>
+            )}
           </div>
         </footer>
 
