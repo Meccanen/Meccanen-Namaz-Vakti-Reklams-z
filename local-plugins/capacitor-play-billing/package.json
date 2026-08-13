@@ -1,37 +1,31 @@
 {
-  "name": "meccanen-namaz-vakti",
-  "private": true,
-  "version": "1.0.2",
+  "name": "capacitor-play-billing",
+  "version": "1.0.0",
+  "description": "Meccanen için doğrudan Google Play Billing Library (v9) entegrasyonu — üçüncü parti servis yok, sadece Google'ın resmi native kütüphanesi.",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "cap:add": "cap add android",
-    "cap:sync": "cap sync",
-    "cap:open": "cap open android"
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
   },
-  "dependencies": {
-    "@capacitor/android": "^6.0.0",
-    "@capacitor/cli": "^6.0.0",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/local-notifications": "^6.0.0",
-    "@capacitor/geolocation": "^6.0.0",
-    "@fortawesome/fontawesome-svg-core": "^7.2.0",
-    "@fortawesome/free-solid-svg-icons": "^7.2.0",
-    "@fortawesome/react-fontawesome": "^3.3.1",
-    "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
-    "capacitor-play-billing": "file:./local-plugins/capacitor-play-billing",
-    "lucide-react": "^0.546.0",
-    "motion": "^12.23.24",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "vite": "^6.2.3"
+  "files": [
+    "android/src/main/",
+    "android/build.gradle",
+    "src/"
+  ],
+  "author": "Meccanen Bilişim",
+  "license": "MIT",
+  "peerDependencies": {
+    "@capacitor/core": "^6.0.0"
   },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "tailwindcss": "^4.1.14",
-    "typescript": "~5.8.2"
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
   }
 }
