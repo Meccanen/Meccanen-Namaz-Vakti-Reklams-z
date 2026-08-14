@@ -25,7 +25,6 @@ import {
   getSupporterProducts, purchaseSupporterBadge, checkIsSupporter, restoreSupporterPurchases,
   SUPPORTER_PRODUCT_IDS, type SupporterProductId,
 } from "./services/billingService";
-import type { BillingProduct } from "capacitor-play-billing";
 
 export const THEMES = {
   gece: {
@@ -369,7 +368,6 @@ function SettingsPanel({
   autoLocationEnabled,
   onToggleAutoLocation,
   initialTab,
-  supporterProducts,
   isSupporterUser,
   supporterLoading,
   purchasingId,
@@ -390,7 +388,6 @@ function SettingsPanel({
   autoLocationEnabled: boolean;
   onToggleAutoLocation: (val: boolean) => void;
   initialTab?: "genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda";
-  supporterProducts: BillingProduct[];
   isSupporterUser: boolean;
   supporterLoading: boolean;
   purchasingId: string | null;
@@ -587,17 +584,20 @@ function SettingsPanel({
                   ) : supporterLoading ? (
                     <div className={`text-sm ${th.textMuted}`}>{t("updating", lang)}</div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-2">
                       {SUPPORTER_PRODUCT_IDS.map((pid) => {
-                        const product = supporterProducts.find(p => p.productId === pid);
                         const isBusy = purchasingId === pid;
+                        const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
+                        const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
                         return (
                           <button key={pid}
                             disabled={isBusy || purchasingId !== null}
                             onClick={() => onSupporterPurchase(pid)}
-                            className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50">
-                            <Coffee className="w-4 h-4" />
-                            <span className="text-base">{isBusy ? t("updating", lang) : (product?.formattedPrice || "···")}</span>
+                            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 text-left">
+                            <span className="flex items-center gap-0.5 shrink-0">
+                              {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-4 h-4" />)}
+                            </span>
+                            <span className="text-sm sm:text-base leading-tight">{isBusy ? t("updating", lang) : t(labelKey, lang)}</span>
                           </button>
                         );
                       })}
@@ -1066,7 +1066,6 @@ export default function App() {
 
   // ── Destekçi Rozeti (Google Play Billing) ── App seviyesinde, çünkü hem
   // Ayarlar panelinde hem de ana sayfanın altındaki footer'da gösteriliyor.
-  const [supporterProducts, setSupporterProducts] = useState<BillingProduct[]>([]);
   const [isSupporterUser, setIsSupporterUser] = useState(false);
   const [supporterLoading, setSupporterLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -1076,12 +1075,14 @@ export default function App() {
     let cancelled = false;
     (async () => {
       setSupporterLoading(true);
-      const [products, ownedStatus] = await Promise.all([
+      // getSupporterProducts() burada fiyat göstermek için değil, Play Billing
+      // bağlantısını ve native taraftaki ürün önbelleğini önceden ısıtmak için
+      // çağrılıyor — purchase() anında daha hızlı açılsın diye.
+      const [, ownedStatus] = await Promise.all([
         getSupporterProducts(),
         checkIsSupporter(),
       ]);
       if (!cancelled) {
-        setSupporterProducts(products);
         setIsSupporterUser(ownedStatus);
         setSupporterLoading(false);
       }
@@ -1438,7 +1439,6 @@ export default function App() {
           autoLocationEnabled={autoLocationEnabled}
           onToggleAutoLocation={handleToggleAutoLocation}
           initialTab={settingsInitialTab}
-          supporterProducts={supporterProducts}
           isSupporterUser={isSupporterUser}
           supporterLoading={supporterLoading}
           purchasingId={purchasingId}
@@ -1807,15 +1807,18 @@ export default function App() {
                 </span>
               ) : !supporterLoading && (
                 SUPPORTER_PRODUCT_IDS.map((pid) => {
-                  const product = supporterProducts.find(p => p.productId === pid);
                   const isBusy = purchasingId === pid;
+                  const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
+                  const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
                   return (
                     <button key={pid}
                       disabled={isBusy || purchasingId !== null}
                       onClick={() => handleSupporterPurchase(pid)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-50">
-                      <Coffee className="w-3.5 h-3.5" />
-                      {isBusy ? t("updating", lang) : `${t("supporterTitle", lang)} · ${product?.formattedPrice || "···"}`}
+                      <span className="flex items-center gap-0.5 shrink-0">
+                        {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-3.5 h-3.5" />)}
+                      </span>
+                      {isBusy ? t("updating", lang) : t(labelKey, lang)}
                     </button>
                   );
                 })
