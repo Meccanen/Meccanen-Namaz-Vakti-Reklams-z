@@ -505,7 +505,7 @@ function SettingsPanel({
   ];
 
   const tabs = [
-    { key: "genel" as const, label: t("general", lang) },
+    { key: "genel" as const, label: t("theme", lang) },
     { key: "konum" as const, label: t("location", lang) },
     { key: "metot" as const, label: t("methodTab", lang) },
     { key: "bildirim" as const, label: t("notificationsTab", lang) },
@@ -568,67 +568,6 @@ function SettingsPanel({
                       </button>
                     );
                   })}
-                </div>
-
-                <div className={`border-t ${th.header} pt-4 space-y-3`}>
-                  <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2`}>
-                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-rose-400" />{t("supporterTitle", lang)}
-                  </h3>
-                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>{t("supporterDesc", lang)}</p>
-
-                  {isSupporterUser ? (
-                    <div className="flex items-center gap-2 p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
-                      <Star className="w-5 h-5 text-emerald-400 shrink-0" />
-                      <span className="text-sm font-bold text-emerald-400">{t("supporterOwned", lang)}</span>
-                    </div>
-                  ) : supporterLoading ? (
-                    <div className={`text-sm ${th.textMuted}`}>{t("updating", lang)}</div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {SUPPORTER_PRODUCT_IDS.map((pid) => {
-                        const isBusy = purchasingId === pid;
-                        const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
-                        const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
-                        return (
-                          <button key={pid}
-                            disabled={isBusy || purchasingId !== null}
-                            onClick={() => onSupporterPurchase(pid)}
-                            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 text-left">
-                            <span className="flex items-center gap-0.5 shrink-0">
-                              {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-4 h-4" />)}
-                            </span>
-                            <span className="text-sm sm:text-base leading-tight">{isBusy ? t("updating", lang) : t(labelKey, lang)}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <button onClick={onSupporterRestore}
-                    className={`text-xs ${th.textMuted} underline underline-offset-2 hover:${th.textPrimary} transition-all cursor-pointer`}>
-                    {t("supporterRestore", lang)}
-                  </button>
-                </div>
-
-                <div className={`border-t ${th.header} pt-4 flex gap-2`}>
-                  <a
-                    href="https://ko-fi.com/meccanen"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
-                  >
-                    <Coffee className="w-4 h-4" />
-                    Ko-fi
-                  </a>
-                  <a
-                    href="https://paypal.me/bulentt"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400 font-semibold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer"
-                  >
-                    <Heart className="w-4 h-4" />
-                    PayPal
-                  </a>
                 </div>
               </div>
             )}
@@ -967,40 +906,70 @@ function SettingsPanel({
                   <p className={`text-sm ${th.textSecondary} leading-relaxed`}>
                     {t("aboutDesc3", lang)}
                   </p>
-                  <p className={`text-sm ${th.textMuted} leading-relaxed`}>
-                    {t("esmaSourceCitation", lang)}
-                  </p>
                 </div>
 
                 <p className={`text-sm ${th.textSecondary} leading-relaxed px-1`}>
                   {t("aboutDesc4", lang)}
                 </p>
 
-                <div className="space-y-2">
-                  <a href="https://github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z"
-                    target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className={`text-xs font-semibold ${th.textPrimary}`}>GitHub</span>
-                    <span className={`text-sm ${th.textMuted}`}>→</span>
+                <div className={`border-t ${th.header} pt-4 space-y-3`}>
+                  <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2`}>
+                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-rose-400" />{t("supporterTitle", lang)}
+                  </h3>
+                  <p className={`text-sm ${th.textSecondary} leading-relaxed`}>{t("supporterDesc", lang)}</p>
+
+                  {isSupporterUser ? (
+                    <div className="flex items-center gap-2 p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
+                      <Star className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <span className="text-sm font-bold text-emerald-400">{t("supporterOwned", lang)}</span>
+                    </div>
+                  ) : supporterLoading ? (
+                    <div className={`text-sm ${th.textMuted}`}>{t("updating", lang)}</div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {SUPPORTER_PRODUCT_IDS.map((pid) => {
+                        const isBusy = purchasingId === pid;
+                        const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
+                        const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
+                        return (
+                          <button key={pid}
+                            disabled={isBusy || purchasingId !== null}
+                            onClick={() => onSupporterPurchase(pid)}
+                            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 text-left">
+                            <span className="flex items-center gap-0.5 shrink-0">
+                              {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-4 h-4" />)}
+                            </span>
+                            <span className="text-sm sm:text-base leading-tight">{isBusy ? t("updating", lang) : t(labelKey, lang)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <button onClick={onSupporterRestore}
+                    className={`text-xs ${th.textMuted} underline underline-offset-2 hover:${th.textPrimary} transition-all cursor-pointer`}>
+                    {t("supporterRestore", lang)}
+                  </button>
+                </div>
+
+                <div className={`border-t ${th.header} pt-4 flex gap-2`}>
+                  <a
+                    href="https://ko-fi.com/meccanen"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
+                  >
+                    <Coffee className="w-4 h-4" />
+                    Ko-fi
                   </a>
-                  <a href="https://ko-fi.com/meccanen"
-                    target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer">
-                    <span className="text-xs font-semibold text-amber-400 flex items-center gap-2">
-                      <Coffee className="w-3.5 h-3.5" />Ko-fi
-                    </span>
-                    <span className="text-sm text-amber-500/70">→</span>
-                  </a>
-                  <a href="https://paypal.me/bulentt"
-                    target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className={`text-xs font-semibold ${th.textPrimary}`}>PayPal</span>
-                    <span className={`text-sm ${th.textMuted}`}>→</span>
-                  </a>
-                  <a href="mailto:meccanen@meccanen.xyz"
-                    className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
-                    <span className={`text-xs font-semibold ${th.textPrimary}`}>{t("email", lang)}</span>
-                    <span className={`text-sm ${th.textMuted}`}>meccanen@meccanen.xyz</span>
+                  <a
+                    href="https://paypal.me/bulentt"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400 font-semibold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4" />
+                    PayPal
                   </a>
                 </div>
 
