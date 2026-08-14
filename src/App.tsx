@@ -596,7 +596,7 @@ function SettingsPanel({
                             disabled={isBusy || purchasingId !== null}
                             onClick={() => onSupporterPurchase(pid)}
                             className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50">
-                            <Heart className="w-4 h-4" />
+                            <Coffee className="w-4 h-4" />
                             <span className="text-base">{isBusy ? t("updating", lang) : (product?.formattedPrice || "···")}</span>
                           </button>
                         );
@@ -1814,7 +1814,7 @@ export default function App() {
                       disabled={isBusy || purchasingId !== null}
                       onClick={() => handleSupporterPurchase(pid)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-50">
-                      <Heart className="w-3.5 h-3.5" />
+                      <Coffee className="w-3.5 h-3.5" />
                       {isBusy ? t("updating", lang) : `${t("supporterTitle", lang)} · ${product?.formattedPrice || "···"}`}
                     </button>
                   );
