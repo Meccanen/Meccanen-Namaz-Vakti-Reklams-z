@@ -155,6 +155,8 @@ const en: Record<string, string> = {
   supporterThankYou: "Thank you for your support! 💚",
   supporterRestoredSuccess: "Your Supporter Badge has been restored.",
   supporterRestoredNone: "No previous purchase found on this account.",
+  supporterButtonSilver: "Pay via Google Play - 1 Silver Coffee",
+  supporterButtonGold: "Pay via Google Play - 2 Gold Coffees",
 };
 
 const de: Record<string, string> = {
@@ -290,6 +292,8 @@ const de: Record<string, string> = {
   supporterThankYou: "Danke für deine Unterstützung! 💚",
   supporterRestoredSuccess: "Dein Unterstützer-Abzeichen wurde wiederhergestellt.",
   supporterRestoredNone: "Auf diesem Konto wurde kein früherer Kauf gefunden.",
+  supporterButtonSilver: "Mit Google Play bezahlen - 1 Silberkaffee",
+  supporterButtonGold: "Mit Google Play bezahlen - 2 Goldkaffees",
 };
 
 
@@ -449,6 +453,8 @@ const tr: Record<string, string> = {
   supporterThankYou: "Desteğin için teşekkürler! 💚",
   supporterRestoredSuccess: "Destekçi Rozeti geri yüklendi.",
   supporterRestoredNone: "Bu hesapta önceden bir satın alma bulunamadı.",
+  supporterButtonSilver: "Google Play ile Öde - 1 Gümüş Kahve",
+  supporterButtonGold: "Google Play ile Öde - 2 Altın Kahve",
 };
 
 const ar: Record<string, string> = {
@@ -606,6 +612,8 @@ const ar: Record<string, string> = {
   supporterThankYou: "شكرًا لدعمك! 💚",
   supporterRestoredSuccess: "تمت استعادة شارة الداعم الخاصة بك.",
   supporterRestoredNone: "لم يتم العثور على عملية شراء سابقة على هذا الحساب.",
+  supporterButtonSilver: "ادفع عبر Google Play - قهوة فضية واحدة",
+  supporterButtonGold: "ادفع عبر Google Play - قهوتان ذهبيتان",
 };
 
 // ===================== URDUCA (ur) =====================
@@ -742,6 +750,8 @@ const ur: Record<string, string> = {
   supporterThankYou: "آپ کے تعاون کا شکریہ! 💚",
   supporterRestoredSuccess: "آپ کا معاون بیج بحال کر دیا گیا ہے۔",
   supporterRestoredNone: "اس اکاؤنٹ پر پہلے کوئی خریداری نہیں ملی۔",
+  supporterButtonSilver: "Google Play کے ذریعے ادائیگی - 1 چاندی کافی",
+  supporterButtonGold: "Google Play کے ذریعے ادائیگی - 2 سنہری کافی",
 };
 
 const LANG_MAP: Record<string, LangCode> = {
