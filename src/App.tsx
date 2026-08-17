@@ -760,7 +760,7 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                         notify(t("notifyActive", lang));
                       } else { notify(t("notifyOff", lang)); }
                     }}
@@ -779,7 +779,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                            await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
@@ -797,7 +797,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
@@ -812,7 +812,7 @@ function SettingsPanel({
                               const updated = { ...notificationSettings, soundTypeAtVakit: st };
                               setNotificationSettings(updated);
                               saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                              await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                             }}
                               className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
@@ -832,7 +832,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, showStatusNotification: turningOn };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                         console.log("[Meccanen] Durum bildirimi planlama sonucu:", r);
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
@@ -868,7 +868,7 @@ function SettingsPanel({
                                 const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
                                 setNotificationSettings(updated);
                                 saveNotificationSettings(updated);
-                                await schedulePrayerNotifications(prayerTimes, updated, "", lang);
+                                await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
                               }}
                                 className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
@@ -1017,6 +1017,10 @@ export default function App() {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>(() =>
     getPrayerTimesFallback(DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude, new Date(), DEFAULT_LOCATION.timezone!)
   );
+  // Gece 00:00 ile İmsak vakti arasındaki geçiş için: "bugünün" (artık dünkü) vakitlerini
+  // değil, GERÇEK yarının İmsak saatini bilmemiz gerekiyor — aksi halde durum bildirimi
+  // yatsıdan sonra hep BUGÜNÜN (zaten geçmiş) imsak saatini yaklaşık değer olarak gösterir.
+  const [tomorrowPrayerTimes, setTomorrowPrayerTimes] = useState<PrayerTime[]>([]);
   const [prayerLoading, setPrayerLoading] = useState(false);
   const [nextPrayerStr, setNextPrayerStr] = useState("");
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
@@ -1112,6 +1116,19 @@ export default function App() {
     } catch {
       setPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul"));
     } finally { setPrayerLoading(false); }
+    // Yarının vakitlerini de (özellikle İmsak) ayrıca çekiyoruz — gece yarısı sonrası
+    // durum bildiriminin doğru saati gösterebilmesi için gerekli. Ana ekranı bloklamaması
+    // için prayerLoading'e dahil etmiyoruz, sessizce arka planda tamamlanır.
+    try {
+      const tomorrow = new Date(dt);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tTimes = await fetchPrayerTimes(loc.latitude, loc.longitude, tomorrow, loc.timezone || "Europe/Istanbul", method);
+      setTomorrowPrayerTimes(tTimes);
+    } catch {
+      const tomorrow = new Date(dt);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setTomorrowPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, tomorrow, loc.timezone || "Europe/Istanbul"));
+    }
   };
 
   // Bildirimleri (varsa durum bildirimi dahil) yeniden planlayan ortak fonksiyon.
@@ -1120,14 +1137,14 @@ export default function App() {
   const rescheduleNotifications = useRef<() => void>(() => {});
   rescheduleNotifications.current = () => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
-      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang)
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang, tomorrowPrayerTimes)
         .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
     }
   };
 
   useEffect(() => {
     rescheduleNotifications.current();
-  }, [prayerTimes, notificationSettings.enabled]);
+  }, [prayerTimes, tomorrowPrayerTimes, notificationSettings.enabled]);
 
   // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
   // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold
