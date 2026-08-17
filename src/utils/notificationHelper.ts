@@ -181,6 +181,7 @@ export async function schedulePrayerNotifications(
   settings: NotificationSettings,
   locationName: string,
   lang: LangCode = "tr",
+  tomorrowPrayerTimes?: { key: string; name: string; time: string }[],
 ): Promise<ScheduleResult> {
   if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
   if (!settings.enabled) { await cancelAllNotifications(); return { success: true, scheduledCount: 0 }; }
@@ -363,6 +364,8 @@ export async function schedulePrayerNotifications(
 
     const timeByKey: Record<string, string> = {};
     prayerTimes.forEach(p => { timeByKey[p.key] = p.time; });
+    const tomorrowTimeByKey: Record<string, string> = {};
+    (tomorrowPrayerTimes || []).forEach(p => { tomorrowTimeByKey[p.key] = p.time; });
 
     // "Şu an" hangi vakitteyiz? Bugünün saatleri arasında now'dan önceki SON vakti bul.
     // Hiçbiri now'dan önce değilse (yani henüz imsak girmemiş), demek ki hâlâ dünün
@@ -381,7 +384,15 @@ export async function schedulePrayerNotifications(
     const currentKey = STATUS_ORDER[currentIdx];
     const nextIdx = (currentIdx + 1) % STATUS_ORDER.length;
     const nextKey = STATUS_ORDER[nextIdx];
-    const nextTime = timeByKey[nextKey] || "";
+    // ÖNEMLİ: Zincirin SARDIĞI tek yer burası — currentKey "yatsi" olduğunda nextKey
+    // "imsak"a döner ve bu artık BUGÜNÜN değil, YARININ imsak vaktidir. Bu durumda
+    // (varsa) gerçek yarının verisini kullan; yoksa eskisi gibi bugünün saatini
+    // yaklaşık değer olarak kullanmaya devam et (veri çekilemediyse tamamen
+    // susmaktansa yaklaşık doğru bir saat göstermek daha iyi).
+    const isWrapToTomorrow = currentIdx === STATUS_ORDER.length - 1;
+    const nextTime = (isWrapToTomorrow && tomorrowTimeByKey[nextKey])
+      ? tomorrowTimeByKey[nextKey]
+      : (timeByKey[nextKey] || "");
 
     if (nextTime) {
       // 1) "Şu an" için ANINDA göster. NOT: `schedule` alanını tamamen boş bırakmak
@@ -422,7 +433,10 @@ export async function schedulePrayerNotifications(
         if (triggerDate <= now) return; // geçmiş vakit, zaten yukarıda "şu an" olarak ele alındı
 
         const thisNextKey = STATUS_ORDER[(i + 1) % STATUS_ORDER.length];
-        const thisNextTime = timeByKey[thisNextKey] || "";
+        const thisIsWrapToTomorrow = i === STATUS_ORDER.length - 1; // key === "yatsi"
+        const thisNextTime = (thisIsWrapToTomorrow && tomorrowTimeByKey[thisNextKey])
+          ? tomorrowTimeByKey[thisNextKey]
+          : (timeByKey[thisNextKey] || "");
         const prevKey = STATUS_ORDER[(i - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
 
         notifications.push({
@@ -439,6 +453,38 @@ export async function schedulePrayerNotifications(
           extra: { cancelPreviousId: STATUS_IDS[prevKey] },
         });
       });
+
+      // 3) YARININ İMSAK GEÇİŞİNİ de açıkça (gerçek bir alarm olarak) planla. Yukarıdaki
+      //    döngü sadece BUGÜNÜN saatlerini kapsıyor, yani yatsıdan imsağa geçiş hiçbir
+      //    zaman otomatik bir tetikleyici olarak kurulmuyordu — kullanıcı gece 00:00 ile
+      //    İmsak arasında uygulamayı hiç açmazsa bu geçiş kendiliğinden hiç gerçekleşmezdi.
+      //    Şimdi, elimizde yarının verisi varsa, tam o ana planlanmış gerçek bir bildirim
+      //    ekliyoruz — otomatik akşam→yatsı geçişiyle birebir aynı güvenilir mekanizma.
+      //    NOT: currentKey zaten "imsak" ise, id=9000 üstteki ANINDA gösterim için
+      //    kullanılmış oluyor — aynı ID'yi iki kez eklememek için bu durumda atlıyoruz.
+      if (currentKey !== "imsak" && tomorrowTimeByKey["imsak"]) {
+        const [th, tm] = tomorrowTimeByKey["imsak"].split(":").map(Number);
+        const tomorrowImsakDate = new Date(now);
+        tomorrowImsakDate.setDate(tomorrowImsakDate.getDate() + 1);
+        tomorrowImsakDate.setHours(th, tm, 0, 0);
+        if (tomorrowImsakDate > now) {
+          const afterImsakKey = STATUS_ORDER[1]; // "gunes" — imsaktan sonraki vakit
+          const afterImsakTime = tomorrowTimeByKey[afterImsakKey] || "";
+          notifications.push({
+            id: STATUS_IDS["imsak"],
+            title: stx("title", { name: PRAYER_NAMES["imsak"]?.[lang] || "imsak" }),
+            body: buildStatusBody(afterImsakKey, afterImsakTime),
+            schedule: { at: tomorrowImsakDate },
+            channelId: CHANNEL_STATUS,
+            sound: "default",
+            smallIcon: "ic_stat_notify",
+            iconColor: "#f59e0b",
+            ongoing: false,
+            autoCancel: false,
+            extra: { cancelPreviousId: STATUS_IDS["yatsi"] },
+          });
+        }
+      }
 
       statusDebug = `ok cur=${currentKey} next=${nextKey}@${nextTime}`;
     } else {
