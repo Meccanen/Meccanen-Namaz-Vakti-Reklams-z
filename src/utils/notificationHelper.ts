@@ -333,6 +333,7 @@ export async function schedulePrayerNotifications(
   // planlanmaya devam ediyor.
   let statusDebug = "showStatusNotification=false";
   if (settings.showStatusNotification) {
+   try {
     const STATUS_TEXTS: Record<string, Record<string, string>> = {
       title: {
         tr: "Şu An {name} Vakti", en: "Currently {name} Time", ar: "الآن وقت {name}",
@@ -490,13 +491,28 @@ export async function schedulePrayerNotifications(
     } else {
       statusDebug = `SKIPPED! nextTime bos. prayerTimes.length=${prayerTimes.length} cur=${currentKey} nextKey=${nextKey} timeByKeyKeys=${Object.keys(timeByKey).join(",")}`;
     }
+   } catch (e) {
+    // Durum bildirimi hesaplamasında beklenmedik bir hata olursa (ör. bozuk saat verisi),
+    // bunu SESSİZCE yutmuyoruz ama normal hatırlatıcı bildirimlerini de ETKİLEMİYORUZ —
+    // sadece durum bildirimi kısmı atlanır, hata debug bilgisine yazılır.
+    statusDebug = `EXCEPTION: ${e instanceof Error ? e.message : String(e)}`;
+   }
   }
 
   if (notifications.length > 0) {
     try {
-      await LocalNotifications.schedule({ notifications });
+      // GÜVENLİK: LocalNotifications.schedule() bazı cihazlarda/durumlarda (özellikle
+      // gece yarısı geçişinde, normalden daha kalabalık bir bildirim grubu gönderilirken)
+      // hiç hata vermeden SONSUZA KADAR asılı kalabiliyor — ne başarı ne hata döner,
+      // arayüz kilitlenir. Bunu Promise.race ile zaman aşımına bağlıyoruz: 8 saniye
+      // içinde cevap gelmezse net bir "timeout" hatası döndürüyoruz, sessizce asılı
+      // kalmak yerine.
+      await Promise.race([
+        LocalNotifications.schedule({ notifications }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout-8s")), 8000)),
+      ]);
     } catch (e) {
-      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)}`, debug: statusDebug };
+      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)} (count=${notifications.length})`, debug: statusDebug };
     }
   }
 
