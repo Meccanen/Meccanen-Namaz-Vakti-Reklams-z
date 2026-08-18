@@ -455,37 +455,15 @@ export async function schedulePrayerNotifications(
         });
       });
 
-      // 3) YARININ İMSAK GEÇİŞİNİ de açıkça (gerçek bir alarm olarak) planla. Yukarıdaki
-      //    döngü sadece BUGÜNÜN saatlerini kapsıyor, yani yatsıdan imsağa geçiş hiçbir
-      //    zaman otomatik bir tetikleyici olarak kurulmuyordu — kullanıcı gece 00:00 ile
-      //    İmsak arasında uygulamayı hiç açmazsa bu geçiş kendiliğinden hiç gerçekleşmezdi.
-      //    Şimdi, elimizde yarının verisi varsa, tam o ana planlanmış gerçek bir bildirim
-      //    ekliyoruz — otomatik akşam→yatsı geçişiyle birebir aynı güvenilir mekanizma.
-      //    NOT: currentKey zaten "imsak" ise, id=9000 üstteki ANINDA gösterim için
-      //    kullanılmış oluyor — aynı ID'yi iki kez eklememek için bu durumda atlıyoruz.
-      if (currentKey !== "imsak" && tomorrowTimeByKey["imsak"]) {
-        const [th, tm] = tomorrowTimeByKey["imsak"].split(":").map(Number);
-        const tomorrowImsakDate = new Date(now);
-        tomorrowImsakDate.setDate(tomorrowImsakDate.getDate() + 1);
-        tomorrowImsakDate.setHours(th, tm, 0, 0);
-        if (tomorrowImsakDate > now) {
-          const afterImsakKey = STATUS_ORDER[1]; // "gunes" — imsaktan sonraki vakit
-          const afterImsakTime = tomorrowTimeByKey[afterImsakKey] || "";
-          notifications.push({
-            id: STATUS_IDS["imsak"],
-            title: stx("title", { name: PRAYER_NAMES["imsak"]?.[lang] || "imsak" }),
-            body: buildStatusBody(afterImsakKey, afterImsakTime),
-            schedule: { at: tomorrowImsakDate },
-            channelId: CHANNEL_STATUS,
-            sound: "default",
-            smallIcon: "ic_stat_notify",
-            iconColor: "#f59e0b",
-            ongoing: false,
-            autoCancel: false,
-            extra: { cancelPreviousId: STATUS_IDS["yatsi"] },
-          });
-        }
-      }
+      // NOT: "Yarının İmsak geçişini ayrı bir alarm olarak önceden planlama" denemesi
+      // (yatsıdan imsağa otomatik geçiş için) ciddi bir soruna yol açtığı için ÇIKARILDI —
+      // "Şu anki vakit durumunu göster" açıldığında bildirim tamamen sessizce (hata bile
+      // vermeden) gelmez oluyordu. Güvenli, çalıştığı doğrulanmış son duruma dönüldü:
+      // sadece BUGÜNÜN geçişleri + "şu an" için anlık gösterim planlanıyor. Yatsıdan
+      // imsağa geçiş, kullanıcı o aralıkta uygulamayı açtığında (visibilitychange
+      // tetikleyicisiyle) hâlâ doğru şekilde gösterilecek; sadece kendiliğinden (uygulama
+      // hiç açılmadan) tetiklenen otomatik alarm kısmı bir sonraki oturumda tekrar
+      // ele alınacak.
 
       statusDebug = `ok cur=${currentKey} next=${nextKey}@${nextTime}`;
     } else {
