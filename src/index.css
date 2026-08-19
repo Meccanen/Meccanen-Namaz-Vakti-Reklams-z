@@ -45,3 +45,33 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* === Erişilebilirlik: Yazı Boyutu Büyütme ===
+   Üst menüdeki "Aa" düğmesiyle kontrol edilir. --afs değişkeni JS tarafından
+   :root üzerinde ayarlanır (1 = normal boyut). Bu kurallar SADECE metin
+   boyutunu (font-size) etkiler — padding/margin/gap gibi yerleşim özellikleri
+   hiç dokunulmaz, böylece büyütme ekranı bozmadan sadece okunabilirliği artırır.
+   Ana ekrandaki "MECCANEN" başlığı (sabit text-[Npx] kullanıyor) ve büyük dijital
+   saat (text-6xl/7xl/8xl, bu listede YOK) kasıtlı olarak bu sistemin dışındadır. */
+:root { --afs: 1; }
+.text-xs   { font-size: calc(0.75rem  * var(--afs)) !important; }
+.text-sm   { font-size: calc(0.875rem * var(--afs)) !important; }
+.text-base { font-size: calc(1rem     * var(--afs)) !important; }
+.text-lg   { font-size: calc(1.125rem * var(--afs)) !important; }
+.text-xl   { font-size: calc(1.25rem  * var(--afs)) !important; }
+.text-2xl  { font-size: calc(1.5rem   * var(--afs)) !important; }
+.text-3xl  { font-size: calc(1.875rem * var(--afs)) !important; }
+.text-4xl  { font-size: calc(2.25rem  * var(--afs)) !important; }
+.text-5xl  { font-size: calc(3rem     * var(--afs)) !important; }
+
+@media (min-width: 640px) {
+  .sm\:text-xs   { font-size: calc(0.75rem  * var(--afs)) !important; }
+  .sm\:text-sm   { font-size: calc(0.875rem * var(--afs)) !important; }
+  .sm\:text-base { font-size: calc(1rem     * var(--afs)) !important; }
+  .sm\:text-lg   { font-size: calc(1.125rem * var(--afs)) !important; }
+  .sm\:text-xl   { font-size: calc(1.25rem  * var(--afs)) !important; }
+  .sm\:text-2xl  { font-size: calc(1.5rem   * var(--afs)) !important; }
+  .sm\:text-3xl  { font-size: calc(1.875rem * var(--afs)) !important; }
+  .sm\:text-4xl  { font-size: calc(2.25rem  * var(--afs)) !important; }
+  .sm\:text-5xl  { font-size: calc(3rem     * var(--afs)) !important; }
+}

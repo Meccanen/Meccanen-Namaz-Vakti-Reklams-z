@@ -760,7 +760,7 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                         notify(t("notifyActive", lang));
                       } else { notify(t("notifyOff", lang)); }
                     }}
@@ -779,7 +779,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                            await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
@@ -797,7 +797,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
@@ -812,7 +812,7 @@ function SettingsPanel({
                               const updated = { ...notificationSettings, soundTypeAtVakit: st };
                               setNotificationSettings(updated);
                               saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                              await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                             }}
                               className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
@@ -832,7 +832,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, showStatusNotification: turningOn };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                         console.log("[Meccanen] Durum bildirimi planlama sonucu:", r);
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
@@ -868,7 +868,7 @@ function SettingsPanel({
                                 const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
                                 setNotificationSettings(updated);
                                 saveNotificationSettings(updated);
-                                await schedulePrayerNotifications(prayerTimes, updated, "", lang, tomorrowPrayerTimes);
+                                await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                               }}
                                 className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
@@ -999,6 +999,28 @@ export default function App() {
     return (localStorage.getItem("mnv_lang") as LangCode) || detectLanguage();
   });
   const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
+
+  // Erişilebilirlik: yazı boyutu büyütme (yaşlı/görme zorluğu yaşayan kullanıcılar için).
+  // "Aa" düğmesiyle 4 kademe arasında döngü yapılır: Normal, Büyük, Daha Büyük, En Büyük.
+  // Uygulanması index.css'teki --afs CSS değişkeni üzerinden global olarak yapılıyor
+  // (aşağıdaki useEffect'e bakınız) — böylece Ayarlar/Hakkında dahil TÜM metinler
+  // otomatik olarak kapsanıyor, tek tek her ekranı değiştirmeye gerek kalmıyor.
+  const FONT_SCALE_LEVELS = [1, 1.15, 1.3, 1.45];
+  const [fontScale, setFontScale] = useState<number>(() => {
+    const saved = parseFloat(localStorage.getItem("mnv_font_scale") || "1");
+    return FONT_SCALE_LEVELS.includes(saved) ? saved : 1;
+  });
+  useEffect(() => {
+    document.documentElement.style.setProperty("--afs", String(fontScale));
+  }, [fontScale]);
+  const cycleFontScale = () => {
+    const idx = FONT_SCALE_LEVELS.indexOf(fontScale);
+    const next = FONT_SCALE_LEVELS[(idx === -1 ? 0 : idx + 1) % FONT_SCALE_LEVELS.length];
+    setFontScale(next);
+    localStorage.setItem("mnv_font_scale", String(next));
+    notify(`${t("fontSizeLabel", lang)}: %${Math.round(next * 100)}`);
+  };
+
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
@@ -1017,10 +1039,6 @@ export default function App() {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>(() =>
     getPrayerTimesFallback(DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude, new Date(), DEFAULT_LOCATION.timezone!)
   );
-  // Gece 00:00 ile İmsak vakti arasındaki geçiş için: "bugünün" (artık dünkü) vakitlerini
-  // değil, GERÇEK yarının İmsak saatini bilmemiz gerekiyor — aksi halde durum bildirimi
-  // yatsıdan sonra hep BUGÜNÜN (zaten geçmiş) imsak saatini yaklaşık değer olarak gösterir.
-  const [tomorrowPrayerTimes, setTomorrowPrayerTimes] = useState<PrayerTime[]>([]);
   const [prayerLoading, setPrayerLoading] = useState(false);
   const [nextPrayerStr, setNextPrayerStr] = useState("");
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
@@ -1116,19 +1134,6 @@ export default function App() {
     } catch {
       setPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul"));
     } finally { setPrayerLoading(false); }
-    // Yarının vakitlerini de (özellikle İmsak) ayrıca çekiyoruz — gece yarısı sonrası
-    // durum bildiriminin doğru saati gösterebilmesi için gerekli. Ana ekranı bloklamaması
-    // için prayerLoading'e dahil etmiyoruz, sessizce arka planda tamamlanır.
-    try {
-      const tomorrow = new Date(dt);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tTimes = await fetchPrayerTimes(loc.latitude, loc.longitude, tomorrow, loc.timezone || "Europe/Istanbul", method);
-      setTomorrowPrayerTimes(tTimes);
-    } catch {
-      const tomorrow = new Date(dt);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setTomorrowPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, tomorrow, loc.timezone || "Europe/Istanbul"));
-    }
   };
 
   // Bildirimleri (varsa durum bildirimi dahil) yeniden planlayan ortak fonksiyon.
@@ -1137,14 +1142,14 @@ export default function App() {
   const rescheduleNotifications = useRef<() => void>(() => {});
   rescheduleNotifications.current = () => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
-      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang, tomorrowPrayerTimes)
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang)
         .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
     }
   };
 
   useEffect(() => {
     rescheduleNotifications.current();
-  }, [prayerTimes, tomorrowPrayerTimes, notificationSettings.enabled]);
+  }, [prayerTimes, notificationSettings.enabled]);
 
   // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
   // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold
@@ -1440,7 +1445,11 @@ export default function App() {
           <div className="flex justify-between items-center">
             <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
               className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 text-left">
-              <div className={`text-2xl sm:text-3xl font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
+              {/* NOT: Bu başlık kasıtlı olarak text-[Npx] (sabit piksel) kullanıyor —
+                  Tailwind'in text-2xl/3xl gibi rem-tabanlı sınıflarını KULLANMIYOR,
+                  bu yüzden üst menüdeki "Aa" yazı boyutu büyütme sisteminden etkilenmez.
+                  Kullanıcı isteği üzerine eski boyuttan (24px/30px) biraz büyütüldü. */}
+              <div className={`text-[26px] sm:text-[32px] font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
                 MECCANEN
               </div>
             </button>
@@ -1480,6 +1489,11 @@ export default function App() {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <button onClick={cycleFontScale}
+                title={t("fontSizeLabel", lang)}
+                className={`px-3.5 py-1.5 text-[15px] font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
+                Aa
+              </button>
               <button onClick={() => {
                   const order: LangCode[] = ["tr", "en", "ar", "de", "ur"];
                   const next = order[(order.indexOf(lang) + 1) % order.length];
@@ -1501,7 +1515,7 @@ export default function App() {
             <span className={`text-6xl sm:text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${tTheme.clockGrad} tracking-tight`}>
               {localTime.hour}:{localTime.min}
             </span>
-            <span className={`text-2xl sm:text-3xl font-light ${tTheme.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
+            <span className={`text-[22px] sm:text-[28px] font-light ${tTheme.secColor} ml-2 animate-pulse`}>:{localTime.sec}</span>
           </div>
           <p className={`text-center text-sm sm:text-base font-medium ${tTheme.textSecondary} mb-4`}>{localTime.weekday}</p>
 
