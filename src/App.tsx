@@ -1010,6 +1010,7 @@ export default function App() {
     const saved = parseFloat(localStorage.getItem("mnv_font_scale") || "1");
     return FONT_SCALE_LEVELS.includes(saved) ? saved : 1;
   });
+  const [isFontScaleChanging, setIsFontScaleChanging] = useState(false);
   useEffect(() => {
     document.documentElement.style.setProperty("--afs", String(fontScale));
   }, [fontScale]);
@@ -1017,6 +1018,8 @@ export default function App() {
     const idx = FONT_SCALE_LEVELS.indexOf(fontScale);
     const next = FONT_SCALE_LEVELS[(idx === -1 ? 0 : idx + 1) % FONT_SCALE_LEVELS.length];
     setFontScale(next);
+    setIsFontScaleChanging(true);
+    window.setTimeout(() => setIsFontScaleChanging(false), 260);
     localStorage.setItem("mnv_font_scale", String(next));
     notify(`${t("fontSizeLabel", lang)}: %${Math.round(next * 100)}`);
   };
@@ -1479,7 +1482,7 @@ export default function App() {
           </div>
 
           {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
-          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
               <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
@@ -1488,10 +1491,11 @@ export default function App() {
                 {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
               <button onClick={cycleFontScale}
                 title={t("fontSizeLabel", lang)}
-                className={`px-3.5 py-1.5 text-[15px] font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
+                aria-label={t("fontSizeLabel", lang)}
+                className={`px-3.5 py-1.5 text-sm sm:text-base font-bold border rounded-full transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${isFontScaleChanging ? "scale-110 ring-2 ring-current/30" : ""} ${hdrBtnBg} ${hdrBtnText}`}>
                 Aa
               </button>
               <button onClick={() => {
