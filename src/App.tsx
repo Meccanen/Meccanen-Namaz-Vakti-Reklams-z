@@ -1533,12 +1533,10 @@ export default function App() {
           {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
-              <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
-              <span className={`text-sm sm:text-base font-bold flex items-center gap-1.5 ${tTheme.accent}`}>
-                {t("adFree", lang)}
-                {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
-              </span>
+              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>MECCANEN</span>
+              {notificationSettings.enabled && (
+                <Bell className="w-3.5 h-3.5 text-amber-500" />
+              )}
             </div>
             <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
               <button onClick={cycleFontScale}
