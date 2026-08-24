@@ -1533,7 +1533,6 @@ export default function App() {
           {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>MECCANEN</span>
               {notificationSettings.enabled && (
                 <Bell className="w-3.5 h-3.5 text-amber-500" />
               )}
