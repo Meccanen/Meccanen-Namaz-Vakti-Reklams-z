@@ -18,6 +18,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
+import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart } from "./utils/batteryHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
@@ -398,6 +399,15 @@ function SettingsPanel({
   const [playingEzanPreview, setPlayingEzanPreview] = useState<string | null>(null);
   const ezanPreviewAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // MIUI/HyperOS (Xiaomi) cihazlarda, ezan çalarken kullanıcı ses tuşuna bastığında
+  // (veya sistem "arka planda çalışıyor" uyarısını kapattığında) MIUI'nin agresif pil/
+  // otomatik başlatma yönetimi uygulamanın bekleyen TÜM alarm bildirimlerini (o günün
+  // kalan namaz vakitlerini) sessizce iptal edebiliyor — uygulama tekrar açılana kadar
+  // hiçbir bildirim gelmiyor. Bunu tamamen kod tarafından önlemek mümkün değil (Android'in
+  // güvenlik modeli bu şekilde çalışıyor), bu yüzden Xiaomi cihazlarda kullanıcıyı
+  // "Otomatik Başlatma" ve "Pil kısıtlaması yok" ayarlarını açmaya yönlendiriyoruz.
+  const [showXiaomiHint, setShowXiaomiHint] = useState(false);
+
   const toggleEzanPreview = (prayerKey: string) => {
     const current = ezanPreviewAudioRef.current;
     if (current) {
@@ -762,12 +772,51 @@ function SettingsPanel({
                       if (next) {
                         await schedulePrayerNotifications(prayerTimes, updated, "", lang);
                         notify(t("notifyActive", lang));
+                        // Pil optimizasyonu muafiyeti iste (tüm Android'lerde geçerli, sessizce
+                        // no-op olur eğer zaten muaf ise veya plugin mevcut değilse).
+                        await promptBatteryWhitelist();
+                        // Xiaomi/MIUI cihazlarda, daha önce gösterilmediyse otomatik başlatma
+                        // uyarısını göster — bildirimlerin gün boyu güvenilir gelmesi için kritik.
+                        if (isLikelyXiaomi() && !localStorage.getItem("mnv_xiaomi_hint_dismissed")) {
+                          setShowXiaomiHint(true);
+                        }
                       } else { notify(t("notifyOff", lang)); }
                     }}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 ${notificationSettings.enabled ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.enabled ? "left-6" : "left-0.5"}`} />
                   </button>
                 </div>
+
+                {showXiaomiHint && (
+                  <div className="p-4 rounded-2xl border border-sky-500/30 bg-sky-500/10 space-y-2.5">
+                    <div className="text-sm sm:text-base font-bold text-sky-400">
+                      {lang === "tr" ? "Xiaomi/MIUI cihaz tespit edildi" : lang === "de" ? "Xiaomi/MIUI-Gerät erkannt" : lang === "ar" ? "تم اكتشاف جهاز MIUI" : lang === "ur" ? "MIUI ڈیوائس کا پتہ چلا" : "Xiaomi/MIUI device detected"}
+                    </div>
+                    <p className={`text-sm ${th.textMuted} leading-relaxed`}>
+                      {lang === "tr"
+                        ? "MIUI, ezan çalarken sesi kapattığında bildirimleri arka planda durdurabiliyor. Bildirimlerin gün boyu güvenilir gelmesi için \"Otomatik Başlatma\"yı açman gerekiyor."
+                        : lang === "de"
+                        ? "MIUI kann Benachrichtigungen im Hintergrund stoppen, wenn du den Ton während des Adhans ausschaltest. Aktiviere \"Autostart\", damit Benachrichtigungen zuverlässig ankommen."
+                        : lang === "ar"
+                        ? "قد يوقف MIUI الإشعارات في الخلفية عند كتم صوت الأذان. فعّل \"بدء التشغيل التلقائي\" لضمان وصول الإشعارات."
+                        : lang === "ur"
+                        ? "MIUI اذان کی آواز بند کرنے پر بیک گراؤنڈ اطلاعات روک سکتا ہے۔ قابل اعتماد اطلاعات کے لیے \"آٹو اسٹارٹ\" آن کریں۔"
+                        : "MIUI can silently stop background notifications when you mute the adhan mid-play. Turn on \"Autostart\" so notifications keep arriving reliably."}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => { await promptXiaomiAutostart(); }}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-sky-500/20 border border-sky-500/40 text-sky-400 hover:bg-sky-500/30 transition-all cursor-pointer">
+                        {lang === "tr" ? "Ayarları Aç" : lang === "de" ? "Einstellungen öffnen" : lang === "ar" ? "فتح الإعدادات" : lang === "ur" ? "ترتیبات کھولیں" : "Open Settings"}
+                      </button>
+                      <button
+                        onClick={() => { localStorage.setItem("mnv_xiaomi_hint_dismissed", "1"); setShowXiaomiHint(false); }}
+                        className={`px-4 py-2.5 rounded-xl text-sm font-bold border border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 transition-all cursor-pointer`}>
+                        {lang === "tr" ? "Kapat" : lang === "de" ? "Schließen" : lang === "ar" ? "إغلاق" : lang === "ur" ? "بند کریں" : "Dismiss"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {notificationSettings.enabled && (
                   <>
