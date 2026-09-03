@@ -1552,7 +1552,11 @@ export default function App() {
                 className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
                 {lang.toUpperCase()}
               </button>
-              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+              <button onClick={() => {
+                  const order = Object.keys(THEMES) as ThemeKey[];
+                  const next = order[(order.indexOf(themeKey) + 1) % order.length];
+                  setTheme(next);
+                }}
                 className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnTextSm}`}>
                 <Palette className="w-3.5 h-3.5 shrink-0" /><span>{t("theme", lang)}</span>
               </button>
