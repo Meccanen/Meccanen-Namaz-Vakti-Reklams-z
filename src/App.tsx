@@ -976,19 +976,17 @@ function SettingsPanel({
                     <div className={`text-sm ${th.textMuted}`}>{t("updating", lang)}</div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {SUPPORTER_PRODUCT_IDS.map((pid) => {
+                      {SUPPORTER_PRODUCT_IDS.filter((pid) => pid === "destekci_2_99").map((pid) => {
                         const isBusy = purchasingId === pid;
-                        const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
-                        const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
                         return (
                           <button key={pid}
                             disabled={isBusy || purchasingId !== null}
                             onClick={() => onSupporterPurchase(pid)}
                             className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-400 font-bold hover:bg-rose-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 text-left">
                             <span className="flex items-center gap-0.5 shrink-0">
-                              {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-4 h-4" />)}
+                              <Coffee className="w-4 h-4" />
                             </span>
-                            <span className="text-sm sm:text-base leading-tight">{isBusy ? t("updating", lang) : t(labelKey, lang)}</span>
+                            <span className="text-sm sm:text-base leading-tight">{isBusy ? t("updating", lang) : t("supporterButtonSilver", lang)}</span>
                           </button>
                         );
                       })}
@@ -999,27 +997,6 @@ function SettingsPanel({
                     className={`text-xs ${th.textMuted} underline underline-offset-2 hover:${th.textPrimary} transition-all cursor-pointer`}>
                     {t("supporterRestore", lang)}
                   </button>
-                </div>
-
-                <div className={`border-t ${th.header} pt-4 flex gap-2`}>
-                  <a
-                    href="https://ko-fi.com/meccanen"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-semibold text-sm hover:bg-amber-500/20 transition-all duration-200 cursor-pointer"
-                  >
-                    <Coffee className="w-4 h-4" />
-                    Ko-fi
-                  </a>
-                  <a
-                    href="https://paypal.me/bulentt"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400 font-semibold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer"
-                  >
-                    <Heart className="w-4 h-4" />
-                    PayPal
-                  </a>
                 </div>
 
                 <p className={`text-center text-sm ${th.textMuted}`}>© 2026 Meccanen</p>
@@ -1860,31 +1837,21 @@ export default function App() {
                   <Star className="w-3.5 h-3.5" />{t("supporterOwned", lang)}
                 </span>
               ) : !supporterLoading && (
-                SUPPORTER_PRODUCT_IDS.map((pid) => {
+                SUPPORTER_PRODUCT_IDS.filter((pid) => pid === "destekci_2_99").map((pid) => {
                   const isBusy = purchasingId === pid;
-                  const labelKey = pid === "destekci_2_99" ? "supporterButtonSilver" : "supporterButtonGold";
-                  const coffeeCount = pid === "destekci_2_99" ? 1 : 2;
                   return (
                     <button key={pid}
                       disabled={isBusy || purchasingId !== null}
                       onClick={() => handleSupporterPurchase(pid)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-50">
                       <span className="flex items-center gap-0.5 shrink-0">
-                        {Array.from({ length: coffeeCount }).map((_, i) => <Coffee key={i} className="w-3.5 h-3.5" />)}
+                        <Coffee className="w-3.5 h-3.5" />
                       </span>
-                      {isBusy ? t("updating", lang) : t(labelKey, lang)}
+                      {isBusy ? t("updating", lang) : t("supporterButtonSilver", lang)}
                     </button>
                   );
                 })
               )}
-              <a href="https://ko-fi.com/meccanen" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all cursor-pointer">
-                <Coffee className="w-3.5 h-3.5" />Ko-fi
-              </a>
-              <a href="https://paypal.me/bulentt" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-400 text-xs font-semibold hover:bg-sky-500/20 transition-all cursor-pointer">
-                <Heart className="w-3.5 h-3.5" />PayPal
-              </a>
             </div>
             {supporterNotice && (
               <div className="text-[11px] text-emerald-400 font-semibold">{supporterNotice}</div>
