@@ -78,7 +78,8 @@ jobs:
           print(content)
           print(">>> ================ DOSYA SONU ================\n")
           PYEOF
-          python3 /tmp/patch_notif.py      - name: Web build al
+          python3 /tmp/patch_notif.py      
+      - name: Web build al
         run: npm run build
       - name: Capacitor Android ekle
         run: |
