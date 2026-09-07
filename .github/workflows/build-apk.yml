@@ -27,7 +27,7 @@ jobs:
       - name: "Local Notifications eklentisini yama: durum bildirimi zinciri (cancelPreviousId)"
         run: |
           cat > /tmp/patch_notif.py << 'PYEOF'
-          import os, re
+          import os
 
           path = "node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java"
           if not os.path.exists(path):
@@ -40,42 +40,38 @@ jobs:
           if marker not in content:
               raise SystemExit(">>> HATA: Beklenen native kod satırı bulunamadı, eklenti sürümü değişmiş olabilir.")
 
-          if "cancelPreviousId" in content:
-              print(">>> Yama zaten uygulanmış, tekrar uygulanmadı.")
-          else:
-              patch = (
-                  "        try {\n"
-                  "            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");\n"
-                  "            if (extra != null && extra.has(\"cancelPreviousId\")) {\n"
-                  "                notificationManager.cancel(extra.getInt(\"cancelPreviousId\"));\n"
-                  "            }\n"
-                  "        } catch (Exception e) {\n"
-                  "            Logger.error(Logger.tags(\"LN\"), \"cancelPreviousId patch failed\", e);\n"
-                  "        }\n"
-                  + marker
-              )
-              content = content.replace(marker, patch)
-              with open(path, "w") as f:
-                  f.write(content)
-              print(">>> Durum bildirimi zinciri yaması uygulandı.")
+          # Eski (log'suz) yama sürümünü de yeni (verbose log'lu) sürümle değiştirebilmek için,
+          # önce eski yamayı tanıyıp temizliyoruz, sonra her zaman güncel yamayı uyguluyoruz.
+          old_patch_start = "        try {\n            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");"
+          if old_patch_start in content:
+              # Eski yamanın tamamını bul ve marker'a kadar sil, böylece yerine yenisini koyabiliriz.
+              start_idx = content.index(old_patch_start)
+              end_idx = content.index(marker, start_idx)
+              content = content[:start_idx] + content[end_idx:]
+              print(">>> Eski (log'suz) yama tespit edildi ve kaldırıldı, yerine verbose sürüm konulacak.")
 
-          # --- TEŞHİS: onReceive metodunun tam (güncel) içeriğini logla ---
-          # notificationJson değişkeninin gerçekten var olup olmadığını, "extra" verisinin
-          # nasıl elde edildiğini ve method'un tam güncel halini gözle görmek için.
-          on_receive_match = re.search(r"(void onReceive\([^)]*\)\s*\{.*?\n    \})", content, re.DOTALL)
-          print("\n>>> ---- onReceive METODU (TAM/GÜNCEL İÇERİK) ----")
-          if on_receive_match:
-              print(on_receive_match.group(1))
-          else:
-              print(">>> onReceive metodu regex ile bulunamadı, dosyanın tamamı:\n" + content)
-          print(">>> ---- SON ----\n")
-
-          # notificationJson değişkeninin dosyada nerede/nasıl tanımlandığını da ayrıca göster
-          decl_lines = [l for l in content.split("\n") if "notificationJson" in l]
-          print(">>> ---- 'notificationJson' geçen TÜM satırlar ----")
-          for l in decl_lines:
-              print(l)
-          print(">>> ---- SON ----\n")
+          patch = (
+              "        try {\n"
+              "            Logger.debug(Logger.tags(\"LN\"), \"cancelPreviousId DEBUG: id=\" + id\n"
+              "                + \" notificationJson=\" + (notificationJson == null ? \"NULL\" : notificationJson.toString()));\n"
+              "            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");\n"
+              "            Logger.debug(Logger.tags(\"LN\"), \"cancelPreviousId DEBUG: extra=\" + (extra == null ? \"NULL\" : extra.toString()));\n"
+              "            if (extra != null && extra.has(\"cancelPreviousId\")) {\n"
+              "                int prevId = extra.getInt(\"cancelPreviousId\");\n"
+              "                notificationManager.cancel(prevId);\n"
+              "                Logger.debug(Logger.tags(\"LN\"), \"cancelPreviousId DEBUG: cancel(\" + prevId + \") CAGRILDI\");\n"
+              "            } else {\n"
+              "                Logger.debug(Logger.tags(\"LN\"), \"cancelPreviousId DEBUG: cancelPreviousId anahtari YOK veya extra NULL, cancel CAGRILMADI\");\n"
+              "            }\n"
+              "        } catch (Exception e) {\n"
+              "            Logger.error(Logger.tags(\"LN\"), \"cancelPreviousId patch failed\", e);\n"
+              "        }\n"
+              + marker
+          )
+          content = content.replace(marker, patch)
+          with open(path, "w") as f:
+              f.write(content)
+          print(">>> Durum bildirimi zinciri yaması (verbose log'lu) uygulandı.")
           PYEOF
           python3 /tmp/patch_notif.py
       - name: Web build al
