@@ -40,15 +40,15 @@ jobs:
           if marker not in content:
               raise SystemExit(">>> HATA: Beklenen native kod satırı bulunamadı, eklenti sürümü değişmiş olabilir.")
 
-          # Eski (log'suz) yama sürümünü de yeni (verbose log'lu) sürümle değiştirebilmek için,
-          # önce eski yamayı tanıyıp temizliyoruz, sonra her zaman güncel yamayı uyguluyoruz.
-          old_patch_start = "        try {\n            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");"
-          if old_patch_start in content:
-              # Eski yamanın tamamını bul ve marker'a kadar sil, böylece yerine yenisini koyabiliriz.
-              start_idx = content.index(old_patch_start)
-              end_idx = content.index(marker, start_idx)
-              content = content[:start_idx] + content[end_idx:]
-              print(">>> Eski (log'suz) yama tespit edildi ve kaldırıldı, yerine verbose sürüm konulacak.")
+          old_patch_start = "        try {\n            Logger.debug(Logger.tags(\"LN\"), \"cancelPreviousId DEBUG:"
+          old_patch_start_v1 = "        try {\n            org.json.JSONObject extra = notificationJson.optJSONObject(\"extra\");"
+          for old_start in (old_patch_start, old_patch_start_v1):
+              if old_start in content:
+                  start_idx = content.index(old_start)
+                  end_idx = content.index(marker, start_idx)
+                  content = content[:start_idx] + content[end_idx:]
+                  print(">>> Önceki yama sürümü tespit edildi ve kaldırıldı, yerine güncel sürüm konulacak.")
+                  break
 
           patch = (
               "        try {\n"
@@ -72,9 +72,13 @@ jobs:
           with open(path, "w") as f:
               f.write(content)
           print(">>> Durum bildirimi zinciri yaması (verbose log'lu) uygulandı.")
+
+          # --- TEŞHİS: TÜM dosyayı logla (özellikle rescheduleNotificationIfNeeded metodu için) ---
+          print("\n>>> ================ TimedNotificationPublisher.java TAM İÇERİK (yamadan SONRA) ================")
+          print(content)
+          print(">>> ================ DOSYA SONU ================\n")
           PYEOF
-          python3 /tmp/patch_notif.py
-      - name: Web build al
+          python3 /tmp/patch_notif.py      - name: Web build al
         run: npm run build
       - name: Capacitor Android ekle
         run: |
