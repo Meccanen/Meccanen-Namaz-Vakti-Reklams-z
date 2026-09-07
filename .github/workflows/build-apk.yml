@@ -27,7 +27,7 @@ jobs:
       - name: "Local Notifications eklentisini yama: durum bildirimi zinciri (cancelPreviousId)"
         run: |
           cat > /tmp/patch_notif.py << 'PYEOF'
-          import os
+          import os, re
 
           path = "node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java"
           if not os.path.exists(path):
@@ -58,6 +58,24 @@ jobs:
               with open(path, "w") as f:
                   f.write(content)
               print(">>> Durum bildirimi zinciri yaması uygulandı.")
+
+          # --- TEŞHİS: onReceive metodunun tam (güncel) içeriğini logla ---
+          # notificationJson değişkeninin gerçekten var olup olmadığını, "extra" verisinin
+          # nasıl elde edildiğini ve method'un tam güncel halini gözle görmek için.
+          on_receive_match = re.search(r"(void onReceive\([^)]*\)\s*\{.*?\n    \})", content, re.DOTALL)
+          print("\n>>> ---- onReceive METODU (TAM/GÜNCEL İÇERİK) ----")
+          if on_receive_match:
+              print(on_receive_match.group(1))
+          else:
+              print(">>> onReceive metodu regex ile bulunamadı, dosyanın tamamı:\n" + content)
+          print(">>> ---- SON ----\n")
+
+          # notificationJson değişkeninin dosyada nerede/nasıl tanımlandığını da ayrıca göster
+          decl_lines = [l for l in content.split("\n") if "notificationJson" in l]
+          print(">>> ---- 'notificationJson' geçen TÜM satırlar ----")
+          for l in decl_lines:
+              print(l)
+          print(">>> ---- SON ----\n")
           PYEOF
           python3 /tmp/patch_notif.py
       - name: Web build al
