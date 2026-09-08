@@ -250,6 +250,29 @@ export async function schedulePrayerNotifications(
   const notifications: any[] = [];
   const now = new Date();
 
+  // "X dakika önce" ve "vakit girdi" bildirimlerini TEK bir kronolojik zincir halinde
+  // topluyoruz (bugün + yarın birlikte), ki her biri native tarafta (cancelPreviousId
+  // yaması ile) kendinden bir önceki bildirimi otomatik iptal edebilsin — tıpkı durum
+  // bildirimi zinciri gibi. Bu olmadan (eski davranış) her bildirim bağımsızdı ve hiçbiri
+  // iptal edilmiyordu; özellikle Yatsı'dan sabah İmsak'a kadar uygulama hiç açılmazsa,
+  // gece boyu her vaktin hatırlatma/"vakti girdi" bildirimi ekranda ayrı ayrı birikiyordu.
+  // Zincir gün sınırını (bugün→yarın) da kapsadığı için bu tam olarak o senaryoyu çözüyor.
+  type PendingEvent = {
+    id: number;
+    triggerDate: Date;
+    title: string;
+    body: string;
+    channelId: string;
+    sound: string;
+  };
+  const events: PendingEvent[] = [];
+  // Şu ana kadar geçmiş (geçmişte kalmış) olan en son olayı ayrıca takip ediyoruz — bu,
+  // hem zincirin ilk gelecekteki bildirimine "cancelPreviousId" olarak verilecek, hem de
+  // aşağıda hemen (JS tarafında) iptal edilecek: cancelAllNotifications() sadece HENÜZ
+  // TETİKLENMEMİŞ olanları temizler, ekranda hâlâ görünen eski bir bildirimi kapsamaz.
+  let mostRecentPastId: number | null = null;
+  let mostRecentPastDate: Date | null = null;
+
   prayerTimes.forEach((prayer, idx) => {
     const prayerKey = prayer.key as keyof typeof settings.prayers;
     if (!settings.prayers[prayerKey]) return;
@@ -279,19 +302,20 @@ export async function schedulePrayerNotifications(
         const beforeDate = new Date(now);
         beforeDate.setDate(beforeDate.getDate() + dayOffset);
         beforeDate.setHours(hour, min - settings.minutesBefore, 0, 0);
+        const id = (dayOffset * 100) + (idx * 2) + 1;
 
         if (beforeDate > now) {
-          const id = (dayOffset * 100) + (idx * 2) + 1;
-          notifications.push({
+          events.push({
             id,
+            triggerDate: beforeDate,
             title: `🕌 ${tx("beforeTitle")}`,
             body: tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) }),
-            schedule: { at: beforeDate },
             channelId: channelIdBefore,
             sound: soundFileBefore,
-            smallIcon: "ic_stat_notify",
-            iconColor: "#f59e0b",
           });
+        } else if (!mostRecentPastDate || beforeDate > mostRecentPastDate) {
+          mostRecentPastDate = beforeDate;
+          mostRecentPastId = id;
         }
       }
 
@@ -300,23 +324,54 @@ export async function schedulePrayerNotifications(
         const atDate = new Date(now);
         atDate.setDate(atDate.getDate() + dayOffset);
         atDate.setHours(hour, min, 0, 0);
+        const id = (dayOffset * 100) + (idx * 2) + 2;
 
         if (atDate > now) {
-          const id = (dayOffset * 100) + (idx * 2) + 2;
-          notifications.push({
+          events.push({
             id,
+            triggerDate: atDate,
             title: `🕌 ${tx("atTitle")}`,
             body: tx("atBody", { name: prayerName }),
-            schedule: { at: atDate },
             channelId: channelIdAtVakit,
             sound: soundFileAtVakit,
-            smallIcon: "ic_stat_notify",
-            iconColor: "#f59e0b",
           });
+        } else if (!mostRecentPastDate || atDate > mostRecentPastDate) {
+          mostRecentPastDate = atDate;
+          mostRecentPastId = id;
         }
       }
     }
   });
+
+  // Kronolojik sıraya diz, sonra her birine "kendinden bir önceki" bildirimi native
+  // tarafta iptal edecek extra.cancelPreviousId ekleyerek zinciri kur. İlk gelecekteki
+  // bildirim, zincire yukarıda bulduğumuz "en son geçmiş" bildirimi iptal ederek başlıyor
+  // — böylece uygulama gece boyu hiç açılmasa bile, sabahki ilk bildirim ateşlendiğinde
+  // gece yarısı öncesinden kalan son bildirimi otomatik temizliyor.
+  events.sort((a, b) => a.triggerDate.getTime() - b.triggerDate.getTime());
+  let prevId: number | null = mostRecentPastId;
+  for (const ev of events) {
+    notifications.push({
+      id: ev.id,
+      title: ev.title,
+      body: ev.body,
+      schedule: { at: ev.triggerDate },
+      channelId: ev.channelId,
+      sound: ev.sound,
+      smallIcon: "ic_stat_notify",
+      iconColor: "#f59e0b",
+      ...(prevId !== null ? { extra: { cancelPreviousId: prevId } } : {}),
+    });
+    prevId = ev.id;
+  }
+
+  // Şu anda ekranda görünüyor olabilecek (zaten tetiklenmiş) en son hatırlatma/"vakit
+  // girdi" bildirimini hemen şimdi (JS tarafında) da temizle — kullanıcı uygulamayı
+  // açtığında/ayar değiştirdiğinde eski bildirim bir sonraki native tetiklemeyi
+  // beklemeden derhal kaybolsun diye.
+  if (mostRecentPastId !== null) {
+    try { await LocalNotifications.cancel({ notifications: [{ id: mostRecentPastId }] }); } catch {}
+  }
 
   // "Şu an hangi vakitteyiz" durum bildirimi — sadece BUGÜN için, 6 sabit ID'lik zincir.
   // Her biri (ileride) tetiklendiğinde native yama (extra.cancelPreviousId) sayesinde
