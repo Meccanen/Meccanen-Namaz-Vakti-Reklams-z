@@ -278,6 +278,16 @@ export async function schedulePrayerNotifications(
     if (!settings.prayers[prayerKey]) return;
     const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
 
+    // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe bildirim
+    // metninde "İmsak namazına/namazı" demek yerine "İmsak vaktine/vakti" diyoruz.
+    // Diğer diller zaten prayer adını (Fajr/Fadschr/الفجر/فجر) doğrudan kullandığı
+    // için bu ayrım sadece Türkçe metinlerde gerekiyor.
+    const isImsakTr = prayer.key === "imsak" && lang === "tr";
+    const beforeBodyText = isImsakTr
+      ? `İmsak vaktine ${settings.minutesBefore} dakika kaldı.`
+      : tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) });
+    const atBodyText = isImsakTr ? "İmsak vakti girdi." : tx("atBody", { name: prayerName });
+
     // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
     // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan sesle çalışır (bkz.
     // NotificationSettings.soundTypeAtVakit açıklaması). Sadece "vakit girdiğinde" bildirimi
@@ -309,7 +319,7 @@ export async function schedulePrayerNotifications(
             id,
             triggerDate: beforeDate,
             title: `🕌 ${tx("beforeTitle")}`,
-            body: tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) }),
+            body: beforeBodyText,
             channelId: channelIdBefore,
             sound: soundFileBefore,
           });
@@ -331,7 +341,7 @@ export async function schedulePrayerNotifications(
             id,
             triggerDate: atDate,
             title: `🕌 ${tx("atTitle")}`,
-            body: tx("atBody", { name: prayerName }),
+            body: atBodyText,
             channelId: channelIdAtVakit,
             sound: soundFileAtVakit,
           });
@@ -405,6 +415,12 @@ export async function schedulePrayerNotifications(
         tr: "Güneşin Doğuşu Saat {time}", en: "Sunrise at {time}", ar: "شروق الشمس الساعة {time}",
         de: "Sonnenaufgang um {time}", ur: "طلوع آفتاب {time} پر",
       },
+      // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe'de "İmsak
+      // Namazı Saat X" yerine "İmsak Vakti Saat X" diyoruz. Diğer diller zaten prayer
+      // adını doğrudan kullandığı için bu ayrım sadece Türkçe'de gerekiyor.
+      bodyImsakTr: {
+        tr: "İmsak Vakti Saat {time}",
+      },
     };
     const stx = (key: string, vars: Record<string, string>) => {
       let s = STATUS_TEXTS[key][lang] || STATUS_TEXTS[key].en;
@@ -413,9 +429,9 @@ export async function schedulePrayerNotifications(
     };
     const buildStatusBody = (nextKey: string, nextTime: string) => {
       const nextName = PRAYER_NAMES[nextKey]?.[lang] || nextKey;
-      return nextKey === "gunes"
-        ? stx("bodySunrise", { time: nextTime })
-        : stx("bodyPrayer", { next: nextName, time: nextTime });
+      if (nextKey === "gunes") return stx("bodySunrise", { time: nextTime });
+      if (nextKey === "imsak" && lang === "tr") return stx("bodyImsakTr", { time: nextTime });
+      return stx("bodyPrayer", { next: nextName, time: nextTime });
     };
 
     const timeByKey: Record<string, string> = {};
