@@ -14,7 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
-  sendTestNotification,
+  sendTestNotification, countPendingNotifications,
   PRAYER_LABELS, NOTIFICATION_HORIZON_DAYS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -439,7 +439,21 @@ function SettingsPanel({
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
   const [exactAlarmOff, setExactAlarmOff] = useState(false);
+  // Bildirim tanılama (diagnostik kartı): son planlama sonucu + cihazdaki gerçek alarm sayısı.
+  const [diagSchedule, setDiagSchedule] = useState<{ ok: boolean; count: number; error?: string; debug?: string; at: number }>({ ok: true, count: 0, at: 0 });
+  const [diagPending, setDiagPending] = useState<{ n: number; at: number }>({ n: -1, at: 0 });
   const MAX_LOCATIONS = 33;
+
+  // Her planlama sonrasında tanılama kartını tazele: sonuç + native'de gerçekten bekleyen sayı.
+  const recordSchedule = (r: Awaited<ReturnType<typeof schedulePrayerNotifications>>) => {
+    setDiagSchedule({ ok: r.success, count: r.scheduledCount, error: r.error, debug: r.debug, at: Date.now() });
+    countPendingNotifications().then(n => setDiagPending({ n, at: Date.now() }));
+  };
+  const scheduleWithDiag = async (settings: NotificationSettings) => {
+    const r = await schedulePrayerNotifications(prayerTimes, settings, "", lang, undefined, multiDayPrayerTimes);
+    recordSchedule(r);
+    return r;
+  };
 
   // Panel her açıldığında kesin alarm iznini kontrol et — zaten bildirimleri açık olan
   // kullanıcılar (izni hiç ayarlamamış olanlar) uyarıyı buradan görür.
@@ -780,7 +794,7 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        await scheduleWithDiag(updated);
                         notify(t("notifyActive", lang));
                         // Pil optimizasyonu muafiyeti iste (tüm Android'lerde geçerli, sessizce
                         // no-op olur eğer zaten muaf ise veya plugin mevcut değilse).
@@ -858,6 +872,22 @@ function SettingsPanel({
                         {t(exactAlarmOff ? "diagOff" : "diagOn", lang)}
                       </span>
                     </div>
+                    <div className={`text-sm ${th.textMuted} flex items-center gap-2`}>
+                      <span>{t("diagPending", lang)}:</span>
+                      <span className={`font-bold ${diagPending.n > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        {diagPending.n >= 0 ? diagPending.n : "…"}
+                      </span>
+                      {diagPending.at > 0 && <span>{new Date(diagPending.at).toLocaleTimeString()}</span>}
+                    </div>
+                    <div className={`text-sm ${th.textMuted}`}>
+                      <span>{t("diagLastSchedule", lang)}: </span>
+                      <span className={`font-bold ${diagSchedule.at === 0 ? "" : diagSchedule.ok ? "text-emerald-400" : "text-rose-400"}`}>
+                        {diagSchedule.at === 0 ? "—" : diagSchedule.ok ? `✓ ${diagSchedule.count}` : "✗"}
+                      </span>
+                      {diagSchedule.error && (
+                        <div className="mt-1 text-[11px] text-rose-400/80 break-all">{diagSchedule.error}</div>
+                      )}
+                    </div>
                     <button
                       onClick={async () => {
                         try {
@@ -883,7 +913,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                            await scheduleWithDiag(updated);
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
@@ -901,7 +931,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        await scheduleWithDiag(updated);
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
@@ -916,7 +946,7 @@ function SettingsPanel({
                               const updated = { ...notificationSettings, soundTypeAtVakit: st };
                               setNotificationSettings(updated);
                               saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                              await scheduleWithDiag(updated);
                             }}
                               className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
@@ -936,7 +966,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, showStatusNotification: turningOn };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        const r = await scheduleWithDiag(updated);
                         console.log("[Meccanen] Durum bildirimi planlama sonucu:", r);
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
@@ -972,7 +1002,7 @@ function SettingsPanel({
                                 const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
                                 setNotificationSettings(updated);
                                 saveNotificationSettings(updated);
-                                await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                                await scheduleWithDiag(updated);
                               }}
                                 className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
@@ -1250,7 +1280,10 @@ export default function App() {
   rescheduleNotifications.current = () => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
       schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang, undefined, multiDayPrayerTimes)
-        .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
+        .then(r => {
+          console.log("[Meccanen] Bildirim planlama sonucu:", r);
+          recordSchedule(r);
+        });
     }
   };
 

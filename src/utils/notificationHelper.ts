@@ -594,24 +594,53 @@ export async function schedulePrayerNotifications(
    }
   }
 
+  // TÜM bildirimlerin iOS/Android'e tek bir DEV batch ile gönderilmesi bazı cihazlarda
+  // (özellikle Android 16/Nothing OS gibi agresif sistemlerde) sessizce BAŞARISIZ
+  // olabiliyor — tek hatalı bildirim tüm grubu düşürüyordu ve "kullanılmayan kanal"
+  // olarak görülmesinin sebebi buydu. Bu yüzden batch'i KÜÇÜK parçalara (5'er) bölüp
+  // sırayla gönderiyoruz: bir parça patlasa bile geri kalanlar planlanmaya devam eder.
+  // Her parça 8 saniyelik zaman aşımına (Promise.race) bağlı — hiçbir çağrı sessizce
+  // asılı kalamaz. İşin sonunda LocalNotifications.pending() ile GERÇEK kayıtlı alarm
+  // sayısı okunur; "kaç planlandı" değil "kaç GERÇEKTEN PLANA GİRDİ" bilgisi döner.
+  let failures: string[] = [];
   if (notifications.length > 0) {
-    try {
-      // GÜVENLİK: LocalNotifications.schedule() bazı cihazlarda/durumlarda (özellikle
-      // gece yarısı geçişinde, normalden daha kalabalık bir bildirim grubu gönderilirken)
-      // hiç hata vermeden SONSUZA KADAR asılı kalabiliyor — ne başarı ne hata döner,
-      // arayüz kilitlenir. Bunu Promise.race ile zaman aşımına bağlıyoruz: 8 saniye
-      // içinde cevap gelmezse net bir "timeout" hatası döndürüyoruz, sessizce asılı
-      // kalmak yerine.
-      await Promise.race([
-        LocalNotifications.schedule({ notifications }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout-8s")), 8000)),
-      ]);
-    } catch (e) {
-      return { success: false, scheduledCount: 0, error: `schedule-error: ${e instanceof Error ? e.message : String(e)} (count=${notifications.length})`, debug: statusDebug };
+    const CHUNK = 5;
+    for (let i = 0; i < notifications.length; i += CHUNK) {
+      const chunk = notifications.slice(i, i + CHUNK);
+      try {
+        await Promise.race([
+          LocalNotifications.schedule({ notifications: chunk }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout-8s")), 8000)),
+        ]);
+      } catch (e) {
+        failures.push(
+          `${chunk[0]?.id ?? "?"}..${chunk[chunk.length - 1]?.id ?? "?"}: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
     }
   }
 
-  return { success: true, scheduledCount: notifications.length, debug: statusDebug };
+  let pendingCount = 0;
+  try {
+    pendingCount = (await LocalNotifications.pending()).notifications.length;
+  } catch {}
+
+  const ok = failures.length === 0;
+  return {
+    success: ok,
+    scheduledCount: pendingCount,
+    error: ok ? undefined : `schedule-kismi: ${failures.join(" | ")} (requested=${notifications.length}, pending=${pendingCount})`,
+    debug: `${statusDebug} |requested=${notifications.length} pending=${pendingCount}`,
+  };
+}
+
+/** Cihazda şu an GERÇEKTEN bekleyen (native'de kayıtlı) bildirim/alarm sayısı. */
+export async function countPendingNotifications(): Promise<number> {
+  try {
+    return (await LocalNotifications.pending()).notifications.length;
+  } catch {
+    return -1;
+  }
 }
 
 /**
