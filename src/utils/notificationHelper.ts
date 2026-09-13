@@ -675,6 +675,42 @@ export async function sendTestNotification(lang: LangCode): Promise<void> {
   });
 }
 
+/**
+ * Durum ("Şu An ... Vakti") bildirimiyle BİREBİR aynı alanlarla gönderilen bir test:
+ * kanal (prayer_status_silent), autoCancel/ongoing değerleri, cancelPreviousId,
+ * timeoutMs ve iconColor dahil. "Genel test" geliyor ama bu gelmiyorsa sorun
+ * genel alarm yolunda değil, DURUM bildirimine özgü native/kanal tarafındadır.
+ */
+export async function sendStatusTestNotification(lang: LangCode): Promise<void> {
+  const TEXTS: Record<string, { title: string; body: string }> = {
+    tr: { title: "🕌 Şu An Test Vakti", body: "Durum bildirimi kanalı: bu geldiyse kanal ve native yol sağlam." },
+    en: { title: "🕌 Currently Test Time", body: "Status channel: if you see this, the channel and native path are fine." },
+    de: { title: "🕌 Gerade Test-Zeit", body: "Status-Kanal: Wenn du dies siehst, sind Kanal und nativer Pfad in Ordnung." },
+    ar: { title: "🕌 الآن وقت الاختبار", body: "قناة حالة الصلاة: إذا رأيت هذا فالقناة والمسار سليمان." },
+    ur: { title: "🕌 اس وقت ٹیسٹ کا وقت ہے", body: "اسٹیٹس چینل: اگر یہ نظر آئے تو چینل اور نیتیو راستہ درست ہے۔" },
+  };
+  const text = TEXTS[lang] || TEXTS.en;
+  const TEST_ID = 7998;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: TEST_ID,
+      title: text.title,
+      body: text.body,
+      schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
+      channelId: CHANNEL_STATUS,
+      sound: "default",
+      smallIcon: "ic_stat_notify",
+      iconColor: "#f59e0b",
+      ongoing: false,
+      autoCancel: false,
+      extra: {
+        cancelPreviousId: TEST_ID - 1,
+        timeoutMs: STATUS_TIMEOUT_MS,
+      },
+    }],
+  });
+}
+
 // Ayarları localStorage'a kaydet/yükle
 export function saveNotificationSettings(s: NotificationSettings): void {
   localStorage.setItem("mnv_notification_settings", JSON.stringify(s));
