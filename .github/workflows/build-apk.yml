@@ -151,6 +151,7 @@ jobs:
           plugin_path = f"{java_dir}/BatteryHelperPlugin.java"
           plugin_code = f'''package {app_id};
 
+          import android.app.AlarmManager;
           import android.content.ComponentName;
           import android.content.Context;
           import android.content.Intent;
@@ -206,6 +207,47 @@ jobs:
                           result.put("opened", false);
                       }}
                   }}
+                  call.resolve(result);
+              }}
+
+              @PluginMethod
+              public void canScheduleExactAlarms(PluginCall call) {{
+                  JSObject result = new JSObject();
+                  boolean allowed = true;
+                  try {{
+                      // Android 12+ (API 31+): tam zamanlı alarm izni. Eski sürümlerde
+                      // setExact() her zaman çalışır, bu yüzden allowed=true varsayılır.
+                      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {{
+                          AlarmManager am = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+                          allowed = am != null && am.canScheduleExactAlarms();
+                      }}
+                  }} catch (Exception e) {{
+                      allowed = true;
+                  }}
+                  result.put("allowed", allowed);
+                  call.resolve(result);
+              }}
+
+              @PluginMethod
+              public void openExactAlarmSettings(PluginCall call) {{
+                  boolean opened = false;
+                  try {{
+                      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {{
+                          AlarmManager am = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+                          // Zaten izin varsa boşuna ekran açma.
+                          if (am == null || !am.canScheduleExactAlarms()) {{
+                              Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                              intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+                              intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                              getContext().startActivity(intent);
+                              opened = true;
+                          }}
+                      }}
+                  }} catch (Exception e) {{
+                      opened = false;
+                  }}
+                  JSObject result = new JSObject();
+                  result.put("opened", opened);
                   call.resolve(result);
               }}
           }}

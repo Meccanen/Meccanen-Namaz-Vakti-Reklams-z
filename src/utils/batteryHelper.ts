@@ -7,6 +7,8 @@ import { registerPlugin } from "@capacitor/core";
 interface BatteryHelperPluginType {
   requestIgnoreBatteryOptimizations(): Promise<void>;
   openXiaomiAutostartSettings(): Promise<{ opened: boolean }>;
+  canScheduleExactAlarms(): Promise<{ allowed: boolean }>;
+  openExactAlarmSettings(): Promise<{ opened: boolean }>;
 }
 
 const BatteryHelper = registerPlugin<BatteryHelperPluginType>("BatteryHelper");
@@ -51,6 +53,34 @@ export async function promptBatteryWhitelist(): Promise<void> {
 export async function promptXiaomiAutostart(): Promise<boolean> {
   try {
     const r = await BatteryHelper.openXiaomiAutostartSettings();
+    return r.opened;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Android 12+ "kesin (tam zamanlı) alarm" izninin açık olup olmadığını döner.
+ * Bu izin kapalıyken namaz vakti bildirimleri dakikalar halinde değil, sistemin
+ * uygun gördüğü anda (özellikle Doze modunda gecikmeli ya da hiç) tetiklenir.
+ * Android 12'den eski sürümlerde ve web önizlemede `true` döner (kısıt yok).
+ */
+export async function exactAlarmsAllowed(): Promise<boolean> {
+  try {
+    const r = await BatteryHelper.canScheduleExactAlarms();
+    return r.allowed;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Kesin alarm izni kapalıysa, sistemin "Alarmlar ve hatırlatıcılar" ekranını açar
+ * (Android 12+). İzin zaten açıksa hiçbir şey yapmaz. `true` dönerse ekran açılmıştır.
+ */
+export async function openExactAlarmSettings(): Promise<boolean> {
+  try {
+    const r = await BatteryHelper.openExactAlarmSettings();
     return r.opened;
   } catch {
     return false;

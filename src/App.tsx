@@ -18,7 +18,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
-import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart } from "./utils/batteryHelper";
+import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart, exactAlarmsAllowed, openExactAlarmSettings } from "./utils/batteryHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
@@ -437,7 +437,14 @@ function SettingsPanel({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
+  const [exactAlarmOff, setExactAlarmOff] = useState(false);
   const MAX_LOCATIONS = 33;
+
+  // Panel her açıldığında kesin alarm iznini kontrol et — zaten bildirimleri açık olan
+  // kullanıcılar (izni hiç ayarlamamış olanlar) uyarıyı buradan görür.
+  useEffect(() => {
+    exactAlarmsAllowed().then(allowed => setExactAlarmOff(!allowed));
+  }, []);
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
@@ -777,6 +784,9 @@ function SettingsPanel({
                         // Pil optimizasyonu muafiyeti iste (tüm Android'lerde geçerli, sessizce
                         // no-op olur eğer zaten muaf ise veya plugin mevcut değilse).
                         await promptBatteryWhitelist();
+                        // Kesin alarm iznini kontrol et: kapalıysa aşağıdaki uyarı paneli
+                        // görünür ("Ayarları Aç" ile "Alarmlar ve hatırlatıcılar" sayfası açılır).
+                        setExactAlarmOff(!(await exactAlarmsAllowed()));
                         // Xiaomi/MIUI cihazlarda, daha önce gösterilmediyse otomatik başlatma
                         // uyarısını göster — bildirimlerin gün boyu güvenilir gelmesi için kritik.
                         if (isLikelyXiaomi() && !localStorage.getItem("mnv_xiaomi_hint_dismissed")) {
@@ -817,6 +827,22 @@ function SettingsPanel({
                         {lang === "tr" ? "Kapat" : lang === "de" ? "Schließen" : lang === "ar" ? "إغلاق" : lang === "ur" ? "بند کریں" : "Dismiss"}
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {exactAlarmOff && notificationSettings.enabled && (
+                  <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 space-y-2.5">
+                    <div className="text-sm sm:text-base font-bold text-amber-400">
+                      {t("exactAlarmWarningTitle", lang)}
+                    </div>
+                    <p className={`text-sm ${th.textMuted} leading-relaxed`}>
+                      {t("exactAlarmWarningDesc", lang)}
+                    </p>
+                    <button
+                      onClick={async () => { await openExactAlarmSettings(); }}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all cursor-pointer w-full">
+                      {t("exactAlarmOpenSettings", lang)}
+                    </button>
                   </div>
                 )}
 
@@ -1204,6 +1230,21 @@ export default function App() {
   useEffect(() => {
     rescheduleNotifications.current();
   }, [prayerTimes, notificationSettings.enabled]);
+
+  // Soğuk başlangıçta: bildirimler açık ama "kesin alarm izni" kapalıysa, kullanıcıya
+  // "Bildirimler" sekmesindeki uyarı panelini BİR KEZ göster (her kurulumda/açılışta
+  // rahatsız etmemek için localStorage bayrağı). İzin zaten açıksa panel açılmaz.
+  useEffect(() => {
+    if (!notificationSettings.enabled) return;
+    if (localStorage.getItem("mnv_exact_alarm_prompted")) return;
+    localStorage.setItem("mnv_exact_alarm_prompted", "1");
+    exactAlarmsAllowed().then(allowed => {
+      if (!allowed) {
+        setSettingsInitialTab("bildirim");
+        setSettingsOpen(true);
+      }
+    });
+  }, []);
 
   // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
   // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold
