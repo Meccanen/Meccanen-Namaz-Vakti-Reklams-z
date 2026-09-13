@@ -14,6 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
+  sendTestNotification,
   PRAYER_LABELS, NOTIFICATION_HORIZON_DAYS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -847,6 +848,32 @@ function SettingsPanel({
                 )}
 
                 {notificationSettings.enabled && (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-white/5 space-y-2.5">
+                    <div className={`text-sm sm:text-base font-bold ${th.textPrimary} flex items-center gap-2`}>
+                      <Bell className="w-5 h-5" />{t("diagTitle", lang)}
+                    </div>
+                    <div className={`text-sm ${th.textMuted} flex items-center gap-2`}>
+                      <span>{t("diagExactAlarm", lang)}:</span>
+                      <span className={`font-bold ${exactAlarmOff ? "text-rose-400" : "text-emerald-400"}`}>
+                        {t(exactAlarmOff ? "diagOff" : "diagOn", lang)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await sendTestNotification(lang);
+                          notify(t("diagTestSent", lang));
+                        } catch (e) {
+                          notify(t("diagTestError", lang, { error: e instanceof Error ? e.message : String(e) }));
+                        }
+                      }}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all cursor-pointer">
+                      {t("diagTestButton", lang)}
+                    </button>
+                  </div>
+                )}
+
+                {notificationSettings.enabled && (
                   <>
                     <div>
                       <div className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} mb-2`}>{t("minutesBefore", lang)}</div>
@@ -1231,20 +1258,19 @@ export default function App() {
     rescheduleNotifications.current();
   }, [prayerTimes, notificationSettings.enabled]);
 
-  // Soğuk başlangıçta: bildirimler açık ama "kesin alarm izni" kapalıysa, kullanıcıya
-  // "Bildirimler" sekmesindeki uyarı panelini BİR KEZ göster (her kurulumda/açılışta
-  // rahatsız etmemek için localStorage bayrağı). İzin zaten açıksa panel açılmaz.
-  useEffect(() => {
-    if (!notificationSettings.enabled) return;
-    if (localStorage.getItem("mnv_exact_alarm_prompted")) return;
-    localStorage.setItem("mnv_exact_alarm_prompted", "1");
-    exactAlarmsAllowed().then(allowed => {
-      if (!allowed) {
-        setSettingsInitialTab("bildirim");
-        setSettingsOpen(true);
-      }
-    });
-  }, []);
+// Kesin alarm izni: Bildirimler AÇIKKEN izin kapalıysa, kullanıcıyı sistemin
+// "Alarmlar ve hatırlatıcılar" sayfasına doğrudan yönlendir (kullanıcı her seferinde
+// rahatsız olmasın diye yalnızca bir kez, localStorage bayrağı ile). Bu efecto
+// hem uygulama açılışında (bildirimler zaten açıksa) hem de kullanıcı bildirimleri
+// daha sonra etkinleştirdiğinde çalışır.
+useEffect(() => {
+  if (!notificationSettings.enabled) return;
+  if (localStorage.getItem("mnv_exact_alarm_prompted")) return;
+  localStorage.setItem("mnv_exact_alarm_prompted", "1");
+  (async () => {
+    if (!(await exactAlarmsAllowed())) await openExactAlarmSettings();
+  })();
+}, [notificationSettings.enabled]);
 
   // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
   // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold

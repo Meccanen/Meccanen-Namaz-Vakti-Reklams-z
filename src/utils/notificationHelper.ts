@@ -614,6 +614,38 @@ export async function schedulePrayerNotifications(
   return { success: true, scheduledCount: notifications.length, debug: statusDebug };
 }
 
+/**
+ * "Bildirimler" sekmesindeki "Test bildirimi gönder" butonu. Bildirim ALTYAPISININ
+ * (kanal + meansly izinli alarm tetikleme) gerçekten çalışıp çalışmadığını cihazda
+ * doğrudan göstermek için 1 saniye sonrasına varsayılan kanalda bir bildirim planlar.
+ * Vakit bildirimleriyle birebir aynı native yolu kullanır (allowWhileIdle dahil).
+ */
+export async function sendTestNotification(lang: LangCode): Promise<void> {
+  const TEST_TEXTS: Record<string, { title: string; body: string }> = {
+    tr: { title: "🕌 Test Bildirimi", body: "Bunu görüyorsan her şey çalışıyor. Vakitli bildirimler de aynen bu şekilde gelecek." },
+    en: { title: "🕌 Test notification", body: "If you see this, everything works. Prayer notifications are delivered exactly the same way." },
+    de: { title: "🕌 Testbenachrichtigung", body: "Wenn du dies siehst, funktioniert alles. Gebetsbenachrichtigungen kommen genauso an." },
+    ar: { title: "🕌 إشعار تجريبي", body: "إذا رأيت هذا فكل شيء يعمل. إشعارات الصلاة تصل بنفس الطريقة." },
+    ur: { title: "🕌 ٹیسٹ اطلاع", body: "اگر آپ یہ دیکھ رہے ہیں تو سب کچھ ٹھیک ہے۔ نماز کی اطلاعات اسی طرح آئیں گی۔" },
+  };
+  const text = TEST_TEXTS[lang] || TEST_TEXTS.en;
+  const TEST_ID = 7999;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: TEST_ID,
+      title: text.title,
+      body: text.body,
+      schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
+      channelId: CHANNEL_DEFAULT,
+      sound: "default",
+      smallIcon: "ic_stat_notify",
+      iconColor: "#f59e0b",
+      autoCancel: true,
+      extra: { timeoutMs: 10 * 60 * 1000 },
+    }],
+  });
+}
+
 // Ayarları localStorage'a kaydet/yükle
 export function saveNotificationSettings(s: NotificationSettings): void {
   localStorage.setItem("mnv_notification_settings", JSON.stringify(s));
