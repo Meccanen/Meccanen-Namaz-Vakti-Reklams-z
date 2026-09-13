@@ -1101,6 +1101,8 @@ export default function App() {
   const [supporterLoading, setSupporterLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const [supporterNotice, setSupporterNotice] = useState("");
+  const [themeToast, setThemeToast] = useState("");
+  const showThemeToast = (msg: string) => { setThemeToast(msg); setTimeout(() => setThemeToast(""), 2500); };
 
   useEffect(() => {
     let cancelled = false;
@@ -1556,7 +1558,12 @@ export default function App() {
                 className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
                 {lang.toUpperCase()}
               </button>
-              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+              <button onClick={() => {
+                  const order = Object.keys(THEMES) as ThemeKey[];
+                  const next = order[(order.indexOf(themeKey) + 1) % order.length];
+                  setTheme(next);
+                  showThemeToast(t(`theme_${next}`, lang));
+                }}
                 aria-label={t("theme", lang)}
                 className={`flex items-center justify-center w-9 h-9 border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnTextSm}`}>
                 <Palette className="w-5 h-5 shrink-0" />
@@ -1889,6 +1896,12 @@ export default function App() {
         </footer>
 
       </div>
+
+      {themeToast && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] px-4 py-2 rounded-full border text-sm font-bold bg-black/80 text-white border-white/20 shadow-xl animate-fadeIn">
+          {themeToast}
+        </div>
+      )}
     </div>
   );
 }
