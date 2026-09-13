@@ -62,16 +62,38 @@ const EZAN_CHANNELS: Partial<Record<keyof NotificationSettings["prayers"], strin
   yatsi: "prayer_ezan_yatsi",
 };
 
-// "Şu an hangi vakitteyiz" durum bildirimi için sabit ID'ler ve zincir sırası.
+// ─── Çok günlük (multi-day) planlama ────────────────────────────────────────────
+// KRİTİK DEĞİŞİKLİK: Eskiden bildirimler yalnızca "bugün + yarın" için planlanıyordu.
+// Kullanıcı uygulamayı 2+ gün açmazsa (namaz uygulamalarında çok normaldir) plan tükeniyor,
+// son bildirim 16-18 saat eski haliyle ekranda ölü şekilde bekliyordu. Artık vakitler
+// NOTIFICATION_HORIZON_DAYS gün önceden planlanıyor; böylece uygulama hiç açılmasa bile
+// zincir 1 hafta kendi kendine işliyor ve her geçişte (cancelPreviousId yaması sayesinde)
+// önceki bildirim otomatik temizleniyor.
+export const NOTIFICATION_HORIZON_DAYS = 7;
+
+// Bildirim otomatik süre dolumu ("timeoutAfter"). Native tarafta (build-workflow'daki
+// TimedNotificationPublisher yaması) her bildirim tetiklendiğinde extra.timeoutMs'ten okunur
+// ve Notification.timeoutAfter olarak uygulanır. Böylece zincirin bir halkası bir sebeple
+// kopsa bile ekranda "dünün" bildirimi sonsuza dek asılı kalmaz — bir süre sonra sistem
+// kendiliğinden temizler. (Özellikle ses tuşuyla kapatınca o günün kalan alarmları iptal
+// olan MIUI/Xiaomi gibi cihazlarda bu, "16-18 saat eski bildirim ekranda bekliyor" sorununu kapatır.)
+const REMINDER_TIMEOUT_MS = 90 * 60 * 1000;   // "X dakika önce" hatırlatması
+const PRAYER_AT_TIMEOUT_MS = 60 * 60 * 1000;  // "Vakit girdi" bildirimi (ezan dahil)
+const STATUS_TIMEOUT_MS = 6 * 60 * 60 * 1000; // "Şu an X vakti" durum bildirimi (yedek temizlik)
+
+export interface PrayerTimeEntry { key: string; name: string; time: string }
+
+// ─── Durum bildirimi zincir ID'leri ─────────────────────────────────────────────
 // Her biri, native tarafta (TimedNotificationPublisher yaması ile) kendisinden hemen
 // önceki ID'yi otomatik olarak iptal eder — böylece gün boyunca HER ZAMAN tek bir
-// bildirim görünür, birikme olmaz. Sadece BUGÜN için planlanır (yarın için değil),
-// çünkü aynı ID'yi iki farklı güne planlamak birbirini iptal eder; uygulama her
-// açıldığında / ayarlar değiştiğinde otomatik tazelenir.
-const STATUS_ORDER: (keyof NotificationSettings["prayers"])[] = ["imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"];
-const STATUS_IDS: Record<keyof NotificationSettings["prayers"], number> = {
-  imsak: 9000, gunes: 9001, ogle: 9002, ikindi: 9003, aksam: 9004, yatsi: 9005,
-};
+// bildirim görünür, birikme olmaz.
+// ESKİ DURUM: Sabit 9000..9005 ID'leri yalnızca "bugün" için planlanıyordu (aynı ID'yi iki
+// farklı güne planlamak birbirini iptal ettiği için). Artık her GÜN için benzersiz ID'ler
+// kullanıyoruz (day*100 + index) → çok günlü zincir; gece yarısı dönüşü de dahil zincir
+// uygulama açılmadan sürer.
+const STATUS_BASE = 9000;
+export const STATUS_ORDER: (keyof NotificationSettings["prayers"])[] = ["imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"];
+const statusId = (dayIdx: number, prayerIdx: number): number => STATUS_BASE + dayIdx * 100 + prayerIdx;
 
 // res/raw içine konan, vakte özel ezan ses dosyaları (Capacitor Local Notifications Android'de
 // uzantılı dosya adını bekliyor; dosyalar android/app/src/main/res/raw/ içinde olmalı).
@@ -182,6 +204,8 @@ export async function schedulePrayerNotifications(
   locationName: string,
   lang: LangCode = "tr",
   tomorrowPrayerTimes?: { key: string; name: string; time: string }[],
+  // YENİ: çok günlü vakit listesi. index 0 = BUGÜN. Verilmezse eski davranış (bugün + yarın).
+  multiDayTimes?: PrayerTimeEntry[][],
 ): Promise<ScheduleResult> {
   if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
   if (!settings.enabled) { await cancelAllNotifications(); return { success: true, scheduledCount: 0 }; }
@@ -196,6 +220,15 @@ export async function schedulePrayerNotifications(
   }
   await cancelAllNotifications();
 
+  // Çok günlü vakit listesini normale dönüştür (en az 2 gün, en fazla ufuk kadar).
+  const days: PrayerTimeEntry[][] = [];
+  if (multiDayTimes && multiDayTimes.length > 0) {
+    days.push(...multiDayTimes.slice(0, NOTIFICATION_HORIZON_DAYS));
+  } else {
+    days.push(prayerTimes);
+    days.push(tomorrowPrayerTimes && tomorrowPrayerTimes.length ? tomorrowPrayerTimes : prayerTimes);
+  }
+
   // "Durum bildirimi" ayarı KAPALIYSA, ekranda hâlâ görünüyor olabilecek eski durum
   // bildirimlerini temizle (cancelAllNotifications() sadece HENÜZ TETİKLENMEMİŞ/pending
   // olanları iptal eder, zaten ekranda görünen/fired olanı kapsamaz). Ayar AÇIKSA bu
@@ -206,9 +239,11 @@ export async function schedulePrayerNotifications(
   // bildirimini de aşağıdaki `extra.cancelPreviousId` yaması hallediyor.
   if (!settings.showStatusNotification && isNativeAvailable()) {
     try {
-      await LocalNotifications.cancel({
-        notifications: STATUS_ORDER.map(k => ({ id: STATUS_IDS[k] })),
-      });
+      const allStatusIds = Array.from(
+        { length: NOTIFICATION_HORIZON_DAYS + 1 },
+        (_, d) => STATUS_ORDER.map((_, i) => statusId(d, i)),
+      ).flat();
+      await LocalNotifications.cancel({ notifications: allStatusIds.map(id => ({ id })) });
     } catch {}
   }
 
@@ -251,12 +286,12 @@ export async function schedulePrayerNotifications(
   const now = new Date();
 
   // "X dakika önce" ve "vakit girdi" bildirimlerini TEK bir kronolojik zincir halinde
-  // topluyoruz (bugün + yarın birlikte), ki her biri native tarafta (cancelPreviousId
-  // yaması ile) kendinden bir önceki bildirimi otomatik iptal edebilsin — tıpkı durum
-  // bildirimi zinciri gibi. Bu olmadan (eski davranış) her bildirim bağımsızdı ve hiçbiri
-  // iptal edilmiyordu; özellikle Yatsı'dan sabah İmsak'a kadar uygulama hiç açılmazsa,
-  // gece boyu her vaktin hatırlatma/"vakti girdi" bildirimi ekranda ayrı ayrı birikiyordu.
-  // Zincir gün sınırını (bugün→yarın) da kapsadığı için bu tam olarak o senaryoyu çözüyor.
+  // topluyoruz (tüm ufuk boyunca: bugün + sonraki günler), ki her biri native tarafta
+  // (cancelPreviousId yaması ile) kendinden bir önceki bildirimi otomatik iptal edebilsin —
+  // tıpkı durum bildirimi zinciri gibi. Bu olmadan (eski davranış) her bildirim bağımsızdı
+  // ve hiçbiri iptal edilmiyordu; özellikle Yatsı'dan sabah İmsak'a kadar uygulama hiç
+  // açılmazsa, gece boyu her vaktin hatırlatma/"vakti girdi" bildirimi ekranda ayrı ayrı
+  // birikiyordu. Zincir gün sınırını da kapsadığı için bu tam olarak o senaryoyu çözüyor.
   type PendingEvent = {
     id: number;
     triggerDate: Date;
@@ -264,6 +299,7 @@ export async function schedulePrayerNotifications(
     body: string;
     channelId: string;
     sound: string;
+    timeoutMs: number;
   };
   const events: PendingEvent[] = [];
   // Şu ana kadar geçmiş (geçmişte kalmış) olan en son olayı ayrıca takip ediyoruz — bu,
@@ -273,46 +309,49 @@ export async function schedulePrayerNotifications(
   let mostRecentPastId: number | null = null;
   let mostRecentPastDate: Date | null = null;
 
-  prayerTimes.forEach((prayer, idx) => {
-    const prayerKey = prayer.key as keyof typeof settings.prayers;
-    if (!settings.prayers[prayerKey]) return;
-    const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
+  days.forEach((dayTimes, dayIdx) => {
+    dayTimes.forEach((prayer, idx) => {
+      const prayerKey = prayer.key as keyof typeof settings.prayers;
+      if (!settings.prayers[prayerKey]) return;
+      const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
 
-    // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe bildirim
-    // metninde "İmsak namazına/namazı" demek yerine "İmsak vaktine/vakti" diyoruz.
-    // Diğer diller zaten prayer adını (Fajr/Fadschr/الفجر/فجر) doğrudan kullandığı
-    // için bu ayrım sadece Türkçe metinlerde gerekiyor.
-    const isImsakTr = prayer.key === "imsak" && lang === "tr";
-    const beforeBodyText = isImsakTr
-      ? `İmsak vaktine ${settings.minutesBefore} dakika kaldı.`
-      : tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) });
-    const atBodyText = isImsakTr ? "İmsak vakti girdi." : tx("atBody", { name: prayerName });
+      // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe bildirim
+      // metninde "İmsak namazına/namazı" demek yerine "İmsak vaktine/vakti" diyoruz.
+      // Diğer diller zaten prayer adını (Fajr/Fadschr/الفجر/فجر) doğrudan kullandığı
+      // için bu ayrım sadece Türkçe metinlerde gerekiyor.
+      const isImsakTr = prayer.key === "imsak" && lang === "tr";
+      const beforeBodyText = isImsakTr
+        ? `İmsak vaktine ${settings.minutesBefore} dakika kaldı.`
+        : tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) });
+      const atBodyText = isImsakTr ? "İmsak vakti girdi." : tx("atBody", { name: prayerName });
 
-    // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
-    // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan sesle çalışır (bkz.
-    // NotificationSettings.soundTypeAtVakit açıklaması). Sadece "vakit girdiğinde" bildirimi
-    // kullanıcının seçimine göre ezan sesi kullanabilir.
-    const ezanChannelId = EZAN_CHANNELS[prayerKey];
-    const ezanSoundFile = EZAN_SOUND_FILES[prayerKey];
-    const hasEzan = !!(ezanChannelId && ezanSoundFile);
+      // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
+      // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan sesle çalışır (bkz.
+      // NotificationSettings.soundTypeAtVakit açıklaması). Sadece "vakit girdiğinde" bildirimi
+      // kullanıcının seçimine göre ezan sesi kullanabilir.
+      const ezanChannelId = EZAN_CHANNELS[prayerKey];
+      const ezanSoundFile = EZAN_SOUND_FILES[prayerKey];
+      const hasEzan = !!(ezanChannelId && ezanSoundFile);
 
-    const channelIdBefore = CHANNEL_DEFAULT;
-    const soundFileBefore = "default";
+      const channelIdBefore = CHANNEL_DEFAULT;
+      const soundFileBefore = "default";
 
-    const useEzanAtVakit = settings.soundTypeAtVakit === "ezan" && hasEzan;
-    const channelIdAtVakit = useEzanAtVakit ? ezanChannelId! : CHANNEL_DEFAULT;
-    const soundFileAtVakit = useEzanAtVakit ? ezanSoundFile! : "default";
+      const useEzanAtVakit = settings.soundTypeAtVakit === "ezan" && hasEzan;
+      const channelIdAtVakit = useEzanAtVakit ? ezanChannelId! : CHANNEL_DEFAULT;
+      const soundFileAtVakit = useEzanAtVakit ? ezanSoundFile! : "default";
 
-    const [hour, min] = prayer.time.split(":").map(Number);
+      const [hour, min] = prayer.time.split(":").map(Number);
 
-    // Bugün ve yarın için planla
-    for (let dayOffset = 0; dayOffset <= 1; dayOffset++) {
+      // Her gün için "X dakika önce" (varsa) ve "vakit girdi" (varsa) olaylarını ekle.
+      // ID şeması: dayIdx*1000 + idx*2 + {1=önce, 2=vakit} → tüm günler için benzersiz.
+      const dayBase = new Date(now);
+      dayBase.setDate(dayBase.getDate() + dayIdx);
+
       // 1) "X dakika önce" bildirimi (minutesBefore > 0 ise)
       if (settings.minutesBefore > 0) {
-        const beforeDate = new Date(now);
-        beforeDate.setDate(beforeDate.getDate() + dayOffset);
+        const beforeDate = new Date(dayBase);
         beforeDate.setHours(hour, min - settings.minutesBefore, 0, 0);
-        const id = (dayOffset * 100) + (idx * 2) + 1;
+        const id = (dayIdx * 1000) + (idx * 2) + 1;
 
         if (beforeDate > now) {
           events.push({
@@ -322,6 +361,7 @@ export async function schedulePrayerNotifications(
             body: beforeBodyText,
             channelId: channelIdBefore,
             sound: soundFileBefore,
+            timeoutMs: REMINDER_TIMEOUT_MS,
           });
         } else if (!mostRecentPastDate || beforeDate > mostRecentPastDate) {
           mostRecentPastDate = beforeDate;
@@ -331,10 +371,9 @@ export async function schedulePrayerNotifications(
 
       // 2) Vakit girdiği anda AYRICA bildirim (notifyAtVakit true ise)
       if (settings.notifyAtVakit) {
-        const atDate = new Date(now);
-        atDate.setDate(atDate.getDate() + dayOffset);
+        const atDate = new Date(dayBase);
         atDate.setHours(hour, min, 0, 0);
-        const id = (dayOffset * 100) + (idx * 2) + 2;
+        const id = (dayIdx * 1000) + (idx * 2) + 2;
 
         if (atDate > now) {
           events.push({
@@ -344,13 +383,14 @@ export async function schedulePrayerNotifications(
             body: atBodyText,
             channelId: channelIdAtVakit,
             sound: soundFileAtVakit,
+            timeoutMs: PRAYER_AT_TIMEOUT_MS,
           });
         } else if (!mostRecentPastDate || atDate > mostRecentPastDate) {
           mostRecentPastDate = atDate;
           mostRecentPastId = id;
         }
       }
-    }
+    });
   });
 
   // Kronolojik sıraya diz, sonra her birine "kendinden bir önceki" bildirimi native
@@ -365,12 +405,15 @@ export async function schedulePrayerNotifications(
       id: ev.id,
       title: ev.title,
       body: ev.body,
-      schedule: { at: ev.triggerDate },
+      schedule: { at: ev.triggerDate, allowWhileIdle: true },
       channelId: ev.channelId,
       sound: ev.sound,
       smallIcon: "ic_stat_notify",
       iconColor: "#f59e0b",
-      ...(prevId !== null ? { extra: { cancelPreviousId: prevId } } : {}),
+      extra: {
+        ...(prevId !== null ? { cancelPreviousId: prevId } : {}),
+        timeoutMs: ev.timeoutMs,
+      },
     });
     prevId = ev.id;
   }
@@ -383,19 +426,16 @@ export async function schedulePrayerNotifications(
     try { await LocalNotifications.cancel({ notifications: [{ id: mostRecentPastId }] }); } catch {}
   }
 
-  // "Şu an hangi vakitteyiz" durum bildirimi — sadece BUGÜN için, 6 sabit ID'lik zincir.
-  // Her biri (ileride) tetiklendiğinde native yama (extra.cancelPreviousId) sayesinde
-  // kendinden önceki durumu otomatik siler.
+  // "Şu an hangi vakitteyiz" durum bildirimi — artık yalnızca bugün değil, ufuktaki TÜM
+  // günler için planlanıyor. Her biri (ileride) tetiklendiğinde native yama
+  // (extra.cancelPreviousId) sayesinde kendinden önceki durumu otomatik siler; böylece
+  // gece yarısı sınırı dahil HER AN tek bir durum bildirimi görünür ve uygulama günlerce
+  // açılmasa bile zincir kendi kendini yeniler.
   //
   // ÖNEMLİ: Bu fonksiyon her çağrıldığında (ayar açıldığında, uygulama her açılışında/
   // konum-tarih değiştiğinde vb.) önce TÜM bekleyen bildirimleri iptal eder (yukarıdaki
-  // cancelAllNotifications). Eskiden burada SADECE gelecekteki vakit geçişleri planlanıyordu;
-  // bu yüzden (a) ayar açıldığı anda mevcut vakit için hiçbir bildirim gösterilmiyordu —
-  // ilk gösterim bir sonraki vakit geçişine kadar bekliyordu, ve (b) uygulama her
-  // açıldığında iptal edilen durum bildirimi de aynı sebeple hemen geri gelmiyordu.
-  // Çözüm: her çağrıda, "şu an" hangi vakitteysek onun bildirimini DERHAL (schedule
-  // olmadan, anında) gösteriyoruz; kalan gelecekteki geçişler eskisi gibi ileri tarihli
-  // planlanmaya devam ediyor.
+  // cancelAllNotifications) ve "şu an" hangi vakitteysek onun bildirimini DERHAL (schedule
+  // olmadan, anında) gösteririz; kalan gelecekteki geçişler ileri tarihli planlanır.
   let statusDebug = "showStatusNotification=false";
   if (settings.showStatusNotification) {
    try {
@@ -434,14 +474,16 @@ export async function schedulePrayerNotifications(
       return stx("bodyPrayer", { next: nextName, time: nextTime });
     };
 
-    const timeByKey: Record<string, string> = {};
-    prayerTimes.forEach(p => { timeByKey[p.key] = p.time; });
-    const tomorrowTimeByKey: Record<string, string> = {};
-    (tomorrowPrayerTimes || []).forEach(p => { tomorrowTimeByKey[p.key] = p.time; });
+    const timeByDay: Record<string, string>[] = days.map(d => {
+      const m: Record<string, string> = {};
+      d.forEach(p => { m[p.key] = p.time; });
+      return m;
+    });
+    const timeByKey = timeByDay[0];
 
-    // "Şu an" hangi vakitteyiz? Bugünün saatleri arasında now'dan önceki SON vakti bul.
-    // Hiçbiri now'dan önce değilse (yani henüz imsak girmemiş), demek ki hâlâ dünün
-    // yatsı vaktindeyiz — zincirin son elemanını "şu an" kabul ediyoruz.
+    // 1) "Şu an" hangi vakitteyiz? Bugünün saatleri arasında now'dan önceki SON vakti bul.
+    //    Hiçbiri now'dan önce değilse (yani henüz imsak girmemiş), demek ki hâlâ dünün
+    //    yatsı vaktindeyiz — zincirin son elemanını "şu an" kabul ediyoruz.
     let currentIdx = -1;
     for (let i = STATUS_ORDER.length - 1; i >= 0; i--) {
       const timeStr = timeByKey[STATUS_ORDER[i]];
@@ -459,84 +501,88 @@ export async function schedulePrayerNotifications(
     // ÖNEMLİ: Zincirin SARDIĞI tek yer burası — currentKey "yatsi" olduğunda nextKey
     // "imsak"a döner ve bu artık BUGÜNÜN değil, YARININ imsak vaktidir. Bu durumda
     // (varsa) gerçek yarının verisini kullan; yoksa eskisi gibi bugünün saatini
-    // yaklaşık değer olarak kullanmaya devam et (veri çekilemediyse tamamen
-    // susmaktansa yaklaşık doğru bir saat göstermek daha iyi).
+    // yaklaşık değer olarak kullanmaya devam et.
     const isWrapToTomorrow = currentIdx === STATUS_ORDER.length - 1;
-    const nextTime = (isWrapToTomorrow && tomorrowTimeByKey[nextKey])
-      ? tomorrowTimeByKey[nextKey]
+    const nextTime = (isWrapToTomorrow && timeByDay[1] && timeByDay[1][nextKey])
+      ? timeByDay[1][nextKey]
       : (timeByKey[nextKey] || "");
 
     if (nextTime) {
-      // 1) "Şu an" için ANINDA göster. NOT: `schedule` alanını tamamen boş bırakmak
+      // a) "Şu an" için ANINDA göster. NOT: `schedule` alanını tamamen boş bırakmak
       //    (hiç zamanlama vermemek) native tarafta güvenilir şekilde ÇALIŞMIYOR —
       //    plugin bazı Android sürümlerinde/cihazlarda bu tür "zamanlamasız"
-      //    bildirimleri sessizce hiç göstermiyor (schedule() başarıyla dönse bile).
-      //    Bunun yerine çok yakın bir gelecek an (2 saniye sonrası) veriyoruz; bu,
-      //    "kesin alarm" izni gerektirmeyen normal/inexact planlama olduğu için
-      //    hem güvenilir çalışıyor hem de pratikte anında görünüyor.
-      //    ÖNEMLİ: extra.cancelPreviousId de eklendi — böylece BİR ÖNCEKİ vaktin
-      //    (farklı ID'li) bildirimi, bu tetiklendiğinde native yama tarafından
-      //    otomatik temizleniyor; ayrıca burada elle "önce iptal et" YAPMIYORUZ
-      //    (bu, aynı anda iptal+yeniden planlama yarış durumuna yol açıyordu).
+      //    bildirimleri sessizce hiç göstermiyor. Bunun yerine çok yakın bir gelecek
+      //    an (2 saniye sonrası) veriyoruz; allowWhileIdle:true sayesinde Doze'da bile
+      //    zamanında/EKSİZ alarma düşer. extra.cancelPreviousId de eklendi — bir önceki
+      //    vaktin (farklı ID'li) bildirimi bu tetiklendiğinde temizlenir.
       const prevOfCurrentKey = STATUS_ORDER[(currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
       notifications.push({
-        id: STATUS_IDS[currentKey],
+        id: statusId(0, currentIdx),
         title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
         body: buildStatusBody(nextKey, nextTime),
-        schedule: { at: new Date(now.getTime() + 2000) },
+        schedule: { at: new Date(now.getTime() + 2000), allowWhileIdle: true },
         channelId: CHANNEL_STATUS,
         sound: "default",
         smallIcon: "ic_stat_notify",
         iconColor: "#f59e0b",
         ongoing: false,
         autoCancel: false,
-        extra: { cancelPreviousId: STATUS_IDS[prevOfCurrentKey] },
+        extra: {
+          cancelPreviousId: statusId(0, (currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length),
+          timeoutMs: STATUS_TIMEOUT_MS,
+        },
       });
 
-      // 2) Bugün kalan gelecekteki vakit geçişlerini eskisi gibi ileri tarihli planla.
-      //    Her biri tetiklendiğinde native yama, zincirdeki kendinden önceki ID'yi
-      //    (currentKey dahil) otomatik iptal eder.
-      STATUS_ORDER.forEach((key, i) => {
-        const timeStr = timeByKey[key];
-        if (!timeStr) return;
-        const [h, m] = timeStr.split(":").map(Number);
-        const triggerDate = new Date(now);
-        triggerDate.setHours(h, m, 0, 0);
-        if (triggerDate <= now) return; // geçmiş vakit, zaten yukarıda "şu an" olarak ele alındı
+      // b) Ufuktaki TÜM günlerin gelecekteki vakit geçişlerini planla. Her biri
+      //    tetiklendiğinde native yama, zincirdeki kendinden önceki ID'yi (gece yarısı
+      //    sınırını aşan gün geçişleri dahil) otomatik iptal eder.
+      days.forEach((dayTimes, dIdx) => {
+        const tMap = timeByDay[dIdx];
+        STATUS_ORDER.forEach((key, i) => {
+          const timeStr = tMap[key];
+          if (!timeStr) return;
+          const [h, m] = timeStr.split(":").map(Number);
+          const triggerDate = new Date(now);
+          triggerDate.setDate(triggerDate.getDate() + dIdx);
+          triggerDate.setHours(h, m, 0, 0);
+          if (triggerDate <= now) return; // geçmiş vakit (yalnızca bugünün geçmişi olabilir)
 
-        const thisNextKey = STATUS_ORDER[(i + 1) % STATUS_ORDER.length];
-        const thisIsWrapToTomorrow = i === STATUS_ORDER.length - 1; // key === "yatsi"
-        const thisNextTime = (thisIsWrapToTomorrow && tomorrowTimeByKey[thisNextKey])
-          ? tomorrowTimeByKey[thisNextKey]
-          : (timeByKey[thisNextKey] || "");
-        const prevKey = STATUS_ORDER[(i - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
+          const thisNextIdx = (i + 1) % STATUS_ORDER.length;
+          const thisNextKey = STATUS_ORDER[thisNextIdx];
+          const wrap = i === STATUS_ORDER.length - 1; // key === "yatsi"
+          let thisNextTime = "";
+          if (wrap && dIdx + 1 < days.length && timeByDay[dIdx + 1][thisNextKey]) {
+            thisNextTime = timeByDay[dIdx + 1][thisNextKey]; // yarının imsakı
+          } else if (tMap[thisNextKey]) {
+            thisNextTime = tMap[thisNextKey];
+          }
+          if (!thisNextTime) return;
 
-        notifications.push({
-          id: STATUS_IDS[key],
-          title: stx("title", { name: PRAYER_NAMES[key]?.[lang] || key }),
-          body: buildStatusBody(thisNextKey, thisNextTime),
-          schedule: { at: triggerDate },
-          channelId: CHANNEL_STATUS,
-          sound: "default",
-          smallIcon: "ic_stat_notify",
-          iconColor: "#f59e0b",
-          ongoing: false,
-          autoCancel: false,
-          extra: { cancelPreviousId: STATUS_IDS[prevKey] },
+          // Zincir bağlantısı: ilk vakit (imsak) bir günün son vaktini (yatsı) iptal eder;
+          // diğerleri aynı gün içinde bir öncekini.
+          const prevDayIdx = (i === 0 && dIdx > 0) ? dIdx - 1 : dIdx;
+          const prevPrayerIdx = (i === 0 && dIdx > 0) ? STATUS_ORDER.length - 1 : i - 1;
+
+          notifications.push({
+            id: statusId(dIdx, i),
+            title: stx("title", { name: PRAYER_NAMES[key]?.[lang] || key }),
+            body: buildStatusBody(thisNextKey, thisNextTime),
+            schedule: { at: triggerDate, allowWhileIdle: true },
+            channelId: CHANNEL_STATUS,
+            sound: "default",
+            smallIcon: "ic_stat_notify",
+            iconColor: "#f59e0b",
+            ongoing: false,
+            autoCancel: false,
+            extra: {
+              cancelPreviousId: statusId(prevDayIdx, prevPrayerIdx),
+              timeoutMs: STATUS_TIMEOUT_MS,
+            },
+          });
         });
       });
 
-      // NOT: "Yarının İmsak geçişini ayrı bir alarm olarak önceden planlama" denemesi
-      // (yatsıdan imsağa otomatik geçiş için) ciddi bir soruna yol açtığı için ÇIKARILDI —
-      // "Şu anki vakit durumunu göster" açıldığında bildirim tamamen sessizce (hata bile
-      // vermeden) gelmez oluyordu. Güvenli, çalıştığı doğrulanmış son duruma dönüldü:
-      // sadece BUGÜNÜN geçişleri + "şu an" için anlık gösterim planlanıyor. Yatsıdan
-      // imsağa geçiş, kullanıcı o aralıkta uygulamayı açtığında (visibilitychange
-      // tetikleyicisiyle) hâlâ doğru şekilde gösterilecek; sadece kendiliğinden (uygulama
-      // hiç açılmadan) tetiklenen otomatik alarm kısmı bir sonraki oturumda tekrar
-      // ele alınacak.
-
-      statusDebug = `ok cur=${currentKey} next=${nextKey}@${nextTime}`;
+      statusDebug = `ok horizon=${days.length} cur=${currentKey} next=${nextKey}@${nextTime}`;
     } else {
       statusDebug = `SKIPPED! nextTime bos. prayerTimes.length=${prayerTimes.length} cur=${currentKey} nextKey=${nextKey} timeByKeyKeys=${Object.keys(timeByKey).join(",")}`;
     }

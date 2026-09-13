@@ -29,7 +29,13 @@ jobs:
           cat > /tmp/patch_notif.py << 'PYEOF'
           import os
 
-          path = "node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/TimedNotificationPublisher.java"
+          base = "node_modules/@capacitor/local-notifications/android/src/main/java/com/capacitorjs/plugins/localnotifications/"
+
+          # ─────────────────────────────────────────────────────────────────────────
+          # 1) TimedNotificationPublisher.java → cancelPreviousId zincir yaması
+          #    (her bildirim tetiklendiğinde kendinden bir önceki ID'yi iptal eder)
+          # ─────────────────────────────────────────────────────────────────────────
+          path = base + "TimedNotificationPublisher.java"
           if not os.path.exists(path):
               raise SystemExit(f">>> HATA: {path} bulunamadı, @capacitor/local-notifications kurulu mu kontrol et.")
 
@@ -71,9 +77,53 @@ jobs:
           content = content.replace(marker, patch)
           with open(path, "w") as f:
               f.write(content)
-          print(">>> Durum bildirimi zinciri yaması (verbose log'lu) uygulandı.")
+          print(">>> Durum bildirimi zinciri yaması (cancelPreviousId) uygulandı.")
 
-          # --- TEŞHİS: TÜM dosyayı logla (özellikle rescheduleNotificationIfNeeded metodu için) ---
+          # ─────────────────────────────────────────────────────────────────────────
+          # 2) LocalNotificationManager.java → timeoutAfter (otomatik temizlik) yaması
+          #    JS her bildirime "extra.timeoutMs" koyar; burada NotificationCompat
+          #    Builder'ın RESMİ setTimeoutAfter() API'siyle uygulanır. Böylece zincirin
+          #    bir halkası gelemese bile (ör. MIUI ses tuşuyla kapatınca alarmları iptal
+          #    ettiğinde) eski bildirim sonsuza dek ekranda kalmaz — bir süre sonra
+          #    sistem kendisi siler. Builder seviyesinde uygulandığı için değer
+          #    Notification Parcelable'ına gömülür, süreç ölümlerinden etkilenmez.
+          # ─────────────────────────────────────────────────────────────────────────
+          path2 = base + "LocalNotificationManager.java"
+          if not os.path.exists(path2):
+              raise SystemExit(f">>> HATA: {path2} bulunamadı")
+
+          with open(path2) as f:
+              content2 = f.read()
+
+          marker2 = (
+              "        mBuilder.setSmallIcon(localNotification.getSmallIcon(context, getDefaultSmallIcon(context)));\n"
+              "        mBuilder.setLargeIcon(localNotification.getLargeIcon(context));"
+          )
+          if marker2 not in content2:
+              raise SystemExit(">>> HATA: LocalNotificationManager.java beklenen satırlar bulunamadı, eklenti sürümü değişmiş olabilir.")
+
+          timeout_patch = (
+              "        mBuilder.setSmallIcon(localNotification.getSmallIcon(context, getDefaultSmallIcon(context)));\n"
+              "        mBuilder.setLargeIcon(localNotification.getLargeIcon(context));\n"
+              "        try {\n"
+              "            org.json.JSONObject timeoutExtra = localNotification.getExtra();\n"
+              "            if (timeoutExtra != null && timeoutExtra.has(\"timeoutMs\")) {\n"
+              "                long timeoutMs = timeoutExtra.getLong(\"timeoutMs\");\n"
+              "                if (timeoutMs > 0) {\n"
+              "                    mBuilder.setTimeoutAfter(timeoutMs);\n"
+              "                    Logger.debug(Logger.tags(\"LN\"), \"timeoutAfter DEBUG: notification \" + localNotification.getId() + \" icin \" + timeoutMs + \" ms timeout set edildi\");\n"
+              "                }\n"
+              "            }\n"
+              "        } catch (Exception timeoutEx) {\n"
+              "            // timeout uygulanamadi — bildirim yine de planlanir, zararsiz\n"
+              "        }"
+          )
+          content2 = content2.replace(marker2, timeout_patch)
+          with open(path2, "w") as f:
+              f.write(content2)
+          print(">>> timeoutAfter (otomatik temizlik) yaması LocalNotificationManager'a uygulandı.")
+
+          # --- TEŞHİS: TÜM dosyayı logla ---
           print("\n>>> ================ TimedNotificationPublisher.java TAM İÇERİK (yamadan SONRA) ================")
           print(content)
           print(">>> ================ DOSYA SONU ================\n")
