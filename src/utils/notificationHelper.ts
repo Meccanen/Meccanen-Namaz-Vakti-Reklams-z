@@ -673,109 +673,21 @@ export async function schedulePrayerNotifications(
   };
 }
 
-/** Cihazda şu an GERÇEKTEN bekleyen (native'de kayıtlı) bildirim/alarm sayısı. */
-export async function countPendingNotifications(): Promise<number> {
+/**
+ * Tanılama döneminden kalan TEST bildirimlerini (7997/7998/7999) cihazın bildirim
+ * ekranından temizler. Üretim sürümünde test ID'lerinden birikinti kalmaması için
+ * uygulama açılışında bir kez çağrılır.
+ */
+export async function cleanupTestNotifications(): Promise<void> {
+  if (!isNativeAvailable()) return;
   try {
-    return (await LocalNotifications.pending()).notifications.length;
+    const testIds = [7999, 7998, 7997];
+    await LocalNotifications.removeDeliveredNotifications({
+      notifications: testIds.map(id => ({ id } as unknown as { id: number; title: string; body: string })),
+    });
   } catch {
-    return -1;
+    // Yoksay: altyapı henüz hazır değilse bir sonraki açılışta tekrar dener.
   }
-}
-
-/**
- * "Bildirimler" sekmesindeki "Test bildirimi gönder" butonu. Bildirim ALTYAPISININ
- * (kanal + meansly izinli alarm tetikleme) gerçekten çalışıp çalışmadığını cihazda
- * doğrudan göstermek için 1 saniye sonrasına varsayılan kanalda bir bildirim planlar.
- * Vakit bildirimleriyle birebir aynı native yolu kullanır (allowWhileIdle dahil).
- */
-export async function sendTestNotification(lang: LangCode): Promise<void> {
-  const TEST_TEXTS: Record<string, { title: string; body: string }> = {
-    tr: { title: "🕌 Test Bildirimi", body: "Bunu görüyorsan her şey çalışıyor. Vakitli bildirimler de aynen bu şekilde gelecek." },
-    en: { title: "🕌 Test notification", body: "If you see this, everything works. Prayer notifications are delivered exactly the same way." },
-    de: { title: "🕌 Testbenachrichtigung", body: "Wenn du dies siehst, funktioniert alles. Gebetsbenachrichtigungen kommen genauso an." },
-    ar: { title: "🕌 إشعار تجريبي", body: "إذا رأيت هذا فكل شيء يعمل. إشعارات الصلاة تصل بنفس الطريقة." },
-    ur: { title: "🕌 ٹیسٹ اطلاع", body: "اگر آپ یہ دیکھ رہے ہیں تو سب کچھ ٹھیک ہے۔ نماز کی اطلاعات اسی طرح آئیں گی۔" },
-  };
-  const text = TEST_TEXTS[lang] || TEST_TEXTS.en;
-  const TEST_ID = 7999;
-  await LocalNotifications.schedule({
-    notifications: [{
-      id: TEST_ID,
-      title: text.title,
-      body: text.body,
-      schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
-      channelId: CHANNEL_DEFAULT,
-      sound: "default",
-      smallIcon: "ic_stat_notify",
-      iconColor: "#f59e0b",
-      autoCancel: true,
-      extra: { timeoutMs: 10 * 60 * 1000 },
-    }],
-  });
-}
-
-/**
- * Durum ("Şu An ... Vakti") bildirimiyle BİREBİR aynı alanlarla gönderilen bir test:
- * kanal (prayer_status_silent), autoCancel/ongoing değerleri, cancelPreviousId,
- * timeoutMs ve iconColor dahil. "Genel test" geliyor ama bu gelmiyorsa sorun
- * genel alarm yolunda değil, DURUM bildirimine özgü native/kanal tarafındadır.
- */
-export async function sendStatusTestNotification(lang: LangCode): Promise<void> {
-  const TEXTS: Record<string, { title: string; body: string }> = {
-    tr: { title: "🕌 Şu An Test Vakti", body: "Durum bildirimi kanalı: bu geldiyse kanal ve native yol sağlam." },
-    en: { title: "🕌 Currently Test Time", body: "Status channel: if you see this, the channel and native path are fine." },
-    de: { title: "🕌 Gerade Test-Zeit", body: "Status-Kanal: Wenn du dies siehst, sind Kanal und nativer Pfad in Ordnung." },
-    ar: { title: "🕌 الآن وقت الاختبار", body: "قناة حالة الصلاة: إذا رأيت هذا فالقناة والمسار سليمان." },
-    ur: { title: "🕌 اس وقت ٹیسٹ کا وقت ہے", body: "اسٹیٹس چینل: اگر یہ نظر آئے تو چینل اور نیتیو راستہ درست ہے۔" },
-  };
-  const text = TEXTS[lang] || TEXTS.en;
-  const TEST_ID = 7998;
-  await LocalNotifications.schedule({
-    notifications: [{
-      id: TEST_ID,
-      title: text.title,
-      body: text.body,
-      schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
-      channelId: CHANNEL_STATUS,
-      sound: "default",
-      smallIcon: "ic_stat_notify",
-      iconColor: "#f59e0b",
-      ongoing: false,
-      autoCancel: false,
-      extra: {
-        cancelPreviousId: TEST_ID - 1,
-        timeoutMs: STATUS_TIMEOUT_MS,
-      },
-    }],
-  });
-}
-
-/**
- * "+2 saniye gecikmeli durum testi": Anlık "Şu An ... Vakti" bildirimiyle birebir aynı
- * zamanlama (at: now+2s) ve alanları kullanır; yalnızca içerik farklıdır (sabit test
- * metni, id 7997). Amaç: anlık durum bildirimini gelmeyen şey "genel durum kanalı" mı
- * yoksa özellikle "+2 saniye/9xxx ID" kombinasyonu mu, tek dokunuşla ayırmak.
- */
-export async function sendStatusImmediateTest(): Promise<void> {
-  const TEST_ID = 7997;
-  await LocalNotifications.schedule({
-    notifications: [{
-      id: TEST_ID,
-      title: "🕌 +2sn Durum Testi",
-      body: "Anlık durum bildiriminin zamanlama kopyası (+2 saniye).",
-      schedule: { at: new Date(Date.now() + 2000), allowWhileIdle: true },
-      channelId: CHANNEL_STATUS,
-      sound: "default",
-      smallIcon: "ic_stat_notify",
-      iconColor: "#f59e0b",
-      ongoing: false,
-      autoCancel: false,
-      extra: {
-        cancelPreviousId: TEST_ID - 1,
-        timeoutMs: STATUS_TIMEOUT_MS,
-      },
-    }],
-  });
 }
 
 // Ayarları localStorage'a kaydet/yükle
