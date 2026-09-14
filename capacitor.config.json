@@ -1,6 +1,6 @@
 {
   "appId": "meccanen.namaz.vakti.v1",
-  "appName": "Meccanen Namaz Vakti",
+  "appName": "Meccanen Prayer Times",
   "webDir": "dist",
   "server": { "androidScheme": "https" },
   "android": { "allowMixedContent": true }
