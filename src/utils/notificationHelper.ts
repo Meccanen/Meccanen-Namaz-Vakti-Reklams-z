@@ -437,6 +437,7 @@ export async function schedulePrayerNotifications(
   // cancelAllNotifications) ve "şu an" hangi vakitteysek onun bildirimini DERHAL (schedule
   // olmadan, anında) gösteririz; kalan gelecekteki geçişler ileri tarihli planlanır.
   let statusDebug = "showStatusNotification=false";
+  let immediateStatus: any = null;
   if (settings.showStatusNotification) {
    try {
     const STATUS_TEXTS: Record<string, Record<string, string>> = {
@@ -515,13 +516,12 @@ export async function schedulePrayerNotifications(
       //    an (2 saniye sonrası) veriyoruz; allowWhileIdle:true sayesinde Doze'da bile
       //    zamanında/EKSİZ alarma düşer. extra.cancelPreviousId de eklendi — bir önceki
       //    vaktin (farklı ID'li) bildirimi bu tetiklendiğinde temizlenir.
-      //    `_atFirst` işareti, aşağıda planlama sırasında bu kaydı listenin EN BAŞINA
-      //    taşır: 70+ bildirim sırayla gönderilirken at (now+2s) geçmişe düşeceğinden,
-      //    plugin onu sessizce atardı ("Scheduled time must be *after* current time").
+      //    `immediateStatus` değişkenine yazarız — listenin içine GİRMEZ; aşağıda tüm
+      //    planlamadan ÖNCE tek başına gönderilir. (Eski `_atFirst` bayrağı + findIndex
+      //    yaklaşımı bazı cihazlarda bulunamıyordu; bu yol hiçbir aramaya dayanmaz.)
       const prevOfCurrentKey = STATUS_ORDER[(currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
-      notifications.push({
+      immediateStatus = {
         id: statusId(0, currentIdx),
-        _atFirst: true,
         title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
         body: buildStatusBody(nextKey, nextTime),
         schedule: { at: new Date(now.getTime() + 2000), allowWhileIdle: true },
@@ -535,7 +535,7 @@ export async function schedulePrayerNotifications(
           cancelPreviousId: statusId(0, (currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length),
           timeoutMs: STATUS_TIMEOUT_MS,
         },
-      });
+      };
 
       // b) Ufuktaki TÜM günlerin gelecekteki vakit geçişlerini planla. Her biri
       //    tetiklendiğinde native yama, zincirdeki kendinden önceki ID'yi (gece yarısı
@@ -608,28 +608,25 @@ export async function schedulePrayerNotifications(
   // sayısı okunur; "kaç planlandı" değil "kaç GERÇEKTEN PLANA GİRDİ" bilgisi döner.
   let failures: string[] = [];
   let immediateScheduled = false;
-  if (notifications.length > 0) {
-    // "+2 saniye sonraki" anlık durum bildirimi (varsa) ÖNCE TEK BAŞINA gönderilir;
-    // böylece at'si geçmişe düşmeden zamanında planlanır. Sonra kalanlar 5'erlik
-    // parçalarla sırayla gider.
-    const immediateIdx = notifications.findIndex(n => (n as any)._atFirst);
-    if (immediateIdx >= 0) {
-      const [immediate] = notifications.splice(immediateIdx, 1);
-      delete (immediate as any)._atFirst;
+  if (notifications.length > 0 || immediateStatus) {
+    // "+2 saniye sonraki" anlık durum bildirimi her şeyden ÖNCE tek başına planlanır:
+    // at'si geçmişe düşüp plugin tarafından sessizce atılmadan zamanında kaydedilir.
+    if (immediateStatus) {
       try {
         await Promise.race([
-          LocalNotifications.schedule({ notifications: [immediate] }),
+          LocalNotifications.schedule({ notifications: [immediateStatus] }),
           new Promise((_, reject) => setTimeout(() => reject(new Error("timeout-8s")), 8000)),
         ]);
         immediateScheduled = true;
       } catch (e) {
-        failures.push(`anlik-${immediate.id}: ${e instanceof Error ? e.message : String(e)}`);
+        failures.push(`anlik-${immediateStatus.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
+    // Kalanlar 5'erlik parçalarla sırayla gider.
     const CHUNK = 5;
     for (let i = 0; i < notifications.length; i += CHUNK) {
-      const chunk = notifications.slice(i, i + CHUNK).map(n => { delete (n as any)._atFirst; return n; });
+      const chunk = notifications.slice(i, i + CHUNK);
       try {
         await Promise.race([
           LocalNotifications.schedule({ notifications: chunk }),
@@ -652,8 +649,8 @@ export async function schedulePrayerNotifications(
   return {
     success: ok,
     scheduledCount: pendingCount,
-    error: ok ? undefined : `schedule-kismi: ${failures.join(" | ")} (requested=${notifications.length}, pending=${pendingCount})`,
-    debug: `${statusDebug} |requested=${notifications.length} pending=${pendingCount} anlik=${immediateScheduled ? "OK" : "YOK"}`,
+    error: ok ? undefined : `schedule-kismi: ${failures.join(" | ")} (requested=${notifications.length + (immediateStatus ? 1 : 0)}, pending=${pendingCount})`,
+    debug: `${statusDebug} |requested=${notifications.length + (immediateStatus ? 1 : 0)} pending=${pendingCount} anlik=${immediateScheduled ? "OK" : "YOK"}`,
   };
 }
 
