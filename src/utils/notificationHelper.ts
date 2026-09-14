@@ -95,6 +95,12 @@ const STATUS_BASE = 9000;
 export const STATUS_ORDER: (keyof NotificationSettings["prayers"])[] = ["imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"];
 const statusId = (dayIdx: number, prayerIdx: number): number => STATUS_BASE + dayIdx * 100 + prayerIdx;
 
+// Anlık "Şu An ... Vakti" bildiriminin ID tabanı. Durum geçişleri statusId desenini
+// (9000+) kullandığı için anlık bildirimin ID'si onlarla ÇAKIŞMAMALI: aynı ID'yi ikinci
+// kez planlamak, plugin'in eski alarmı silip yerine geçişi koymasına yol açar ve anlık
+// bildirim asla görünmez. Hatırlatıcılar ≤6012, geçişler ≥9000 → 8300..8305 serbesttir.
+const IMMEDIATE_ID_BASE = 8300;
+
 // res/raw içine konan, vakte özel ezan ses dosyaları (Capacitor Local Notifications Android'de
 // uzantılı dosya adını bekliyor; dosyalar android/app/src/main/res/raw/ içinde olmalı).
 const EZAN_SOUND_FILES: Partial<Record<keyof NotificationSettings["prayers"], string>> = {
@@ -519,9 +525,22 @@ export async function schedulePrayerNotifications(
       //    `immediateStatus` değişkenine yazarız — listenin içine GİRMEZ; aşağıda tüm
       //    planlamadan ÖNCE tek başına gönderilir. (Eski `_atFirst` bayrağı + findIndex
       //    yaklaşımı bazı cihazlarda bulunamıyordu; bu yol hiçbir aramaya dayanmaz.)
-      const prevOfCurrentKey = STATUS_ORDER[(currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length];
+      //
+      //    KRİTİK: Bu bildirimin ID'si durum geçiş ID'leriyle (9000+...) ÇAKIŞMAMALI.
+      //    Geçiş zinciri bugünün tüm gelecek vakitlerini AYNI statusId(d,i) deseniyle
+      //    planlar; aynı ID'yi ikinci kez planlamak plugin'in eski alarmı iptal edip
+      //    yerine geçişi koymasına yol açıyordu → anlık (+2sn) bildirim asla görünmüyordu.
+      //    Benzersiz 8300+ alanı kullanıyoruz. Kendini-temizleme: timeoutMs, bir sonraki
+      //    vakit geçişine kadar geçen süre olarak ayarlanır; böylece anlık bildirim,
+      //    sıradaki gerçek geçiş geldiğinde kendiliğinden kaybolur (eski/çakışan durum
+      //    bildirimi ekranda kalmaz).
+      const pastAnchorStatusId = statusId(0, -1); // "dünün yatsısı" — zincirin geçmiş ucu, hiç planlanmaz
+      const nt = nextTime.split(":").map(Number);
+      const nextTransitionDate = new Date(now);
+      nextTransitionDate.setHours(nt[0], nt[1], 0, 0);
+      if (nextTransitionDate <= now) nextTransitionDate.setDate(nextTransitionDate.getDate() + 1);
       immediateStatus = {
-        id: statusId(0, currentIdx),
+        id: IMMEDIATE_ID_BASE + currentIdx,
         title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
         body: buildStatusBody(nextKey, nextTime),
         schedule: { at: new Date(now.getTime() + 2000), allowWhileIdle: true },
@@ -532,8 +551,8 @@ export async function schedulePrayerNotifications(
         ongoing: false,
         autoCancel: false,
         extra: {
-          cancelPreviousId: statusId(0, (currentIdx - 1 + STATUS_ORDER.length) % STATUS_ORDER.length),
-          timeoutMs: STATUS_TIMEOUT_MS,
+          cancelPreviousId: pastAnchorStatusId,
+          timeoutMs: Math.max(60 * 1000, nextTransitionDate.getTime() - now.getTime() - 2000),
         },
       };
 
