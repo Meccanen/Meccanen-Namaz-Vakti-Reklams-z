@@ -607,6 +607,7 @@ export async function schedulePrayerNotifications(
   // asılı kalamaz. İşin sonunda LocalNotifications.pending() ile GERÇEK kayıtlı alarm
   // sayısı okunur; "kaç planlandı" değil "kaç GERÇEKTEN PLANA GİRDİ" bilgisi döner.
   let failures: string[] = [];
+  let immediateScheduled = false;
   if (notifications.length > 0) {
     // "+2 saniye sonraki" anlık durum bildirimi (varsa) ÖNCE TEK BAŞINA gönderilir;
     // böylece at'si geçmişe düşmeden zamanında planlanır. Sonra kalanlar 5'erlik
@@ -620,6 +621,7 @@ export async function schedulePrayerNotifications(
           LocalNotifications.schedule({ notifications: [immediate] }),
           new Promise((_, reject) => setTimeout(() => reject(new Error("timeout-8s")), 8000)),
         ]);
+        immediateScheduled = true;
       } catch (e) {
         failures.push(`anlik-${immediate.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -651,7 +653,7 @@ export async function schedulePrayerNotifications(
     success: ok,
     scheduledCount: pendingCount,
     error: ok ? undefined : `schedule-kismi: ${failures.join(" | ")} (requested=${notifications.length}, pending=${pendingCount})`,
-    debug: `${statusDebug} |requested=${notifications.length} pending=${pendingCount}`,
+    debug: `${statusDebug} |requested=${notifications.length} pending=${pendingCount} anlik=${immediateScheduled ? "OK" : "YOK"}`,
   };
 }
 
@@ -718,6 +720,34 @@ export async function sendStatusTestNotification(lang: LangCode): Promise<void> 
       title: text.title,
       body: text.body,
       schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
+      channelId: CHANNEL_STATUS,
+      sound: "default",
+      smallIcon: "ic_stat_notify",
+      iconColor: "#f59e0b",
+      ongoing: false,
+      autoCancel: false,
+      extra: {
+        cancelPreviousId: TEST_ID - 1,
+        timeoutMs: STATUS_TIMEOUT_MS,
+      },
+    }],
+  });
+}
+
+/**
+ * "+2 saniye gecikmeli durum testi": Anlık "Şu An ... Vakti" bildirimiyle birebir aynı
+ * zamanlama (at: now+2s) ve alanları kullanır; yalnızca içerik farklıdır (sabit test
+ * metni, id 7997). Amaç: anlık durum bildirimini gelmeyen şey "genel durum kanalı" mı
+ * yoksa özellikle "+2 saniye/9xxx ID" kombinasyonu mu, tek dokunuşla ayırmak.
+ */
+export async function sendStatusImmediateTest(): Promise<void> {
+  const TEST_ID = 7997;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: TEST_ID,
+      title: "🕌 +2sn Durum Testi",
+      body: "Anlık durum bildiriminin zamanlama kopyası (+2 saniye).",
+      schedule: { at: new Date(Date.now() + 2000), allowWhileIdle: true },
       channelId: CHANNEL_STATUS,
       sound: "default",
       smallIcon: "ic_stat_notify",

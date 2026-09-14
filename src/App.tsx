@@ -14,7 +14,7 @@ import {
   requestNotificationPermission, checkNotificationPermission,
   schedulePrayerNotifications, cancelAllNotifications,
   saveNotificationSettings, loadNotificationSettings,
-  sendTestNotification, countPendingNotifications, sendStatusTestNotification,
+  sendTestNotification, countPendingNotifications, sendStatusTestNotification, sendStatusImmediateTest,
   PRAYER_LABELS, NOTIFICATION_HORIZON_DAYS,
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode } from "./utils/i18n";
@@ -914,6 +914,18 @@ function SettingsPanel({
                       }}
                       className="w-full py-2.5 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all cursor-pointer">
                       {t("diagStatusTestButton", lang)}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await sendStatusImmediateTest();
+                          notify(t("diagTestSent", lang));
+                        } catch (e) {
+                          notify(t("diagTestError", lang, { error: e instanceof Error ? e.message : String(e) }));
+                        }
+                      }}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all cursor-pointer">
+                      {t("diagImmediateTestButton", lang)}
                     </button>
                   </div>
                 )}
