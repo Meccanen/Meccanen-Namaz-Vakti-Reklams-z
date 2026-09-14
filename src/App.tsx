@@ -887,6 +887,9 @@ function SettingsPanel({
                       {diagSchedule.error && (
                         <div className="mt-1 text-[11px] text-rose-400/80 break-all">{diagSchedule.error}</div>
                       )}
+                      {diagSchedule.debug && (
+                        <div className="mt-1 text-[11px] text-slate-400/80 break-all">{diagSchedule.debug}</div>
+                      )}
                     </div>
                     <button
                       onClick={async () => {
