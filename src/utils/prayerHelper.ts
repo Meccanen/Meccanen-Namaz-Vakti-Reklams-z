@@ -3,6 +3,8 @@
  * https://aladhan.com/prayer-times-api
  */
 
+import { detectLanguage } from "./i18n";
+
 export interface PrayerTime {
   name: string;
   time: string;
@@ -13,6 +15,27 @@ export interface PrayerMethod {
   id: number;
   label: Record<string, string>;
   description: Record<string, string>;
+}
+
+export const PRAYER_METHOD_DIYANET = 13;
+export const PRAYER_METHOD_MWL = 3;
+export const PRAYER_METHOD_KARACHI = 1;
+
+// Varsayılan metot — uygulamanın temel dilini İngilizceye sabitleme mantığıyla aynı:
+//  - Cihaz dili Türkçe ise → Diyanet (13)
+//  - Cihaz dili Urduca ise → Karachi (1)
+//  - Diğer tüm diller      → Muslim World League (3) [temel varsayılan]
+// Kullanıcı açıkça bir metot SEÇMEDİYSE (mnv_prayer_method kayıtlı değilse) her açılışta
+// cihaz dilini izler; açıkça seçtiyse kayıtlı değer her zaman korunur.
+export function resolveDefaultPrayerMethod(saved: string | null): number {
+  if (saved !== null) {
+    const n = parseInt(saved, 10);
+    if (!Number.isNaN(n) && PRAYER_METHODS.some(m => m.id === n)) return n;
+  }
+  const deviceLang = detectLanguage();
+  if (deviceLang === "tr") return PRAYER_METHOD_DIYANET;
+  if (deviceLang === "ur") return PRAYER_METHOD_KARACHI;
+  return PRAYER_METHOD_MWL;
 }
 
 export const PRAYER_METHODS: PrayerMethod[] = [

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
-import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS } from "./utils/prayerHelper";
+import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS, resolveDefaultPrayerMethod } from "./utils/prayerHelper";
 import { Location } from "./types";
 import { TURKEY_PROVINCES, PAKISTAN_CITIES } from "./utils/weatherHelper";
 import {
@@ -1117,7 +1117,7 @@ export default function App() {
     catch { return [DEFAULT_LOCATION]; }
   });
   const [prayerMethod, setPrayerMethodState] = useState<number>(() =>
-    parseInt(localStorage.getItem("mnv_prayer_method") || "13")
+    resolveDefaultPrayerMethod(localStorage.getItem("mnv_prayer_method"))
   );
   const [date, setDate] = useState(new Date());
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>(() =>
