@@ -71,7 +71,7 @@ const en: Record<string, string> = {
   kerahatDesc: "Prayer is not performed during the prohibited time!",
   kerahatActive: "Prohibited Time Now!",
   kerahatEndsIn: "ends in {time}",
-  kerahatStartsIn: "starts in {time}",
+  kerahatStartsIn: "{time} until kerahat time",
 
   hijri: "Hijri",
   coordinates: "Coordinates",
@@ -224,7 +224,7 @@ const de: Record<string, string> = {
   kerahatDesc: "Während der verbotenen Zeit wird nicht gebetet!",
   kerahatActive: "Jetzt verbotene Zeit!",
   kerahatEndsIn: "endet in {time}",
-  kerahatStartsIn: "beginnt in {time}",
+  kerahatStartsIn: "{time} bis zur verbotenen Zeit",
 
   hijri: "Hijri",
   qibla: "Qibla",
@@ -377,7 +377,7 @@ const tr: Record<string, string> = {
   kerahatDesc: "Kerahat vaktinde namaz kılınmaz!",
   kerahatActive: "Şu An Kerahat Vakti!",
   kerahatEndsIn: "bitişe {time}",
-  kerahatStartsIn: "başlangıca {time}",
+  kerahatStartsIn: "Kerahat vaktine {time} kaldı",
 
   hijri: "Hicri",
   coordinates: "Koordinat",
@@ -540,7 +540,7 @@ const ar: Record<string, string> = {
   kerahatDesc: "لا تُصلّى الصلاة في وقت الكراهة!",
   kerahatActive: "الآن وقت الكراهة!",
   kerahatEndsIn: "ينتهي خلال {time}",
-  kerahatStartsIn: "يبدأ خلال {time}",
+  kerahatStartsIn: "{time} حتى وقت الكراهة",
 
   hijri: "هجري",
   coordinates: "الإحداثيات",
@@ -696,7 +696,7 @@ const ur: Record<string, string> = {
   kerahatDesc: "مکروہ وقت میں نماز ادا نہیں کی جاتی!",
   kerahatActive: "ابھی مکروہ وقت ہے!",
   kerahatEndsIn: "ختم ہونے میں {time}",
-  kerahatStartsIn: "شروع ہونے میں {time}",
+  kerahatStartsIn: "{time} تک مکروہ وقت",
 
   hijri: "ہجری",
   qibla: "قبلہ",

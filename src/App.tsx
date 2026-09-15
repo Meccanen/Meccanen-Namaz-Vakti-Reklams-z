@@ -208,6 +208,26 @@ export const THEMES = {
 };
 export type ThemeKey = keyof typeof THEMES;
 
+// Kerahat üçgenlerinin temaya özel "belirleyici" rengi (koyu temalarda parlak, açık temalarda koyu ton).
+export const KERAHAT_COLORS: Record<ThemeKey, string> = {
+  gece: "#38bdf8",
+  alacakaranlik: "#e879f9",
+  orman: "#4ade80",
+  altin: "#fbbf24",
+  ramazan: "#c084fc",
+  kabe: "#d4af37",
+  turkuaz: "#22d3ee",
+  bordo: "#fb7185",
+  gunes: "#fb923c",
+  safir: "#60a5fa",
+  seher: "#b45309",
+  gul: "#be123c",
+  nane: "#15803d",
+  vaha: "#0f766e",
+  nilufer: "#be123c",
+  lavanta: "#6d28d9",
+};
+
 function guessTimezone(lng: number): string {
   const offset = Math.round(lng / 15);
   const MAP: Record<string, string> = {
@@ -1680,6 +1700,13 @@ useEffect(() => {
             const cx = 175, cy = 190, r = 110, needleR = 88;
             const needleColor = isLight ? "#1e293b" : "#f8fafc";
 
+            // Kerahat üçgen rengi temaya göre değişir (belirleyici renk).
+            const kerahatHex = KERAHAT_COLORS[themeKey] || "#ef4444";
+            const hexToRgba = (hex: string, alpha: number) => {
+              const n = parseInt(hex.slice(1), 16);
+              return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+            };
+
             // Kerahat (namazın mekruh olduğu) bantları — yaygın kabul gören yaklaşık süreler:
             // güneş doğuşundan ~45 dk sonrasına kadar, istivanın birkaç dk öncesi/sonrası,
             // ve batıştan ~45 dk öncesinden batışa kadar.
@@ -1730,15 +1757,17 @@ useEffect(() => {
                       <stop offset="0%" stopColor="rgba(245,158,11,0.65)" />
                       <stop offset="100%" stopColor="rgba(245,158,11,0)" />
                     </radialGradient>
-                    <pattern id="kerahatHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-                      <rect width="6" height="6" fill="rgba(15,23,42,0.45)" />
-                      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" strokeWidth="3" />
+                    <pattern id="kerahatHatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+                      <rect width="7" height="7" fill={hexToRgba(kerahatHex, 0.32)} />
+                      <line x1="0" y1="0" x2="0" y2="7" stroke={hexToRgba(kerahatHex, 0.85)} strokeWidth="3" />
                     </pattern>
                   </defs>
 
                   {bands.map((b, i) => (
                     <path key={i} d={wedgePath(b.start, b.end)}
                       fill={activeBand === b ? "rgba(239,68,68,0.45)" : "url(#kerahatHatch)"}
+                      stroke={activeBand === b ? "rgba(239,68,68,0.7)" : hexToRgba(kerahatHex, 0.55)}
+                      strokeWidth={1.5}
                       className={activeBand === b ? "kerahat-active-glow" : ""} />
                   ))}
 
