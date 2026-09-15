@@ -208,7 +208,7 @@ export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
   settings: NotificationSettings,
   locationName: string,
-  lang: LangCode = "tr",
+  lang: LangCode = "en",
   tomorrowPrayerTimes?: { key: string; name: string; time: string }[],
   // YENİ: çok günlü vakit listesi. index 0 = BUGÜN. Verilmezse eski davranış (bugün + yarın).
   multiDayTimes?: PrayerTimeEntry[][],
