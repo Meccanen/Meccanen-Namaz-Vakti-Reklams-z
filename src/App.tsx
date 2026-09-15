@@ -1700,16 +1700,17 @@ useEffect(() => {
               return hh > 0 ? `${hh}:${mmss}` : mmss;
             };
 
-            const outerR = r + 7, innerR = r - 7;
+            const outerR = r + 7;
             const pt = (rr: number, a: number) => {
               const rad = (a * Math.PI) / 180;
               return [cx + rr * Math.cos(rad), cy - rr * Math.sin(rad)];
             };
-            const bandPath = (startMin: number, endMin: number) => {
+            // Her kerahat vaktini merkezden dış yaya uzanan taralı "üçgen" dilim olarak çizer —
+            // ibre bu dilimlerin içine girdiğinde kerahat vaktinde olduğu görülsün.
+            const wedgePath = (startMin: number, endMin: number) => {
               const a1 = minToAngle(startMin), a2 = minToAngle(endMin);
               const [ox1, oy1] = pt(outerR, a1), [ox2, oy2] = pt(outerR, a2);
-              const [ix2, iy2] = pt(innerR, a2), [ix1, iy1] = pt(innerR, a1);
-              return `M ${ox1},${oy1} A ${outerR},${outerR} 0 0 1 ${ox2},${oy2} L ${ix2},${iy2} A ${innerR},${innerR} 0 0 0 ${ix1},${iy1} Z`;
+              return `M ${cx},${cy} L ${ox1},${oy1} A ${outerR},${outerR} 0 0 1 ${ox2},${oy2} Z`;
             };
 
             return (
@@ -1736,7 +1737,7 @@ useEffect(() => {
                   </defs>
 
                   {bands.map((b, i) => (
-                    <path key={i} d={bandPath(b.start, b.end)}
+                    <path key={i} d={wedgePath(b.start, b.end)}
                       fill={activeBand === b ? "rgba(239,68,68,0.45)" : "url(#kerahatHatch)"}
                       className={activeBand === b ? "kerahat-active-glow" : ""} />
                   ))}
