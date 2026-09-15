@@ -1691,7 +1691,7 @@ useEffect(() => {
               { start: solarTimes.sunsetMinutes - 45, end: solarTimes.sunsetMinutes },
             ];
             const activeBand = isDaytime && bands.find(b => nowSec >= b.start * 60 && nowSec <= b.end * 60);
-            const upcomingBand = !activeBand && bands.find(b => b.start * 60 > nowSec);
+            const upcomingBand = !activeBand && bands.find(b => b.start * 60 > nowSec && b.start * 60 - nowSec <= 30 * 60);
 
             const fmtDur = (sec: number) => {
               const t = Math.max(0, Math.round(sec));
@@ -1755,14 +1755,14 @@ useEffect(() => {
                         style={{ filter: activeBand ? "drop-shadow(0 0 7px rgba(239,68,68,0.9))" : isLight ? "drop-shadow(0 0 5px rgba(30,41,59,0.5))" : "drop-shadow(0 0 5px rgba(248,250,252,0.55))" }} />
                       <circle cx={cx} cy={cy - needleR} r={16} fill="url(#sunGlowRad)" className="kerahat-sun-glow" />
                       <Sun x={cx - 13} y={cy - needleR - 13} width={26} height={26}
-                        className={activeBand ? "text-red-400" : "text-amber-400"}
+                        className={activeBand ? (isLight ? "text-red-600" : "text-red-400") : (isLight ? "text-amber-600" : "text-amber-400")}
                         style={{ filter: activeBand ? "drop-shadow(0 0 6px rgba(239,68,68,0.9))" : "drop-shadow(0 0 6px rgba(245,158,11,0.9))" }} />
                     </g>
                   )}
                   <circle cx={cx} cy={cy} r={6} fill={activeBand ? "#ef4444" : needleColor} />
 
                   <Sunrise className={tTheme.textMuted} x={cx - r - 45} y={cy - 60} width={36} height={36} />
-                  <Sun className="text-red-400" x={cx - 20} y={2} width={40} height={40} />
+                  <Sun className={isLight ? "text-red-600" : "text-red-400"} x={cx - 20} y={2} width={40} height={40} />
                   <Sunset className={tTheme.textMuted} x={cx + r + 9} y={cy - 60} width={36} height={36} />
 
                   <text x={cx - r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunrise}</text>
@@ -1773,11 +1773,11 @@ useEffect(() => {
                 {(activeBand || upcomingBand) && (
                   <div className="flex justify-center -mt-1 mb-1">
                     {activeBand ? (
-                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/20 border-2 border-red-500/50 text-red-400 font-extrabold text-base sm:text-lg animate-pulse">
+                      <span className={`inline-flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/20 border-2 border-red-500/50 ${isLight ? "text-red-700" : "text-red-400"} font-extrabold text-base sm:text-lg animate-pulse`}>
                         <Ban className="w-5 h-5" />{t("kerahatActive", lang)} · {t("kerahatEndsIn", lang, { time: fmtDur(activeBand.end * 60 - nowSec) })}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-bold text-sm sm:text-base">
+                      <span className={`inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/15 border ${isLight ? "border-amber-500/60 text-amber-800" : "border-amber-500/40 text-amber-300"} font-bold text-sm sm:text-base`}>
                         <Clock className="w-4 h-4" />{t("kerahatStartsIn", lang, { time: fmtDur(upcomingBand.start * 60 - nowSec) })}
                       </span>
                     )}
