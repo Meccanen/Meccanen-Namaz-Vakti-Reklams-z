@@ -70,6 +70,9 @@ const en: Record<string, string> = {
   sunsetLabel: "Sunset",
   kerahatDesc: "Prayer is not performed during the prohibited time!",
   kerahatActive: "Prohibited Time Now!",
+  kerahatEndsIn: "ends in {time}",
+  kerahatStartsIn: "starts in {time}",
+
   hijri: "Hijri",
   coordinates: "Coordinates",
   city: "City",
@@ -220,6 +223,9 @@ const de: Record<string, string> = {
   sunsetLabel: "Sonnenuntergang",
   kerahatDesc: "Während der verbotenen Zeit wird nicht gebetet!",
   kerahatActive: "Jetzt verbotene Zeit!",
+  kerahatEndsIn: "endet in {time}",
+  kerahatStartsIn: "beginnt in {time}",
+
   hijri: "Hijri",
   qibla: "Qibla",
   qiblaDesc: "Tippen Sie, um den Kompass zu aktivieren",
@@ -370,6 +376,9 @@ const tr: Record<string, string> = {
   sunsetLabel: "Güneşin Batışı",
   kerahatDesc: "Kerahat vaktinde namaz kılınmaz!",
   kerahatActive: "Şu An Kerahat Vakti!",
+  kerahatEndsIn: "bitişe {time}",
+  kerahatStartsIn: "başlangıca {time}",
+
   hijri: "Hicri",
   coordinates: "Koordinat",
   city: "Şehir",
@@ -530,6 +539,9 @@ const ar: Record<string, string> = {
   sunsetLabel: "غروب الشمس",
   kerahatDesc: "لا تُصلّى الصلاة في وقت الكراهة!",
   kerahatActive: "الآن وقت الكراهة!",
+  kerahatEndsIn: "ينتهي خلال {time}",
+  kerahatStartsIn: "يبدأ خلال {time}",
+
   hijri: "هجري",
   coordinates: "الإحداثيات",
   city: "المدينة",
@@ -683,6 +695,9 @@ const ur: Record<string, string> = {
   sunsetLabel: "غروب آفتاب",
   kerahatDesc: "مکروہ وقت میں نماز ادا نہیں کی جاتی!",
   kerahatActive: "ابھی مکروہ وقت ہے!",
+  kerahatEndsIn: "ختم ہونے میں {time}",
+  kerahatStartsIn: "شروع ہونے میں {time}",
+
   hijri: "ہجری",
   qibla: "قبلہ",
   qiblaDesc: "قبلہ نما فعال کریں",

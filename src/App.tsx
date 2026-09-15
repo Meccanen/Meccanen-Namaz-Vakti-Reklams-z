@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   MapPin, Calendar, Sparkles, Search, Compass,
   RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
@@ -1667,20 +1667,18 @@ useEffect(() => {
           {(() => {
             const total = solarTimes.sunsetMinutes - solarTimes.sunriseMinutes;
             const parts = new Intl.DateTimeFormat("en-US", {
-              timeZone: location.timezone || "Europe/Istanbul", hour: "2-digit", minute: "2-digit", hour12: false,
+              timeZone: location.timezone || "Europe/Istanbul", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
             }).formatToParts(date);
-            const nowMin = parseInt(parts.find(p => p.type === "hour")?.value || "0") * 60 +
-                           parseInt(parts.find(p => p.type === "minute")?.value || "0");
+            const num = (ty: string) => parseInt(parts.find(p => p.type === ty)?.value || "0");
+            const nowMin = num("hour") * 60 + num("minute");
+            const nowSec = num("hour") * 3600 + num("minute") * 60 + num("second");
             const isDaytime = nowMin >= solarTimes.sunriseMinutes && nowMin <= solarTimes.sunsetMinutes;
-            const frac = Math.min(1, Math.max(0, (nowMin - solarTimes.sunriseMinutes) / total));
+            // Saniye çözünürlüklü yumuşak ilerleme (ibre + güneş sürekli hareket eder).
+            const frac = Math.min(1, Math.max(0, (nowSec / 60 - solarTimes.sunriseMinutes) / total));
             // 0 (doğuş) -> 180°(sol), 0.5 (istiva) -> 90°(tepe), 1 (batış) -> 0°(sağ)
             const angleDeg = 180 * (1 - frac);
-            const angleRad = (angleDeg * Math.PI) / 180;
             const cx = 175, cy = 190, r = 110, needleR = 88;
-            const needleX = cx + needleR * Math.cos(angleRad);
-            const needleY = cy - needleR * Math.sin(angleRad);
             const needleColor = isLight ? "#1e293b" : "#f8fafc";
-            const needleRing = isLight ? "#f8fafc" : "#0f172a";
 
             // Kerahat (namazın mekruh olduğu) bantları — yaygın kabul gören yaklaşık süreler:
             // güneş doğuşundan ~45 dk sonrasına kadar, istivanın birkaç dk öncesi/sonrası,
@@ -1692,7 +1690,15 @@ useEffect(() => {
               { start: solarTimes.solarNoonMinutes - 5, end: solarTimes.solarNoonMinutes + 5 },
               { start: solarTimes.sunsetMinutes - 45, end: solarTimes.sunsetMinutes },
             ];
-            const activeBand = isDaytime && bands.some(b => nowMin >= b.start && nowMin <= b.end);
+            const activeBand = isDaytime && bands.find(b => nowSec >= b.start * 60 && nowSec <= b.end * 60);
+            const upcomingBand = !activeBand && bands.find(b => b.start * 60 > nowSec);
+
+            const fmtDur = (sec: number) => {
+              const t = Math.max(0, Math.round(sec));
+              const hh = Math.floor(t / 3600), mm = Math.floor((t % 3600) / 60), ss = t % 60;
+              const mmss = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+              return hh > 0 ? `${hh}:${mmss}` : mmss;
+            };
 
             const outerR = r + 7, innerR = r - 7;
             const pt = (rr: number, a: number) => {
@@ -1719,6 +1725,10 @@ useEffect(() => {
                       <stop offset="50%" stopColor="#ef4444" />
                       <stop offset="100%" stopColor="#f97316" />
                     </linearGradient>
+                    <radialGradient id="sunGlowRad" cx="0.5" cy="0.5" r="0.5">
+                      <stop offset="0%" stopColor="rgba(245,158,11,0.65)" />
+                      <stop offset="100%" stopColor="rgba(245,158,11,0)" />
+                    </radialGradient>
                     <pattern id="kerahatHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
                       <rect width="6" height="6" fill="rgba(15,23,42,0.45)" />
                       <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" strokeWidth="3" />
@@ -1726,16 +1736,30 @@ useEffect(() => {
                   </defs>
 
                   {bands.map((b, i) => (
-                    <path key={i} d={bandPath(b.start, b.end)} fill="url(#kerahatHatch)" />
+                    <path key={i} d={bandPath(b.start, b.end)}
+                      fill={activeBand === b ? "rgba(239,68,68,0.45)" : "url(#kerahatHatch)"}
+                      className={activeBand === b ? "kerahat-active-glow" : ""} />
                   ))}
 
                   {isDaytime && (
-                    <g>
-                      <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke={needleColor} strokeWidth={3} strokeLinecap="round" />
-                      <circle cx={needleX} cy={needleY} r={7} fill={needleColor} stroke={needleRing} strokeWidth={2} />
+                    <g style={{
+                        transformBox: "view-box",
+                        transformOrigin: `${cx}px ${cy}px`,
+                        transform: `rotate(${90 - angleDeg}deg)`,
+                        transition: "transform 1s linear",
+                        willChange: "transform",
+                      }}>
+                      <line x1={cx} y1={cy} x2={cx} y2={cy - needleR}
+                        stroke={activeBand ? "#ef4444" : needleColor}
+                        strokeWidth={3} strokeLinecap="round"
+                        style={{ filter: activeBand ? "drop-shadow(0 0 7px rgba(239,68,68,0.9))" : isLight ? "drop-shadow(0 0 5px rgba(30,41,59,0.5))" : "drop-shadow(0 0 5px rgba(248,250,252,0.55))" }} />
+                      <circle cx={cx} cy={cy - needleR} r={16} fill="url(#sunGlowRad)" className="kerahat-sun-glow" />
+                      <Sun x={cx - 13} y={cy - needleR - 13} width={26} height={26}
+                        className={activeBand ? "text-red-400" : "text-amber-400"}
+                        style={{ filter: activeBand ? "drop-shadow(0 0 6px rgba(239,68,68,0.9))" : "drop-shadow(0 0 6px rgba(245,158,11,0.9))" }} />
                     </g>
                   )}
-                  <circle cx={cx} cy={cy} r={6} fill={needleColor} />
+                  <circle cx={cx} cy={cy} r={6} fill={activeBand ? "#ef4444" : needleColor} />
 
                   <Sunrise className={tTheme.textMuted} x={cx - r - 45} y={cy - 60} width={36} height={36} />
                   <Sun className="text-red-400" x={cx - 20} y={2} width={40} height={40} />
@@ -1746,11 +1770,17 @@ useEffect(() => {
                   <text x={cx + r} y={cy + 26} textAnchor="middle" fill="currentColor" className={`font-mono font-extrabold ${tTheme.textPrimary}`} fontSize={20}>{solarTimes.sunset}</text>
                 </svg>
 
-                {activeBand && (
+                {(activeBand || upcomingBand) && (
                   <div className="flex justify-center -mt-1 mb-1">
-                    <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/20 border-2 border-red-500/50 text-red-400 font-extrabold text-base sm:text-lg animate-pulse">
-                      {t("kerahatActive", lang)}
-                    </span>
+                    {activeBand ? (
+                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/20 border-2 border-red-500/50 text-red-400 font-extrabold text-base sm:text-lg animate-pulse">
+                        <Ban className="w-5 h-5" />{t("kerahatActive", lang)} · {t("kerahatEndsIn", lang, { time: fmtDur(activeBand.end * 60 - nowSec) })}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-bold text-sm sm:text-base">
+                        <Clock className="w-4 h-4" />{t("kerahatStartsIn", lang, { time: fmtDur(upcomingBand.start * 60 - nowSec) })}
+                      </span>
+                    )}
                   </div>
                 )}
               </>
