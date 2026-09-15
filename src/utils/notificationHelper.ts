@@ -95,6 +95,24 @@ const STATUS_BASE = 9000;
 export const STATUS_ORDER: (keyof NotificationSettings["prayers"])[] = ["imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"];
 const statusId = (dayIdx: number, prayerIdx: number): number => STATUS_BASE + dayIdx * 100 + prayerIdx;
 
+// Durum bildirimine ait OLABİLECEK tüm ID'ler (geçiş zinciri 9000+ ve anlık 8300+).
+// Planlama her açılışta gün-1 "day0" olacak şekilde YENİDEN yapıldığı için ekranda
+// görünen (daha önce ateşlenmiş) bir durum bildiriminin ID'si, bugünün hesabıyla hazır
+// set içinde OLMAYABİLİR (ör. dün day0 iken planlanmış bir geçiş). Bu yüzden hem geçiş
+// hem anlık ID'lerinin "ufuk + fazlası" kadar geniş bir penceresini üretiyoruz ve açılışta
+// bunların zaten ekranda görünenlerini (delivered) ayrıca silip "tek, güncel durum" kuralını
+// garantiye alıyoruz.
+const fallbackStatusSpecIds = (): number[] => {
+  const ids: number[] = [];
+  for (let d = 0; d <= NOTIFICATION_HORIZON_DAYS + 2; d++) {
+    for (let i = 0; i < STATUS_ORDER.length; i++) ids.push(statusId(d, i));
+  }
+  for (let i = 0; i < STATUS_ORDER.length; i++) ids.push(IMMEDIATE_ID_BASE + i);
+  return ids;
+};
+const asDeliveredSpec = (ids: number[]) =>
+  ids.map(id => ({ id }) as unknown as { id: number, title: string, body: string });
+
 // Anlık "Şu An ... Vakti" bildiriminin ID tabanı. Durum geçişleri statusId desenini
 // (9000+) kullandığı için anlık bildirimin ID'si onlarla ÇAKIŞMAMALI: aynı ID'yi ikinci
 // kez planlamak, plugin'in eski alarmı silip yerine geçişi koymasına yol açar ve anlık
@@ -245,11 +263,11 @@ export async function schedulePrayerNotifications(
   // bildirimini de aşağıdaki `extra.cancelPreviousId` yaması hallediyor.
   if (!settings.showStatusNotification && isNativeAvailable()) {
     try {
-      const allStatusIds = Array.from(
-        { length: NOTIFICATION_HORIZON_DAYS + 1 },
-        (_, d) => STATUS_ORDER.map((_, i) => statusId(d, i)),
-      ).flat();
+      const allStatusIds = fallbackStatusSpecIds();
       await LocalNotifications.cancel({ notifications: allStatusIds.map(id => ({ id })) });
+      // Ekranda hâlâ görünen (daha önce ateşlenmiş) durum bildirimlerini de temizle;
+      // aksi halde ayar kapatıldığında eski "Şu an..." bildirimi ekranda asılı kalıyordu.
+      await LocalNotifications.removeDeliveredNotifications({ notifications: asDeliveredSpec(allStatusIds) });
     } catch {}
   }
 
@@ -534,7 +552,30 @@ export async function schedulePrayerNotifications(
       //    vakit geçişine kadar geçen süre olarak ayarlanır; böylece anlık bildirim,
       //    sıradaki gerçek geçiş geldiğinde kendiliğinden kaybolur (eski/çakışan durum
       //    bildirimi ekranda kalmaz).
-      const pastAnchorStatusId = statusId(0, -1); // "dünün yatsısı" — zincirin geçmiş ucu, hiç planlanmaz
+      // Anlık bildirimin kendinden önce iptal edeceği görünen durum: Bugünün o vakti
+      // GEÇTİYSE, ekranda duran geçiş bildirimi statusId(0, currentIdx) olmalı → anlık
+      // tetiklendiğinde onu temizler. Henüz geçmediyse (ör. imsaktan önce, dünün yatsısı)
+      // bilinen bir id yok → eski zararsız 8999 çapası (planlanmaz, no-op).
+      const currentTimeStr = timeByKey[currentKey];
+      let pastAnchorStatusId = statusId(0, -1);
+      if (currentTimeStr) {
+        const [ch, cm] = currentTimeStr.split(":").map(Number);
+        const curD = new Date(now);
+        curD.setHours(ch, cm, 0, 0);
+        if (curD <= now) pastAnchorStatusId = statusId(0, currentIdx);
+      }
+
+      if (settings.showStatusNotification) {
+        // Ekranda daha önce ateşlenmiş olarak duran TÜM eski durum bildirimlerini
+        // (dünün artığı, bu sabah ateşleneni vb.) sil — DUPLİKATIN KAYNAĞI BU:
+        // cancelAllNotifications() sadece planlanmış ama tetiklenmemiş olanları iptal eder;
+        // aşağıdaki "+2 sn" anlığı tek görünür durum bildirimi olarak yeniden koyar.
+        try {
+          await LocalNotifications.removeDeliveredNotifications({
+            notifications: asDeliveredSpec(fallbackStatusSpecIds()),
+          });
+        } catch {}
+      }
       const nt = nextTime.split(":").map(Number);
       const nextTransitionDate = new Date(now);
       nextTransitionDate.setHours(nt[0], nt[1], 0, 0);
