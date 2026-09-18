@@ -1,5 +1,7 @@
 package meccanen.namaz.vakti.v1.widgets;
 
+import meccanen.namaz.vakti.v1.R;
+
 /**
  * Widget renk paletleri — uygulamanın 16 temasına birebir karşılık gelir.
  * Her tema: arka plan (bg), vurgu panel, ana/metin (text), soluk (muted), vurgu (accent).
