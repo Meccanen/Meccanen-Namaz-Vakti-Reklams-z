@@ -23,6 +23,7 @@ import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart, exactAla
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
 import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
+import { buildWidgetPayload, syncWidgets } from "./utils/widgetBridge";
 import {
   getSupporterProducts, purchaseSupporterBadge, checkIsSupporter, restoreSupporterPurchases,
   SUPPORTER_PRODUCT_IDS, type SupporterProductId,
@@ -1233,6 +1234,7 @@ export default function App() {
         setMultiDayPrayerTimes(days);
       } catch { /* çok günlü veri yok — yalnızca bugün+yarın planlanır */ }
     } catch {
+      setMultiDayPrayerTimes([]);
       setPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul"));
     } finally { setPrayerLoading(false); }
   };
@@ -1251,6 +1253,24 @@ export default function App() {
   useEffect(() => {
     rescheduleNotifications.current();
   }, [prayerTimes, notificationSettings.enabled]);
+
+  // Ana ekran widget'ları (sayısal + sematik yay) için veriyi native köprüye it.
+  // `date` state'i her saniye tick ettiği için depend'e ALINMAZ; gün tarihleri
+  // widgetBridge konumun zaman dilimine göre kendisi hesaplar.
+  useEffect(() => {
+    const days = multiDayPrayerTimes.length > 0
+      ? multiDayPrayerTimes
+      : prayerTimes.length > 0 ? [prayerTimes] : [];
+    if (days.length === 0) return;
+    const payload = buildWidgetPayload(
+      days,
+      location.name,
+      themeKey,
+      lang,
+      location.timezone || "Europe/Istanbul"
+    );
+    syncWidgets(payload);
+  }, [multiDayPrayerTimes, prayerTimes, location, themeKey, lang]);
 
   // Açılışta, tanılama döneminden kalma test bildirimlerini (7997/7998/7999)
   // cihazın bildirim ekranından temizle.

@@ -14,13 +14,18 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
    storefront'larında; simge + feature graphic yenileme; veri güvenliği sayfası,
    içerik derecelendirmesi. 10K'nın ~%60-70'i arama/önerme trafiği.
 3. **Ana ekran widget'ları** — en yüksek getiri (tutunma + marka görünürlüğü):
-   - **Sayısal widget**: bugünün 6 vaktini ve "sonraki vakitle birlikte" listeler
-     (4x2, 4x1 varyantları).
-   - **Sematik widget**: günü yay üzerinde dönen güneş + kerahat dilimleri ile gösterir
-     (2x2 / 4x2) — uygulama içindeki kerahat görselinin widget versiyonu.
-   - Veri akışı: app → SharedPreferences'a bugünün vakitleri + konum + metot yazar;
-     widget provider oradan okur; her vakit geçişinde ve gece yarısı (mevcut
-     exact-alarm altyapısı + TimedNotificationPublisher deseni üzerinden) tazelenir.
+   - **Sayısal widget (4x2)**: bugünün 6 vakti + başlık satırında şehir ve
+     "sonraki vakte kalan" geri sayımı; sonraki vakit vurgulu.
+   - **Sematik widget (3x3)**: 24 saatin tam daire halkası — 6 vakit ayrı renkli
+     dilimler (kerahat yapısının tüm vakitlere genişletilmiş hali) + şimdiki
+     zamanda dönen ibre + merkezde sonraki vakit/süre.
+   - Kullanıcı **16 temadan dilediğini widget'ta da** gösterir (WidgetPalettes +
+     `widget_bg_<tema>` yuvarlak arka planlar); dil seçimiyle vakit adları yerelleşir.
+   - Durum: **v1 kodlandı** (`native/widget/` → CI build'e kopyalanır) — JS
+     `widgetBridge` vakit/şehir/tema/dil/zaman dilimini SharedPreferences'a iter,
+     `WidgetCore` sonraki vakit + kalanı hesaplar, her vakit geçişinde + gece
+     yarısında exact alarmla, boot/saat/dilim değişiminde `WidgetRefreshReceiver`
+     tazeler. CI build'inde derlenip doğrulanacak.
 4. **Ramazan paketi (imsakiye + ekstra)** — bakınız aşağıda.
 
 ## Ramazan 1448 (8 Şubat 2027 - ~9 Mart 2027) — KRİTİK
@@ -40,7 +45,8 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
 - İlk gün onboarding sadeleştirme (3 adım).
 
 ## Orta vadeli (2. - 5. ay)
-- Widget v1 (önce sayısal 4x2, sonra sematik).
+- Widget v1: sayısal 4x2 + sematik (kodlandı — CI ile v1 üretimde).
+- Widget v1.5: yapılandırma (gösterilecek metot/şehir, sayısal 4x1).
 - Haftalık namaz takvimi görünümü + dakika düzeltme (adjust) ayarı.
 - "Vakit bildirimi + alarm birlikte" seçeneği (imsak öncesi alarm).
 - Topluluk: WhatsApp/Telegram grupları, cami QR posterleri (TR + PK).
