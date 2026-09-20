@@ -25,7 +25,12 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
      `widgetBridge` vakit/şehir/tema/dil/zaman dilimini SharedPreferences'a iter,
      `WidgetCore` sonraki vakit + kalanı hesaplar, her vakit geçişinde + gece
      yarısında exact alarmla, boot/saat/dilim değişiminde `WidgetRefreshReceiver`
-     tazeler. CI build'inde derlenip doğrulanacak.
+     tazeler. R import düzeltmesi sonrası yerel SDK ile tam build yeşil
+     (aapt2: receiver'lar + widget res'ler APK'da doğrulandı).
+     Sematik yay, in-app kerahat şemasıyla birebir çizilir: gündoğumu→batımı
+     180°'lik yay + 3 kerahat bandı (doğuş/+45dk, istiva±5dk, batış/−45dk),
+     6 vakit noktası ve geçiş saatleri, istiva saati, konum adı (city TextView),
+     gündüz ibresi band içindeyse kırmızı. CI'de onay bekleniyor.
 4. **Ramazan paketi (imsakiye + ekstra)** — bakınız aşağıda.
 
 ## Ramazan 1448 (8 Şubat 2027 - ~9 Mart 2027) — KRİTİK

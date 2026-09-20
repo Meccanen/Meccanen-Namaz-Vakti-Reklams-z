@@ -53,6 +53,7 @@ public final class WidgetCore {
         public String lang;
         public String tz;
         public final PrayTime[][] days = new PrayTime[3][6];
+        public final int[] noonMins = new int[3]; // her günün istiva/zeval dakikası
         public int todayIndex = 0;   // bugünle eşleşen gün (0..2)
         public int decoded = 0;      // kaç gün başarıyla çözüldü
     }
@@ -114,6 +115,14 @@ public final class WidgetCore {
                 JSONObject day = days.optJSONObject(i);
                 if (day == null) continue;
                 d.days[i] = parseTimes(day.optJSONArray("times"));
+                String noon = day.optString("noon", "");
+                int mn = noon.isEmpty() ? 0 : toMinutes(noon);
+                if (mn <= 0) {
+                    int sr = d.days[i][1] != null ? d.days[i][1].mins : 300;
+                    int se = d.days[i][4] != null ? d.days[i][4].mins : 1200;
+                    mn = (sr + se) / 2;
+                }
+                d.noonMins[i] = mn;
             }
             d.decoded = n;
             pickToday(d);

@@ -1267,7 +1267,9 @@ export default function App() {
       location.name,
       themeKey,
       lang,
-      location.timezone || "Europe/Istanbul"
+      location.timezone || "Europe/Istanbul",
+      location.latitude,
+      location.longitude
     );
     syncWidgets(payload);
   }, [multiDayPrayerTimes, prayerTimes, location, themeKey, lang]);

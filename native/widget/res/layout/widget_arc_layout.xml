@@ -3,7 +3,20 @@
     android:id="@+id/widget_arc_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp">
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/widget_arc_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:gravity="center_horizontal"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:includeFontPadding="false"
+        android:text="–" />
 
     <ImageView
         android:id="@+id/widget_arc_image"
@@ -18,6 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:layout_marginTop="16dp"
         android:orientation="vertical"
         android:gravity="center">
 
