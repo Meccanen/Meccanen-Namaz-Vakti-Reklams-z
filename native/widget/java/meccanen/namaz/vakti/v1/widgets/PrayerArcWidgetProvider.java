@@ -59,8 +59,10 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
 
         v.setTextViewText(R.id.widget_arc_next, np.name);
         v.setTextColor(R.id.widget_arc_next, pal.accent);
-        v.setTextViewText(R.id.widget_arc_detail, WidgetCore.fmtTime(np.mins) + " · " + dur);
+        v.setTextViewText(R.id.widget_arc_detail, WidgetCore.fmtTime(np.mins));
         v.setTextColor(R.id.widget_arc_detail, pal.text);
+        v.setTextViewText(R.id.widget_arc_remaining, dur);
+        v.setTextColor(R.id.widget_arc_remaining, pal.accent);
 
         Bitmap bmp = buildArcBitmap(d, pal, idx);
         v.setImageViewBitmap(R.id.widget_arc_image, bmp);
@@ -143,11 +145,6 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         Paint tickP = new Paint(Paint.ANTI_ALIAS_FLAG);
         tickP.setColor(pal.text);
         tickP.setStrokeWidth(size * 0.006f);
-        Paint timeHalo = new Paint(Paint.ANTI_ALIAS_FLAG);
-        timeHalo.setStyle(Paint.Style.STROKE);
-        timeHalo.setStrokeWidth(size * 0.03f);
-        timeHalo.setTextAlign(Paint.Align.CENTER);
-        timeHalo.setColor(pal.light ? 0xAA0F172A : 0xCCFFFFFF);
         Paint timeP = new Paint(Paint.ANTI_ALIAS_FLAG);
         timeP.setTextSize(size * 0.044f);
         timeP.setTextAlign(Paint.Align.CENTER);
@@ -164,8 +161,6 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
             float tx = cx + timeR * cosDeg(a);
             float ty = cy - timeR * sinDeg(a);
             timeP.setColor(i == nextIdx ? pal.accent : pal.text);
-            timeHalo.setColor(pal.light ? 0xAA0F172A : 0xCCFFFFFF);
-            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.016f, timeHalo);
             canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.016f, timeP);
         }
 

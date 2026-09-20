@@ -50,8 +50,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_remaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:textSize="12sp"
-            android:textColor="#94A3B8"
+            android:textColor="#38BDF8"
             android:includeFontPadding="false"
             android:text="–" />
     </LinearLayout>
