@@ -1662,6 +1662,10 @@ useEffect(() => {
         </header>
 
         <section className={`${tTheme.card} border rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-2xl`}>
+          <div className={`flex items-center justify-center gap-1.5 mb-2 ${tTheme.accent}`}>
+            <MapPin className="w-4 h-4 shrink-0" />
+            <span className="text-sm sm:text-base font-bold truncate max-w-full">{location.name}{location.country ? `, ${location.country}` : ""}</span>
+          </div>
           <div className="flex items-baseline justify-center font-mono select-none mb-1">
             <span className={`text-6xl sm:text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${tTheme.clockGrad} tracking-tight`}>
               {localTime.hour}:{localTime.min}
