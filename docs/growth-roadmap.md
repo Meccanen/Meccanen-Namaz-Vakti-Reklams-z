@@ -30,7 +30,11 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
      Sematik yay, in-app kerahat şemasıyla birebir çizilir: gündoğumu→batımı
      180°'lik yay + 3 kerahat bandı (doğuş/+45dk, istiva±5dk, batış/−45dk),
      6 vakit noktası ve geçiş saatleri, istiva saati, konum adı (city TextView),
-     gündüz ibresi band içindeyse kırmızı. CI'de onay bekleniyor.
+     gündüz ibresi band içindeyse kırmızı.
+     Kullanıcı geri bildirimiyle tam gün halkasına geçildi: 6 ayrik renkli dilim
+     (güneş dilimi kerahat bitişiyle sınırlı, kalan sabah soluk), saat etiketleri
+     vakit geçişlerinde belirgin (büyük/kalın/halo), İmsak dahil tüm vakitler işaretli,
+     ilerleme yönü dil bazlı: ar/ur sağdan-sola, tr/en/de soldan-sağa. CI'de onay bekleniyor.
 4. **Ramazan paketi (imsakiye + ekstra)** — bakınız aşağıda.
 
 ## Ramazan 1448 (8 Şubat 2027 - ~9 Mart 2027) — KRİTİK

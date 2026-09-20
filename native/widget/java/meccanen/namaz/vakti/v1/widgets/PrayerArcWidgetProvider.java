@@ -24,6 +24,9 @@ import meccanen.namaz.vakti.v1.R;
 public class PrayerArcWidgetProvider extends AppWidgetProvider {
 
     private static final int KERAHAT_WINDOW_MIN = 45;
+    // Sağdan-sola diller (ar/ur): gün doğudan doğduğu için imsak sağda, ilerleme sağdan sola.
+    // Soldan-sağa diller (tr/en/de): İngilizce orijinali gibi soldan başlar, sağa ilerler.
+    private static boolean RTL;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -65,6 +68,7 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
     }
 
     private static Bitmap buildArcBitmap(WidgetCore.Data d, WidgetPalettes.Pal pal, int nextIdx) {
+        RTL = d.lang != null && ("ar".equals(d.lang) || "ur".equals(d.lang));
         int size = 512;
         Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
@@ -135,34 +139,42 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
             ringBand(canvas, kbP, cx, cy, radius, a1, a2);
         }
 
-        // ---- 4) GEÇİŞ NOKTALARI: tik + TAM VAKİT SAATİ (sınırda).
+        // ---- 4) GEÇİŞ NOKTALARI: tik + TAM VAKİT SAATİ (sınırda, belirgin).
         Paint tickP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        tickP.setColor(pal.muted);
-        tickP.setStrokeWidth(size * 0.004f);
+        tickP.setColor(pal.text);
+        tickP.setStrokeWidth(size * 0.006f);
+        Paint timeHalo = new Paint(Paint.ANTI_ALIAS_FLAG);
+        timeHalo.setStyle(Paint.Style.STROKE);
+        timeHalo.setStrokeWidth(size * 0.03f);
+        timeHalo.setTextAlign(Paint.Align.CENTER);
+        timeHalo.setColor(pal.light ? 0xAA0F172A : 0xCCFFFFFF);
         Paint timeP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        timeP.setTextSize(size * 0.032f);
+        timeP.setTextSize(size * 0.044f);
         timeP.setTextAlign(Paint.Align.CENTER);
-        timeP.setColor(pal.muted);
+        timeP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        timeP.setColor(pal.text);
         float tickIn = radius - stroke / 2f + 2f;
-        float tickOut = radius + stroke / 2f + size * 0.012f;
-        float timeR = radius + stroke / 2f + size * 0.045f;
+        float tickOut = radius + stroke / 2f + size * 0.018f;
+        float timeR = radius + stroke / 2f + size * 0.052f;
         for (int i = 0; i < 6; i++) {
             float a = ang(mins[i]);
             canvas.drawLine(
                 cx + tickIn * cosDeg(a), cy - tickIn * sinDeg(a),
                 cx + tickOut * cosDeg(a), cy - tickOut * sinDeg(a), tickP);
-            timeP.setColor(i == nextIdx ? pal.accent : pal.muted);
             float tx = cx + timeR * cosDeg(a);
             float ty = cy - timeR * sinDeg(a);
-            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.011f, timeP);
+            timeP.setColor(i == nextIdx ? pal.accent : pal.text);
+            timeHalo.setColor(pal.light ? 0xAA0F172A : 0xCCFFFFFF);
+            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.016f, timeHalo);
+            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.016f, timeP);
         }
 
         // ---- 5) VAKİT ADLARI (dilim içinde, iç halka kenarında).
         Paint nameP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        nameP.setTextSize(size * 0.04f);
+        nameP.setTextSize(size * 0.045f);
         nameP.setTextAlign(Paint.Align.CENTER);
         nameP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        float nameR = innerR - size * 0.015f;
+        float nameR = innerR - size * 0.016f;
         for (int i = 0; i < 6; i++) {
             int mid = i == 1 ? mins[1] + KERAHAT_WINDOW_MIN / 2
                              : (mins[i] + ((i < 5) ? mins[i + 1] : t6)) / 2;
@@ -190,9 +202,11 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         return bmp;
     }
 
-    /** Dakikayı tam daire açısına çevirir (yukarı-düzlem: -90=12:00, 0=06:00, 90=00:00). */
+    /** Dakikayı tam daire açısına çevirir (yukarı-düzlem: -90=üst/12:00). İlerleme yönü dilin
+     *  RTL/LTR olmasına göre: ar/ur → saat yönü (imsak sağda, batıya doğru); tr/en/de → ters. */
     private static float ang(int t) {
-        return -90f + (t % 1440) / 1440f * 360f;
+        int m = t % 1440;
+        return RTL ? -90f + m * 0.25f : 270f - m * 0.25f;
     }
 
     /** Halka yayı çizer (a1→a2 derece, butt cap; tam segmented vurgusu için path). */
