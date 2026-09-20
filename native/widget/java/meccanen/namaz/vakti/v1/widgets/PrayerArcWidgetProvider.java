@@ -8,7 +8,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.widget.RemoteViews;
@@ -16,18 +15,15 @@ import android.widget.RemoteViews;
 import meccanen.namaz.vakti.v1.R;
 
 /**
- * Sematik yay widget: güneş doğuşundan batışına 180°'lik yay üzerinde, in-app
- * kerahat şemasıyla birebir aynı hesapla 3 kerahat bandı (güneş doğuşu kerahatı,
- * istiva/zeval, güneş batışı kerahatı) + 6 vakit işareti ve saat etiketleri +
- * istiva saati + hareketli ibre. Konum adı RemoteViews TextView'ı ile gösterilir.
- * Gündüz renkli bölümleri kerahat bantlarıyla sınırlıdır — güneş doğumu bölümü
- * dev bir dilim değil, yalnızca kerahat penceresidir.
+ * Sematik yay widget: tam gün halkasında 6 vakti ayrık RENKLİ DİLİM olarak çizer
+ * (her biri bir sonraki vakte kadar) + güneş doğumu/istiva/güneş batışı kerahat
+ * bantları kırmızı bindirmeyle + SAAT ETİKETLERİ vakit geçiş noktalarında (tam
+ * sınırda) + vakit adları dilimin içinde. Güneş dilimi kerahat bitişiyle sınırlıdır;
+ * kalan sabah aralığı soluk tonla gösterilir (dev "güneş" bölümü yok).
  */
 public class PrayerArcWidgetProvider extends AppWidgetProvider {
 
-    private static final int KERAHAT_SUNRISE_MIN = 45;
-    private static final int KERAHAT_NOON_WINDOW = 5;
-    private static final int KERAHAT_SUNSET_MIN = 45;
+    private static final int KERAHAT_WINDOW_MIN = 45;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -74,150 +70,144 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         Canvas canvas = new Canvas(bmp);
         canvas.drawColor(Color.TRANSPARENT);
 
-        WidgetCore.PrayTime[] today = WidgetCore.today(d);
-        int sunriseMin = today[1] != null ? today[1].mins : 6 * 60;
-        int sunsetMin = today[4] != null ? today[4].mins : 19 * 60;
-        int noonMin = d.noonMins[d.todayIndex] > 0 ? d.noonMins[d.todayIndex] : (sunriseMin + sunsetMin) / 2;
-        int daylight = Math.max(60, sunsetMin - sunriseMin);
-
-        float cx = size / 2f, cy = size * 0.60f;
-        float radius = size * 0.30f;
-        float stroke = size * 0.075f;
-        float outerR = radius + stroke / 2f;
-
-        int kerahat = pal.light ? 0xFFB91C1C : 0xFFF87171;
-        int fillA = pal.light ? 0x40 : 0x55;
-        int kerahatFill = (fillA << 24) | (kerahat & 0x00FFFFFF);
-        int nowMin = WidgetCore.nowMins(d.tz);
-
-        // Düzlem yardımcıları — in-app hesabı birebir: açı 0=batış(sağ), 90=istiva(üst),
-        // 180=doğuş(sol). Nokta: x = cx + rr*cos(a), y = cy - rr*sin(a).
-
-        // ---- ARKA PLAN: base halka (üst 180°). Canvas y-aşağı: 180°=sol, 90°=üst, 0°=sağ.
-        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        bgPaint.setStyle(Paint.Style.STROKE);
-        bgPaint.setStrokeWidth(stroke);
-        bgPaint.setColor(pal.panel);
-        bgPaint.setStrokeCap(Paint.Cap.BUTT);
-        RectF oval = new RectF(cx - radius, cy - radius, cx + radius, cy + radius);
-        canvas.drawArc(oval, 180f, -180f, false, bgPaint);
-
-        // ---- KERAHAT BANTLARI: merkezden dış yaya taralı görünümlü dolgu dilimleri.
-        // in-app belirleyiciler: [sunrise, sunrise+45], [noon-5, noon+5], [sunset-45, sunset].
-        int[][] bands = {
-            { sunriseMin, sunriseMin + KERAHAT_SUNRISE_MIN },
-            { noonMin - KERAHAT_NOON_WINDOW, noonMin + KERAHAT_NOON_WINDOW },
-            { sunsetMin - KERAHAT_SUNSET_MIN, sunsetMin },
-        };
-        Paint fillP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        fillP.setStyle(Paint.Style.FILL);
-        Paint edgeP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        edgeP.setStyle(Paint.Style.STROKE);
-        edgeP.setStrokeWidth(size * 0.0045f);
-        edgeP.setColor(kerahat);
-        for (int b = 0; b < bands.length; b++) {
-            float a1 = minToAngle(bands[b][0], sunriseMin, daylight);
-            float a2 = minToAngle(bands[b][1], sunriseMin, daylight);
-            boolean active = nowMin >= bands[b][0] && nowMin <= bands[b][1];
-            fillP.setColor(active ? 0x9A000000 | (kerahat & 0x00FFFFFF) : kerahatFill);
-            canvas.drawPath(wedgePath(cx, cy, outerR, a1, a2), fillP);
-            canvas.drawPath(wedgePath(cx, cy, outerR, a1, a2), edgeP);
-        }
-
-        // ---- 6 VAKİT İŞARETİ (renkli nokta) + saat/etiket.
-        int[] prayerColors = WidgetPalettes.prayers(pal);
-        WidgetCore.PrayTime[] t = today;
+        WidgetCore.PrayTime[] t = WidgetCore.today(d);
         int[] mins = new int[6];
         for (int i = 0; i < 6; i++) mins[i] = t[i] != null ? t[i].mins : 0;
+        int t6 = mins[0] + 1440; // ertesi gün imsakı — halka bununla sarar
+        int nowMin = WidgetCore.nowMins(d.tz);
 
-        Paint dotP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        dotP.setStyle(Paint.Style.FILL);
-        float dotR = stroke * 0.42f + 2f;
+        float cx = size / 2f, cy = size / 2f;
+        float radius = size * 0.30f;
+        float stroke = size * 0.13f;
+        float innerR = radius - stroke / 2f;
+        float outerR = radius + stroke / 2f;
+        int[] prayerColors = WidgetPalettes.prayers(pal);
 
-        // Etiket konumları (kendi açılarına yayılır; imsak/yatsı yay dışında).
-        // slot açılarımız bizim yukarı-düzlemde (0=sağ,90=üst,180=sol), 36° aralıkla.
-        int[] labAng = { 192, 150, 108, 72, 30, -12 };
-        float labelR = radius + stroke / 2f + size * 0.10f;
+        // ---- 1) ARKA PLAN halka (tam daire).
+        Paint ringP = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ringP.setStyle(Paint.Style.STROKE);
+        ringP.setStrokeWidth(stroke);
+        ringP.setStrokeCap(Paint.Cap.BUTT);
+        ringP.setColor(pal.panel);
+        canvas.drawCircle(cx, cy, radius, ringP);
 
-        Paint nameP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        nameP.setTextSize(size * 0.042f);
-        nameP.setTextAlign(Paint.Align.CENTER);
-        nameP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        // ---- 2) AYRIK VAKİT DİLİMLERİ (renkli halka yayları, sonraki vakte kadar).
+        // Güneş dilimi kerahat bitişiyle sınırlanır; kalan sabah aralığı soluk tondur.
+        int gunesEnd = mins[1] + KERAHAT_WINDOW_MIN;
+        for (int i = 0; i < 6; i++) {
+            int a = mins[i];
+            int b = (i < 5) ? mins[i + 1] : t6;
+            int c = Math.min(b, gunesEnd);
+            if (c > a) {
+                ringP.setColor(prayerColors[i]);
+                ringBand(canvas, ringP, cx, cy, radius, ang(a), ang(c));
+            }
+            if (i == 1 && b > gunesEnd) {
+                int f = (prayerColors[i] & 0x00FFFFFF) | 0x2E000000; // soluk güneş tonu
+                ringP.setColor(f);
+                ringBand(canvas, ringP, cx, cy, radius, ang(gunesEnd), ang(b));
+            }
+        }
+
+        // ---- 3) KERAHAT BANTLARI: güneş doğuşu / istiva / güneş batışı.
+        int[][] kerahat = {
+            { mins[1], mins[1] + KERAHAT_WINDOW_MIN },
+            { mins[2] - 5, mins[2] + 5 },
+            { mins[4] - KERAHAT_WINDOW_MIN, mins[4] },
+        };
+        boolean inKerahat = false;
+        for (int[] kb : kerahat) {
+            if (nowMin >= kb[0] && nowMin <= kb[1]) inKerahat = true;
+            float a1 = ang(kb[0]), a2 = ang(kb[1]);
+
+            // yarı saydam kırmızı dilim (merkezden dış yaya) — segmentlerin üstünde.
+            Paint wedgeP = new Paint(Paint.ANTI_ALIAS_FLAG);
+            wedgeP.setStyle(Paint.Style.FILL);
+            wedgeP.setColor((pal.light ? 0x3A : 0x4D) << 24 | 0x00000000 | (0xFFB91C1C & 0x00FFFFFF));
+            canvas.drawPath(wedgePath(cx, cy, outerR, a1, a2), wedgeP);
+
+            // halka üzerinde kırmızı şerit.
+            Paint kbP = new Paint(Paint.ANTI_ALIAS_FLAG);
+            kbP.setStyle(Paint.Style.STROKE);
+            kbP.setStrokeWidth(stroke * 0.55f);
+            kbP.setStrokeCap(Paint.Cap.BUTT);
+            kbP.setColor((pal.light ? 0xC8 : 0xE6) << 24 | 0xC8 << 16 | 0x1C << 8 | 0x1C);
+            ringBand(canvas, kbP, cx, cy, radius, a1, a2);
+        }
+
+        // ---- 4) GEÇİŞ NOKTALARI: tik + TAM VAKİT SAATİ (sınırda).
+        Paint tickP = new Paint(Paint.ANTI_ALIAS_FLAG);
+        tickP.setColor(pal.muted);
+        tickP.setStrokeWidth(size * 0.004f);
         Paint timeP = new Paint(Paint.ANTI_ALIAS_FLAG);
         timeP.setTextSize(size * 0.032f);
         timeP.setTextAlign(Paint.Align.CENTER);
-        Paint leadP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        leadP.setStyle(Paint.Style.STROKE);
-        leadP.setStrokeWidth(size * 0.003f);
-        leadP.setColor(pal.muted);
-        leadP.setAlpha(pal.light ? 60 : 80);
-
+        timeP.setColor(pal.muted);
+        float tickIn = radius - stroke / 2f + 2f;
+        float tickOut = radius + stroke / 2f + size * 0.012f;
+        float timeR = radius + stroke / 2f + size * 0.045f;
         for (int i = 0; i < 6; i++) {
-            if (mins[i] <= 0) continue;
-            int targetMin = mins[i];
-            // imsak/batsılar yay dışında kalsın diye uçları hafifçe dışına taşır.
-            float ringAng;
-            if (i == 0) ringAng = 185f;
-            else if (i == 5) ringAng = -5f;
-            else ringAng = minToAngle(targetMin, sunriseMin, daylight);
+            float a = ang(mins[i]);
+            canvas.drawLine(
+                cx + tickIn * cosDeg(a), cy - tickIn * sinDeg(a),
+                cx + tickOut * cosDeg(a), cy - tickOut * sinDeg(a), tickP);
+            timeP.setColor(i == nextIdx ? pal.accent : pal.muted);
+            float tx = cx + timeR * cosDeg(a);
+            float ty = cy - timeR * sinDeg(a);
+            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.011f, timeP);
+        }
 
-            // nokta (halka orta çizgisi üzerinde)
-            float dx = cx + radius * cosDeg(ringAng);
-            float dy = cy - radius * sinDeg(ringAng);
-            dotP.setColor(i == nextIdx ? pal.accent : prayerColors[i]);
-            canvas.drawCircle(dx, dy, i == nextIdx ? dotR + 4f : dotR, dotP);
-
-            // etiket
-            float la = (float) Math.toRadians(labAng[i]);
-            float lx = cx + labelR * (float) Math.cos(la);
-            float ly = cy - labelR * (float) Math.sin(la);
-            canvas.drawLine(dx, dy, lx, ly, leadP);
-
+        // ---- 5) VAKİT ADLARI (dilim içinde, iç halka kenarında).
+        Paint nameP = new Paint(Paint.ANTI_ALIAS_FLAG);
+        nameP.setTextSize(size * 0.04f);
+        nameP.setTextAlign(Paint.Align.CENTER);
+        nameP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        float nameR = innerR - size * 0.015f;
+        for (int i = 0; i < 6; i++) {
+            int mid = i == 1 ? mins[1] + KERAHAT_WINDOW_MIN / 2
+                             : (mins[i] + ((i < 5) ? mins[i + 1] : t6)) / 2;
+            float a = ang(mid);
+            float nx = cx + nameR * cosDeg(a);
+            float ny = cy - nameR * sinDeg(a);
             nameP.setColor(i == nextIdx ? pal.accent : pal.text);
-            canvas.drawText(t[i].name, lx, ly, nameP);
-            timeP.setColor(pal.muted);
-            canvas.drawText(WidgetCore.fmtTime(mins[i]), lx, ly + size * 0.048f, timeP);
+            canvas.drawText(t[i].name, nx, ny + size * 0.012f, nameP);
         }
 
-        // ---- İSTİVA ZAMANI (üstte, kerahat renginde).
-        Paint noonP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        noonP.setTextSize(size * 0.036f);
-        noonP.setTextAlign(Paint.Align.CENTER);
-        noonP.setColor(kerahat);
-        noonP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText(WidgetCore.fmtTime(noonMin), cx, cy - radius - stroke / 2f - size * 0.012f, noonP);
-
-        // ---- İBRE (yalnızca gündüz; kerahat bandındaysa kırmızı).
-        boolean isDaytime = nowMin >= sunriseMin - 5 && nowMin <= sunsetMin + 5;
-        if (isDaytime) {
-            boolean inBand = (nowMin >= bands[0][0] && nowMin <= bands[0][1])
-                    || (nowMin >= bands[1][0] && nowMin <= bands[1][1])
-                    || (nowMin >= bands[2][0] && nowMin <= bands[2][1]);
-            float a = minToAngle(nowMin, sunriseMin, daylight);
-            float len = radius - stroke / 2f - 2f;
-            float tx = cx + len * cosDeg(a);
-            float ty = cy - len * sinDeg(a);
-            Paint needle = new Paint(Paint.ANTI_ALIAS_FLAG);
-            needle.setColor(inBand ? kerahat : pal.accent);
-            needle.setStrokeWidth(size * 0.01f);
-            needle.setStrokeCap(Paint.Cap.ROUND);
-            canvas.drawLine(cx, cy, tx, ty, needle);
-            canvas.drawCircle(tx, ty, size * 0.042f, needle);
-            canvas.drawCircle(cx, cy, size * 0.012f, needle);
-        }
+        // ---- 6) İBRE — kerahat bandındayken kırmızı.
+        int needleColor = inKerahat ? 0xFFDC2626 : pal.accent;
+        float a = ang(Math.max(-120, Math.min(nowMin, t6)));
+        float len = innerR - 6f;
+        float tx = cx + len * cosDeg(a);
+        float ty = cy - len * sinDeg(a);
+        Paint needle = new Paint(Paint.ANTI_ALIAS_FLAG);
+        needle.setColor(needleColor);
+        needle.setStrokeWidth(size * 0.012f);
+        needle.setStrokeCap(Paint.Cap.ROUND);
+        canvas.drawLine(cx, cy, tx, ty, needle);
+        canvas.drawCircle(tx, ty, size * 0.045f, needle);
+        canvas.drawCircle(cx, cy, size * 0.014f, needle);
 
         return bmp;
     }
 
-    /** İn-app minToAngle birebir: yayın dışına düşen dakikalar uçlara kenetlenir. */
-    private static float minToAngle(int m, int sunriseMin, int daylight) {
-        float frac = (m - sunriseMin) / (float) daylight;
-        if (frac <= 0f) return 180f;
-        if (frac >= 1f) return 0f;
-        return 180f * (1f - frac);
+    /** Dakikayı tam daire açısına çevirir (yukarı-düzlem: -90=12:00, 0=06:00, 90=00:00). */
+    private static float ang(int t) {
+        return -90f + (t % 1440) / 1440f * 360f;
     }
 
-    /** Merkezden dış yaya giden dolgu dilimi (yukarı-düzlem: 0=sağ,90=üst,180=sol). */
+    /** Halka yayı çizer (a1→a2 derece, butt cap; tam segmented vurgusu için path). */
+    private static void ringBand(Canvas canvas, Paint p, float cx, float cy, float r, float a1, float a2) {
+        Path path = new Path();
+        int steps = Math.max(2, (int) Math.abs(a2 - a1));
+        for (int k = 0; k <= steps; k++) {
+            float a = a1 + (a2 - a1) * k / steps;
+            if (k == 0) path.moveTo(cx + r * cosDeg(a), cy - r * sinDeg(a));
+            else path.lineTo(cx + r * cosDeg(a), cy - r * sinDeg(a));
+        }
+        canvas.drawPath(path, p);
+    }
+
+    /** Merkezden dış yaya giden yarı saydam kerahat dilimi. */
     private static Path wedgePath(float cx, float cy, float outerR, float a1, float a2) {
         Path p = new Path();
         p.moveTo(cx, cy);

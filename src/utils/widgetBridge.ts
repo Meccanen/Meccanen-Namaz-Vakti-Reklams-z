@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { registerPlugin } from "@capacitor/core";
+import { calcSolarTimes } from "./astronomyHelper";
 
 /**
  * Yerel ana ekran widget'larına vakit/tema/şehir verisini ileten kapı.
@@ -11,7 +12,7 @@ interface WidgetBridgePlugin {
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>("WidgetBridge");
 
 export type PrayerRow = { key: string; name: string; time: string };
-export type WidgetDayPayload = { date: string; times: { n: string; t: string }[] };
+export type WidgetDayPayload = { date: string; noon: string; times: { n: string; t: string }[] };
 
 export interface WidgetPayload {
   days: WidgetDayPayload[];
@@ -41,21 +42,40 @@ function dateInTz(tz: string, offsetDays: number): string {
   return `${parts.find(p => p.type === "year")!.value}-${parts.find(p => p.type === "month")!.value}-${parts.find(p => p.type === "day")!.value}`;
 }
 
+function fmtHM(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes));
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
 export function buildWidgetPayload(
   days: PrayerRow[][],
   city: string,
   theme: string,
   lang: string,
-  tz: string
+  tz: string,
+  lat?: number,
+  lng?: number
 ): WidgetPayload {
-  const rows = days.slice(0, 3).map((day, i) => ({
-    date: dateInTz(tz || "Europe/Istanbul", i),
-    times: day.map(p => ({
-      n: PRAYER_NAMES[lang]?.[p.key] ?? p.name,
-      t: p.time,
-    })),
-  }));
-  return { days: rows, city, theme, lang, tz: tz || "Europe/Istanbul" };
+  const safeTz = tz || "Europe/Istanbul";
+  const rows = days.slice(0, 3).map((day, i) => {
+    let noon = "";
+    if (typeof lat === "number" && typeof lng === "number") {
+      try {
+        noon = fmtHM(calcSolarTimes(lat, lng, new Date(Date.now() + i * 86400000), safeTz).solarNoonMinutes);
+      } catch {
+        noon = "";
+      }
+    }
+    return {
+      date: dateInTz(safeTz, i),
+      noon,
+      times: day.map(p => ({
+        n: PRAYER_NAMES[lang]?.[p.key] ?? p.name,
+        t: p.time,
+      })),
+    };
+  });
+  return { days: rows, city, theme, lang, tz: safeTz };
 }
 
 export async function syncWidgets(payload: WidgetPayload): Promise<void> {

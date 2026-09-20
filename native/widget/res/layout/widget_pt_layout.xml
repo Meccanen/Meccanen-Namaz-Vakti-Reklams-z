@@ -43,24 +43,22 @@
         android:orientation="horizontal">
 
         <LinearLayout android:id="@+id/widget_pt_item0" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l0" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l0" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t0" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/widget_pt_item1" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l1" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t1" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
     </LinearLayout>
@@ -72,24 +70,22 @@
         android:orientation="horizontal">
 
         <LinearLayout android:id="@+id/widget_pt_item2" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l2" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t2" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/widget_pt_item3" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l3" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t3" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
     </LinearLayout>
@@ -101,24 +97,22 @@
         android:orientation="horizontal">
 
         <LinearLayout android:id="@+id/widget_pt_item4" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l4" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t4" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/widget_pt_item5" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/widget_pt_l5" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:singleLine="true"
-                android:textSize="11sp" android:textColor="#94A3B8"
+            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+            <TextView android:id="@+id/widget_pt_l5" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
                 android:includeFontPadding="false" android:text="–" />
             <TextView android:id="@+id/widget_pt_t5" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
+                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
                 android:includeFontPadding="false" android:text="–" />
         </LinearLayout>
     </LinearLayout>

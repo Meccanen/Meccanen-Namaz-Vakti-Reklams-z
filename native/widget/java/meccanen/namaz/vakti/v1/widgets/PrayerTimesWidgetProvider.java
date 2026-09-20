@@ -43,10 +43,10 @@ public class PrayerTimesWidgetProvider extends AppWidgetProvider {
         v.setTextColor(CITY, pal.muted);
 
         int idx = WidgetCore.nextIndex(d);
-        String dur = WidgetCore.fmtDur(WidgetCore.remainingMinutes(d, idx));
+        String dur = fmtDurHuman(WidgetCore.remainingMinutes(d, idx), d.lang);
         WidgetCore.PrayTime np = WidgetCore.nextPrayer(d, idx);
         if (np == null) return null;
-        v.setTextViewText(NEXT, dur + " · " + np.name);
+        v.setTextViewText(NEXT, np.name + " · " + dur);
         v.setTextColor(NEXT, pal.accent);
 
         for (int i = 0; i < 6; i++) {
@@ -68,5 +68,20 @@ public class PrayerTimesWidgetProvider extends AppWidgetProvider {
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
                                           int appWidgetId, android.os.Bundle newOptions) {
         WidgetCore.refreshAll(context);
+    }
+
+    /** Kalan süreyi saate benzemeyen, okunaklı metne çevirir (ör. "3 sa 12 dk"). */
+    static String fmtDurHuman(long minutes, String lang) {
+        if (minutes < 0) minutes = 0;
+        long h = minutes / 60, m = minutes % 60;
+        String H = String.valueOf(h), M = String.valueOf(m);
+        String l = lang == null ? "en" : lang;
+        switch (l) {
+            case "tr": return h > 0 ? H + " sa " + M + " dk" : M + " dk";
+            case "de": return h > 0 ? H + " Std " + M + " Min" : M + " Min";
+            case "ar": return h > 0 ? H + " س " + M + " د" : M + " د";
+            case "ur": return h > 0 ? H + " گھنٹے " + M + " منٹ" : M + " منٹ";
+            default:   return h > 0 ? H + "h " + M + "m" : M + "m";
+        }
     }
 }
