@@ -18,6 +18,11 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
     static final int CITY      = R.id.widget_grid_city;
     static final int REMAINING = R.id.widget_grid_remaining;
 
+    static final int[] CARDS = {
+            R.id.widget_grid_c0, R.id.widget_grid_c1, R.id.widget_grid_c2,
+            R.id.widget_grid_c3, R.id.widget_grid_c4, R.id.widget_grid_c5
+    };
+
     static final int[] LABELS = {
             R.id.widget_grid_l0, R.id.widget_grid_l1, R.id.widget_grid_l2,
             R.id.widget_grid_l3, R.id.widget_grid_l4, R.id.widget_grid_l5
@@ -43,12 +48,13 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
         try {
             WidgetPalettes.Pal pal = WidgetPalettes.get(d == null ? "gece" : d.theme);
             v.setInt(ROOT, "setBackgroundResource", WidgetPalettes.bgDrawableId(d == null ? "gece" : d.theme));
-            v.setTextColor(CITY, pal.muted);
-            v.setTextColor(REMAINING, pal.accent);
             for (int i = 0; i < 6; i++) {
+                v.setInt(CARDS[i], "setBackgroundResource", R.drawable.widget_grid_card);
                 v.setTextColor(LABELS[i], pal.accent);
                 v.setTextColor(TIMES[i], pal.text);
             }
+            v.setTextColor(CITY, pal.muted);
+            v.setTextColor(REMAINING, pal.accent);
 
             if (d == null) return v; // veri henüz yok — yer tutucularla görün
 
