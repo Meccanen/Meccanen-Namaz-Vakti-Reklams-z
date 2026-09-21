@@ -23,8 +23,11 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
      saat+halici/miladi takvim kartının portu — dev canlı dijital saat, şehir,
      sonraki vakit, iki sütunlu Miladi/Hicri (Umm al-Qura) ve ay fazı; dakikada
      bir exact alarm zinciriyle canlı (yalnızca widget yerleşikken).
-   - **Widget isimlendirmesi**: üç widget launcher ekleme ekranında ayrık adlarla
-     görünür (`widget_times` / `widget_arc` / `widget_clock`, 5 dil).
+   - **Vakit Kartları widget'ı (kompakt 4x2)**: 6 başlık kartı (İmsak..Yatsı),
+     tek ayraç çizgisi, her kart altında ortalanmış vakitler; sol-üst şehir,
+     sağ-üst sonraki vakitte kalan süre.
+   - **Widget isimlendirmesi**: widget'lar launcher ekleme ekranında ayrık adlarla
+     görünür (`widget_times` / `widget_arc` / `widget_clock` / `widget_grid`, 5 dil).
    - Kullanıcı **16 temadan dilediğini widget'ta da** gösterir (WidgetPalettes +
      `widget_bg_<tema>` yuvarlak arka planlar); dil seçimiyle vakit adları yerelleşir.
    - Durum: **v1 kodlandı** (`native/widget/` → CI build'e kopyalanır) — JS

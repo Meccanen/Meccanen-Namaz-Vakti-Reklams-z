@@ -86,6 +86,23 @@ else:
     open(mp, "w").write(xml)
     print(">>> Saat widget receiver'i manifest'e eklendi.")
 
+if "widgets.PrayerGridWidgetProvider" in xml:
+    print(">>> Kart widget receiver'i zaten mevcut, dokunulmadi.")
+else:
+    grid_rx = f'''
+        <receiver
+            android:name="{app_id}.widgets.PrayerGridWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_grid">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_grid_info" />
+        </receiver>'''
+    xml = xml.replace("</application>", grid_rx + "\n    </application>")
+    open(mp, "w").write(xml)
+    print(">>> Kart widget receiver'i manifest'e eklendi.")
+
 main_matches = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
 main_path = main_matches[0]
 content = open(main_path).read()

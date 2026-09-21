@@ -188,6 +188,7 @@ jobs:
           WIDGET_T = {"tr": "Vakitler", "en": "Prayer Times", "de": "Gebetszeiten", "ar": "مواقيت الصلاة", "ur": "اوقات نماز"}
           WIDGET_A = {"tr": "Vakit Halkası", "en": "Prayer Circle", "de": "Gebetskreis", "ar": "دائرة الأوقات", "ur": "اوقات کا دائرہ"}
           WIDGET_C = {"tr": "Saat & Takvim", "en": "Clock & Calendar", "de": "Uhr & Kalender", "ar": "الساعة والتقويم", "ur": "گھڑی اور کیلنڈر"}
+          WIDGET_G = {"tr": "Vakit Kartları", "en": "Prayer Cards", "de": "Gebetskarten", "ar": "بطاقات الأوقات", "ur": "اوقات کارڈز"}
           ET.register_namespace("", "http://schemas.android.com/apk/res/android")
           def write_values(loc, entries):
               d = os.path.join(base, f"values-{loc}" if loc else "values")
@@ -210,7 +211,7 @@ jobs:
               print(f">>> {p} guncellendi")
           for loc in ("", "tr", "en", "de", "ar", "ur"):
               l = loc or "en"
-              write_values(loc, {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l]})
+              write_values(loc, {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l], "widget_grid": WIDGET_G[l]})
           mp = os.path.join(base, "..", "AndroidManifest.xml")
           mp = os.path.normpath(mp)
           xml = open(mp).read()
@@ -473,6 +474,23 @@ else:
                 xml = xml.replace("</application>", clock_rx + "\n    </application>")
                 open(mp, "w").write(xml)
                 print(">>> Saat widget receiver'i manifest'e eklendi.")
+
+            if "widgets.PrayerGridWidgetProvider" in xml:
+                print(">>> Kart widget receiver'i zaten mevcut, dokunulmadi.")
+            else:
+                grid_rx = f'''
+        <receiver
+            android:name="{app_id}.widgets.PrayerGridWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_grid">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_grid_info" />
+        </receiver>'''
+                xml = xml.replace("</application>", grid_rx + "\n    </application>")
+                open(mp, "w").write(xml)
+                print(">>> Kart widget receiver'i manifest'e eklendi.")
 
             # 4) WidgetBridgePlugin'i MainActivity'ye kaydet (BatteryHelper onCreate'u korunur)
           main_matches = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)

@@ -73,6 +73,7 @@ names = {"tr": "Meccanen Namaz Vakti", "en": "Meccanen Prayer Times", "de": "Mec
 WIDGET_T = {"tr": "Vakitler", "en": "Prayer Times", "de": "Gebetszeiten", "ar": "مواقيت الصلاة", "ur": "اوقات نماز"}
 WIDGET_A = {"tr": "Vakit Halkası", "en": "Prayer Circle", "de": "Gebetskreis", "ar": "دائرة الأوقات", "ur": "اوقات کا دائرہ"}
 WIDGET_C = {"tr": "Saat & Takvim", "en": "Clock & Calendar", "de": "Uhr & Kalender", "ar": "الساعة والتقويم", "ur": "گھڑی اور کیلنڈر"}
+WIDGET_G = {"tr": "Vakit Kartları", "en": "Prayer Cards", "de": "Gebetskarten", "ar": "بطاقات الأوقات", "ur": "اوقات کارڈز"}
 ET.register_namespace("", "http://schemas.android.com/apk/res/android")
 def write_values(loc, entries):
     d = os.path.join(base, f"values-{loc}" if loc else "values"); os.makedirs(d, exist_ok=True)
@@ -90,7 +91,7 @@ def write_values(loc, entries):
     ET.ElementTree(root).write(p, encoding="utf-8", xml_declaration=True)
 for loc in ("", "tr", "en", "de", "ar", "ur"):
     l = loc or "en"
-    entries = {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l]}
+    entries = {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l], "widget_grid": WIDGET_G[l]}
     write_values(loc, entries)
 mp = os.path.normpath(os.path.join(base, "..", "AndroidManifest.xml"))
 xml_ = open(mp).read()
