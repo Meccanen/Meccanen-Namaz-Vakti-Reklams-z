@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_clock_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="18dp">
+
+    <TextView
+        android:id="@+id/widget_clock_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:textSize="15sp"
+        android:textColor="#94A3B8"
+        android:includeFontPadding="false"
+        android:text="–" />
+
+    <TextView
+        android:id="@+id/widget_clock_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:typeface="monospace"
+        android:textSize="84sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.02"
+        android:includeFontPadding="false"
+        android:textColor="#F1F5F9"
+        android:text="--:--" />
+
+    <TextView
+        android:id="@+id/widget_clock_weekday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="17sp"
+        android:textColor="#94A3B8"
+        android:includeFontPadding="false"
+        android:text="–" />
+
+    <TextView
+        android:id="@+id/widget_clock_next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:includeFontPadding="false"
+        android:textColor="#38BDF8"
+        android:text="–" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="14dp"
+        android:background="#22FFFFFF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_clock_glabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
+
+            <TextView
+                android:id="@+id/widget_clock_gday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:typeface="monospace"
+                android:textSize="54sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#F1F5F9"
+                android:text="--" />
+
+            <TextView
+                android:id="@+id/widget_clock_gmo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-4dp"
+                android:textSize="17sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#94A3B8"
+                android:text="–" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/widget_clock_hlabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
+
+            <TextView
+                android:id="@+id/widget_clock_hday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:typeface="monospace"
+                android:textSize="54sp"
+                android:textStyle="bold"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="--" />
+
+            <TextView
+                android:id="@+id/widget_clock_hmo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-4dp"
+                android:textSize="17sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
+
+            <TextView
+                android:id="@+id/widget_clock_moon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="14sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:textColor="#94A3B8"
+                android:text="–" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -66,6 +66,23 @@ if "widgets.PrayerTimesWidgetProvider" not in xml:
     print(">>> Widget receiver'ları manifest'e eklendi.")
 else:
     print(">>> Widget receiver'ları zaten mevcut, dokunulmadı.")
+
+if "widgets.PrayerClockWidgetProvider" in xml:
+    print(">>> Saat widget receiver'i zaten mevcut, dokunulmadi.")
+else:
+    clock_rx = f'''
+        <receiver
+            android:name="{app_id}.widgets.PrayerClockWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_clock_info" />
+        </receiver>'''
+    xml = xml.replace("</application>", clock_rx + "\n    </application>")
+    open(mp, "w").write(xml)
+    print(">>> Saat widget receiver'i manifest'e eklendi.")
+
 main_matches = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
 main_path = main_matches[0]
 content = open(main_path).read()

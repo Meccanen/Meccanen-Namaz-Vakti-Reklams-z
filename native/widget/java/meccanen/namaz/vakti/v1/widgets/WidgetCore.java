@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.widget.RemoteViews;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,6 +41,9 @@ public final class WidgetCore {
 
     public static final String[] KEYS = {"imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"};
 
+    // Saat widget'ı için ayrı alarm istek kodu (prayer/midnight 7100..7106'dan ayrı).
+    public static final int ALARM_REQ_CLOCK = 7107;
+
     public static final class PrayTime {
         public String name;
         public int mins; // gün içi dakika (0..1439)
@@ -54,6 +58,15 @@ public final class WidgetCore {
         public String tz;
         public final PrayTime[][] days = new PrayTime[3][6];
         public final int[] noonMins = new int[3]; // her günün istiva/zeval dakikası
+        // Saat/takvim widget'ı için gün bazlı yerelleştirilmiş alanlar (JS'den gelir).
+        public final String[] wd = new String[3]; // haftanın günü
+        public final String[] gd = new String[3]; // miladi gün
+        public final String[] gm = new String[3]; // miladi ay + yıl
+        public final String[] hd = new String[3]; // hicri gün
+        public final String[] hm = new String[3]; // hicri ay
+        public final String[] hy = new String[3]; // hicri yıl
+        public final String[] mp = new String[3]; // ay fazı
+        public final int[] mi = new int[3];       // ay aydınlanma %
         public int todayIndex = 0;   // bugünle eşleşen gün (0..2)
         public int decoded = 0;      // kaç gün başarıyla çözüldü
     }
@@ -79,6 +92,7 @@ public final class WidgetCore {
         AppWidgetManager mgr = AppWidgetManager.getInstance(c);
         updateProvider(c, mgr, PrayerTimesWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerArcWidgetProvider.class, d);
+        updateProvider(c, mgr, PrayerClockWidgetProvider.class, d);
     }
 
     private static void updateProvider(Context c, AppWidgetManager mgr, Class<?> provider, Data d) {
@@ -86,13 +100,17 @@ public final class WidgetCore {
         int[] ids = mgr.getAppWidgetIds(cn);
         for (int id : ids) {
             try {
-                mgr.updateAppWidget(id, provider == PrayerTimesWidgetProvider.class
-                        ? PrayerTimesWidgetProvider.buildViews(c, id, d)
-                        : PrayerArcWidgetProvider.buildViews(c, id, d));
+                mgr.updateAppWidget(id, buildFor(c, provider, id, d));
             } catch (Exception ignored) {
                 // tek widget hatalıysa uygulama etkilenmesin
             }
         }
+    }
+
+    private static RemoteViews buildFor(Context c, Class<?> provider, int id, Data d) {
+        if (provider == PrayerTimesWidgetProvider.class) return PrayerTimesWidgetProvider.buildViews(c, id, d);
+        if (provider == PrayerClockWidgetProvider.class) return PrayerClockWidgetProvider.buildViews(c, id, d);
+        return PrayerArcWidgetProvider.buildViews(c, id, d);
     }
 
     // ---------------------------------------------------------------- veri çözümleme
@@ -123,6 +141,14 @@ public final class WidgetCore {
                     mn = (sr + se) / 2;
                 }
                 d.noonMins[i] = mn;
+                d.wd[i] = day.optString("wd", "");
+                d.gd[i] = day.optString("gd", "");
+                d.gm[i] = day.optString("gm", "");
+                d.hd[i] = day.optString("hd", "");
+                d.hm[i] = day.optString("hm", "");
+                d.hy[i] = day.optString("hy", "");
+                d.mp[i] = day.optString("mp", "");
+                d.mi[i] = day.optInt("mi", 0);
             }
             d.decoded = n;
             pickToday(d);
@@ -254,9 +280,28 @@ public final class WidgetCore {
             // gece yarısı (yarın 00:00) — yeni gün verilerine geçiş
             long midnight = triggerMs(d, tz, 1440);
             am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, midnight, alarmIntent(c, ALARM_REQ_BASE + 6));
+
+            // Büyük saat widget'ı yerleşikse HER DAKİKA tazele (canlı saat). Saat widget'ı
+            // launcher'dan kaldırılınca alarm iptal edilir (pil dostu).
+            PendingIntent tick = PendingIntent.getBroadcast(c, ALARM_REQ_CLOCK,
+                    new Intent(ACTION_REFRESH).setPackage(c.getPackageName()),
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            if (hasAppWidgets(c, PrayerClockWidgetProvider.class)) {
+                long nowMs = System.currentTimeMillis();
+                long nextMin = nowMs - (nowMs % 60000) + 60000;
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextMin, tick);
+            } else {
+                am.cancel(tick);
+            }
         } catch (Exception ignored) {
             // exact izni yoksa sessiz geç; widget 30 dk / boot ile yenilenir
         }
+    }
+
+    /** Belirtilen widget sağlayıcısının launcher'da en az bir örneği var mı? */
+    public static boolean hasAppWidgets(Context c, Class<?> provider) {
+        AppWidgetManager mgr = AppWidgetManager.getInstance(c);
+        return mgr.getAppWidgetIds(new ComponentName(c, provider)).length > 0;
     }
 
     public static PendingIntent alarmIntent(Context c, int reqCode) {

@@ -448,10 +448,26 @@ jobs:
               xml = xml.replace("</application>", receivers + "\n    </application>")
               open(mp, "w").write(xml)
               print(">>> Widget receiver'ları manifest'e eklendi.")
-          else:
-              print(">>> Widget receiver'ları zaten mevcut, dokunulmadı.")
+else:
+                print(">>> Widget receiver'ları zaten mevcut, dokunulmadı.")
 
-          # 4) WidgetBridgePlugin'i MainActivity'ye kaydet (BatteryHelper onCreate'u korunur)
+            if "widgets.PrayerClockWidgetProvider" in xml:
+                print(">>> Saat widget receiver'i zaten mevcut, dokunulmadi.")
+            else:
+                clock_rx = f'''
+        <receiver
+            android:name="{app_id}.widgets.PrayerClockWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_clock_info" />
+        </receiver>'''
+                xml = xml.replace("</application>", clock_rx + "\n    </application>")
+                open(mp, "w").write(xml)
+                print(">>> Saat widget receiver'i manifest'e eklendi.")
+
+            # 4) WidgetBridgePlugin'i MainActivity'ye kaydet (BatteryHelper onCreate'u korunur)
           main_matches = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
           if not main_matches:
               raise SystemExit(">>> HATA: MainActivity.java bulunamadı.")
