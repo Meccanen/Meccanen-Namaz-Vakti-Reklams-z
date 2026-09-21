@@ -19,6 +19,12 @@ reklam+veri toplama yükünden ayrışma noktası bunlardır.
    - **Sematik widget (3x3)**: 24 saatin tam daire halkası — 6 vakit ayrı renkli
      dilimler (kerahat yapısının tüm vakitlere genişletilmiş hali) + şimdiki
      zamanda dönen ibre + merkezde sonraki vakit/süre.
+   - **Saat & Takvim widget'ı (4x4/4x5, yeniden boyutlanabilir)**: ana uygulamanın
+     saat+halici/miladi takvim kartının portu — dev canlı dijital saat, şehir,
+     sonraki vakit, iki sütunlu Miladi/Hicri (Umm al-Qura) ve ay fazı; dakikada
+     bir exact alarm zinciriyle canlı (yalnızca widget yerleşikken).
+   - **Widget isimlendirmesi**: üç widget launcher ekleme ekranında ayrık adlarla
+     görünür (`widget_times` / `widget_arc` / `widget_clock`, 5 dil).
    - Kullanıcı **16 temadan dilediğini widget'ta da** gösterir (WidgetPalettes +
      `widget_bg_<tema>` yuvarlak arka planlar); dil seçimiyle vakit adları yerelleşir.
    - Durum: **v1 kodlandı** (`native/widget/` → CI build'e kopyalanır) — JS

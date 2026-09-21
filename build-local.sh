@@ -64,26 +64,34 @@ npx cap sync android >/dev/null
 echo ">>> Local Notifications yamalari (cancelPreviousId + timeoutAfter)"
 python3 "$SCRIPT_DIR/patch_notif.py"
 
-echo ">>> Yerlestirilmis uygulama adi (5 dil) + manifest label"
+echo ">>> Yerlestirilmis uygulama adi (5 dil) + widget isimleri + manifest label"
 python3 - << 'PY'
 import os, re, xml.etree.ElementTree as ET
 base = os.path.join(os.getcwd(), "android", "app", "src", "main", "res")
 names = {"tr": "Meccanen Namaz Vakti", "en": "Meccanen Prayer Times", "de": "Meccanen Gebetszeiten", "ar": "Meccanen مواقيت الصلاة", "ur": "Meccanen اوقات نماز"}
+# Widget isimleri — launcher ekleme ekraninda widget'lar ayristirilsin diye.
+WIDGET_T = {"tr": "Vakitler", "en": "Prayer Times", "de": "Gebetszeiten", "ar": "مواقيت الصلاة", "ur": "اوقات نماز"}
+WIDGET_A = {"tr": "Vakit Halkası", "en": "Prayer Circle", "de": "Gebetskreis", "ar": "دائرة الأوقات", "ur": "اوقات کا دائرہ"}
+WIDGET_C = {"tr": "Saat & Takvim", "en": "Clock & Calendar", "de": "Uhr & Kalender", "ar": "الساعة والتقويم", "ur": "گھڑی اور کیلنڈر"}
 ET.register_namespace("", "http://schemas.android.com/apk/res/android")
-def write_values(loc, label):
+def write_values(loc, entries):
     d = os.path.join(base, f"values-{loc}" if loc else "values"); os.makedirs(d, exist_ok=True)
     p = os.path.join(d, "strings.xml"); root = None
     if os.path.exists(p):
         try: root = ET.parse(p).getroot()
         except Exception: root = None
     if root is None: root = ET.Element("resources", {"xmlns:android": "http://schemas.android.com/apk/res/android"})
-    node = None
-    for s in root.findall("string"):
-        if s.get("name") == "app_name": node = s; break
-    if node is None: node = ET.SubElement(root, "string", {"name": "app_name"})
-    node.text = label; ET.ElementTree(root).write(p, encoding="utf-8", xml_declaration=True)
-write_values("", names["en"])
-for loc, label in names.items(): write_values(loc, label)
+    for k, v in entries.items():
+        node = None
+        for s in root.findall("string"):
+            if s.get("name") == k: node = s; break
+        if node is None: node = ET.SubElement(root, "string", {"name": k})
+        node.text = v
+    ET.ElementTree(root).write(p, encoding="utf-8", xml_declaration=True)
+for loc in ("", "tr", "en", "de", "ar", "ur"):
+    l = loc or "en"
+    entries = {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l]}
+    write_values(loc, entries)
 mp = os.path.normpath(os.path.join(base, "..", "AndroidManifest.xml"))
 xml_ = open(mp).read()
 def set_label(tag):

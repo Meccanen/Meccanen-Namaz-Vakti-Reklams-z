@@ -32,22 +32,24 @@ if "RECEIVE_BOOT_COMPLETED" not in xml:
     print(">>> RECEIVE_BOOT_COMPLETED izni eklendi.")
 if "widgets.PrayerTimesWidgetProvider" not in xml:
     receivers = f'''
-    <receiver
-        android:name="{app_id}.widgets.PrayerTimesWidgetProvider"
-        android:exported="false">
-        <intent-filter>
-            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-        </intent-filter>
-        <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_pt_info" />
-    </receiver>
-    <receiver
-        android:name="{app_id}.widgets.PrayerArcWidgetProvider"
-        android:exported="false">
-        <intent-filter>
-            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-        </intent-filter>
-        <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_arc_info" />
-    </receiver>
+<receiver
+                android:name="{app_id}.widgets.PrayerTimesWidgetProvider"
+                android:exported="false"
+                android:label="@string/widget_times">
+                <intent-filter>
+                    <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                </intent-filter>
+                <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_pt_info" />
+            </receiver>
+            <receiver
+                android:name="{app_id}.widgets.PrayerArcWidgetProvider"
+                android:exported="false"
+                android:label="@string/widget_arc">
+                <intent-filter>
+                    <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                </intent-filter>
+                <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_arc_info" />
+            </receiver>
     <receiver
         android:name="{app_id}.widgets.WidgetRefreshReceiver"
         android:exported="false">
@@ -73,7 +75,8 @@ else:
     clock_rx = f'''
         <receiver
             android:name="{app_id}.widgets.PrayerClockWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_clock">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
