@@ -59,47 +59,65 @@ public class PrayerClockWidgetProvider extends AppWidgetProvider {
     }
 
     static RemoteViews buildViews(Context c, int widgetId, WidgetCore.Data d) {
-        if (d == null) return null;
-        int today = d.todayIndex;
-
-        WidgetPalettes.Pal pal = WidgetPalettes.get(d.theme);
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_clock_layout);
-        v.setInt(ROOT, "setBackgroundResource", WidgetPalettes.bgDrawableId(d.theme));
+        try {
+            WidgetPalettes.Pal pal = WidgetPalettes.get(d == null ? "gece" : d.theme);
+            v.setInt(ROOT, "setBackgroundResource", WidgetPalettes.bgDrawableId(d == null ? "gece" : d.theme));
+            v.setTextColor(CITY, pal.muted);
+            v.setTextColor(TIME, pal.text);
+            v.setTextColor(WEEKDAY, pal.muted);
+            v.setTextColor(GLABEL, pal.accent);
+            v.setTextColor(HLABEL, pal.accent);
+            v.setTextColor(MOON, pal.muted);
 
-        v.setTextViewText(CITY, d.city);
-        v.setTextColor(CITY, pal.muted);
+            if (d == null) {
+                // veri henüz gelmedi — yer tutucu boş görünüm; hata olarak algılanmasın
+                v.setTextViewText(TIME, "--:--");
+                v.setTextViewText(WEEKDAY, "–");
+                return v;
+            }
+            int today = d.todayIndex;
 
-        v.setTextViewText(TIME, WidgetCore.fmtTime(WidgetCore.nowMins(d.tz)));
-        v.setTextColor(TIME, pal.text);
+            v.setTextViewText(CITY, safe(d.city));
+            v.setTextViewText(TIME, WidgetCore.fmtTime(WidgetCore.nowMins(d.tz)));
+            v.setTextViewText(WEEKDAY, safe(d.wd[today]));
+            v.setTextColor(WEEKDAY, pal.accent);
 
-        v.setTextViewText(WEEKDAY, d.wd[today]);
-        v.setTextColor(WEEKDAY, pal.muted);
+            int idx = WidgetCore.nextIndex(d);
+            String dur = PrayerTimesWidgetProvider.fmtDurHuman(WidgetCore.remainingMinutes(d, idx), d.lang);
+            WidgetCore.PrayTime np = WidgetCore.nextPrayer(d, idx);
+            if (np != null) {
+                v.setTextViewText(NEXT, np.name + " · " + dur);
+                v.setTextColor(NEXT, pal.accent);
+            } else {
+                v.setTextViewText(NEXT, "–");
+            }
 
-        int idx = WidgetCore.nextIndex(d);
-        String dur = PrayerTimesWidgetProvider.fmtDurHuman(WidgetCore.remainingMinutes(d, idx), d.lang);
-        WidgetCore.PrayTime np = WidgetCore.nextPrayer(d, idx);
-        if (np != null) {
-            v.setTextViewText(NEXT, np.name + " · " + dur);
-            v.setTextColor(NEXT, pal.accent);
+            v.setTextViewText(GLABEL, label(d.lang, "gregorian"));
+            v.setTextViewText(GDAY, safe(d.gd[today]));
+            v.setTextColor(GDAY, pal.text);
+            v.setTextViewText(GMO, safe(d.gm[today]));
+            v.setTextColor(GMO, pal.muted);
+
+            v.setTextViewText(HLABEL, label(d.lang, "hijri"));
+            v.setTextViewText(HDAY, safe(d.hd[today]));
+            v.setTextColor(HDAY, pal.text);
+            String hmo = safe(d.hm[today]);
+            if (!hmo.isEmpty() && !safe(d.hy[today]).isEmpty()) hmo += " (" + d.hy[today] + ")";
+            v.setTextViewText(HMO, hmo);
+            v.setTextColor(HMO, pal.accent);
+            v.setTextViewText(MOON, safe(d.mp[today]) + " · %" + d.mi[today]);
+        } catch (Exception ignored) {
+            // herhangi bir çizim hatasında widget kullanıcıya boş göstermesin;
+            // zaman bilgisiyle birlikte sağlam şekilde sunulmaya devam etsin
+            try {
+                v = new RemoteViews(c.getPackageName(), R.layout.widget_clock_layout);
+                v.setTextViewText(TIME, WidgetCore.fmtTime(WidgetCore.nowMins(d == null ? "" : d.tz)));
+            } catch (Exception ignored2) {
+            }
         }
-
-        v.setTextViewText(GLABEL, label(d.lang, "gregorian"));
-        v.setTextColor(GLABEL, pal.accent);
-        v.setTextViewText(GDAY, d.gd[today]);
-        v.setTextColor(GDAY, pal.text);
-        v.setTextViewText(GMO, d.gm[today]);
-        v.setTextColor(GMO, pal.muted);
-
-        v.setTextViewText(HLABEL, label(d.lang, "hijri"));
-        v.setTextColor(HLABEL, pal.accent);
-        v.setTextViewText(HDAY, d.hd[today]);
-        v.setTextColor(HDAY, pal.accent);
-        String hmo = d.hm[today];
-        if (!hmo.isEmpty() && !d.hy[today].isEmpty()) hmo += " (" + d.hy[today] + " AH)";
-        v.setTextViewText(HMO, hmo);
-        v.setTextColor(HMO, pal.accent);
-        v.setTextViewText(MOON, d.mp[today] + " · %" + d.mi[today]);
-        v.setTextColor(MOON, pal.muted);
         return v;
     }
+
+    private static String safe(String s) { return s == null ? "" : s; }
 }
