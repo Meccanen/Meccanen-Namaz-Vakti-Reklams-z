@@ -147,6 +147,32 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+      - name: "Maven Central yedek deposu (repo1.maven.org) — runner'daki 403/egress tıkanmasına karşı"
+        run: |
+          python3 - << 'PY'
+          import re, sys
+
+          # repo.maven.apache.org runner'da anlık 403 dönebiliyor (GitHub Actions egress).
+          # repo1.maven.org resmi Maven Central hostudur ve farklı CDN ağından (Cloudflare) hizmet
+          # verir. mavenCentral() çağrısının ÖNÜNE yedek depo ekleyince Gradle önce burayı dener;
+          # 4xx hatalarında diğer depoya düşmediği için başarılı depo en öne yazılmalı.
+          target = r'( *)mavenCentral\(\)'
+          repl = lambda m: (
+              f"{m.group(1)}maven {{ url 'https://repo1.maven.org/maven2' }}\n"
+              f"{m.group(1)}mavenCentral()"
+          )
+          for path in ["android/settings.gradle", "android/build.gradle"]:
+              s = open(path).read()
+              n = len(re.findall(target, s))
+              if n == 0:
+                  print(f">>> UYARI: {path} içinde mavenCentral() bulunamadı — sürüm değişmiş olabilir.")
+                  continue
+              s2 = re.sub(target, repl, s)
+              open(path, "w").write(s2)
+              print(f">>> {path}: {n} mavenCentral() önüne repo1.maven.org yedeği eklendi.")
+          PY
+          echo "--- android/build.gradle (depo bloğu) ---"
+          grep -n -A3 "maven" android/build.gradle
       - name: "Uygulama adı — cihaz diline göre (5 dilli strings.xml + manifest label sabitleme)"
         run: |
           python3 - <<'PY'
@@ -642,11 +668,30 @@ jobs:
               print(">>> UYARI: ic_launcher_background.xml bulunamadı, arka plan rengi güncellenemedi.")
           PYEOF
           python3 /tmp/make_icons.py
+      - name: Gradle depo cache (sonraki çalıştırmalarda Maven Central'a gerek kalmaz)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-${{ runner.os }}-${{ hashFiles('android/settings.gradle', 'android/build.gradle', 'android/variables.gradle') }}
+          restore-keys: |
+            gradle-cache-${{ runner.os }}-
       - name: Debug APK build et
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          for i in 1 2 3; do
+            echo ">>> assembleDebug deneme $i/3"
+            if ./gradlew assembleDebug; then
+              echo ">>> assembleDebug başarılı (deneme $i)"
+              exit 0
+            fi
+            echo ">>> assembleDebug denemesi başarısız, 20 sn sonra tekrar..."
+            sleep 20
+          done
+          echo ">>> 3 denemede de assembleDebug başarısız."
+          exit 1
       - name: APK uygulama etiketlerini doğrula (aapt)
         run: |
           AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)
@@ -662,11 +707,21 @@ jobs:
         working-directory: android
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > app/meccanen.keystore
-          ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=$(pwd)/app/meccanen.keystore \
-            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+          for i in 1 2 3; do
+            echo ">>> bundleRelease deneme $i/3"
+            if ./gradlew bundleRelease \
+              -Pandroid.injected.signing.store.file=$(pwd)/app/meccanen.keystore \
+              -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+              -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+              -Pandroid.injected.signing.key.password=$KEY_PASSWORD; then
+              echo ">>> bundleRelease başarılı (deneme $i)"
+              exit 0
+            fi
+            echo ">>> bundleRelease denemesi başarısız, 20 sn sonra tekrar..."
+            sleep 20
+          done
+          echo ">>> 3 denemede de bundleRelease başarısız."
+          exit 1
       - name: Debug APK kaydet
         uses: actions/upload-artifact@v4
         with:
