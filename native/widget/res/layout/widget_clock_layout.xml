@@ -60,12 +60,13 @@
         android:textColor="#94A3B8"
         android:text="–" />
 
-    <View
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:background="#22FFFFFF" />
+        android:background="#22FFFFFF"
+        android:text="" />
 
     <LinearLayout
         android:layout_width="match_parent"
