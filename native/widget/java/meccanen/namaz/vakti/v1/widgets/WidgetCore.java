@@ -93,6 +93,7 @@ public final class WidgetCore {
         updateProvider(c, mgr, PrayerTimesWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerArcWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerClockWidgetProvider.class, d);
+        updateProvider(c, mgr, PrayerGridWidgetProvider.class, d);
     }
 
     private static void updateProvider(Context c, AppWidgetManager mgr, Class<?> provider, Data d) {

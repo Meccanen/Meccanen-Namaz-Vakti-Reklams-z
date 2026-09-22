@@ -3,6 +3,7 @@ package meccanen.namaz.vakti.v1.widgets;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import meccanen.namaz.vakti.v1.R;
@@ -13,6 +14,8 @@ import meccanen.namaz.vakti.v1.R;
  * Tasarım ilk (sayısal) widget'ın verisini kullanır ama görsel düzeni farklıdır.
  */
 public class PrayerGridWidgetProvider extends AppWidgetProvider {
+
+    static final String TAG = "PrayerGridWidget";
 
     static final int ROOT      = R.id.widget_grid_root;
     static final int CITY      = R.id.widget_grid_city;
@@ -77,7 +80,8 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
                     nextMarked = true;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.e(TAG, "buildViews hatasi widgetId=" + widgetId, e);
             // hata anında da boş görünüm sunulsun — asla null dönme
         }
         return v;
