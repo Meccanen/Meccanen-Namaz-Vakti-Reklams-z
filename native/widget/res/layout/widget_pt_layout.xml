@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:gravity="top"
     android:padding="9dp">
 
     <LinearLayout
@@ -29,6 +28,7 @@
             android:id="@+id/widget_pt_next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:singleLine="true"
             android:textSize="13sp"
             android:textStyle="bold"
             android:includeFontPadding="false"
@@ -36,84 +36,274 @@
             android:text="–" />
     </LinearLayout>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#22FFFFFF"
+        android:text="" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <LinearLayout android:id="@+id/widget_pt_item0" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l0" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t0" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
+        <LinearLayout
+            android:id="@+id/widget_pt_item0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/widget_pt_item1" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l1" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t1" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/widget_pt_t0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:orientation="horizontal">
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <LinearLayout android:id="@+id/widget_pt_item2" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l2" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t2" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
+        <LinearLayout
+            android:id="@+id/widget_pt_item1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/widget_pt_item3" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l3" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t3" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/widget_pt_t1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:orientation="horizontal">
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <LinearLayout android:id="@+id/widget_pt_item4" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l4" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t4" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
+        <LinearLayout
+            android:id="@+id/widget_pt_item2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/widget_pt_item5" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
-            <TextView android:id="@+id/widget_pt_l5" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:singleLine="true" android:textSize="11sp" android:textColor="#94A3B8"
-                android:includeFontPadding="false" android:text="–" />
-            <TextView android:id="@+id/widget_pt_t5" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginStart="4dp" android:textSize="15sp" android:textStyle="bold" android:textColor="#F1F5F9"
-                android:includeFontPadding="false" android:text="–" />
+        <TextView
+            android:id="@+id/widget_pt_t2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/widget_pt_item3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_pt_t3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/widget_pt_item4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_pt_t4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/widget_pt_item5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/widget_pt_l5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="–" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_pt_t5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="start"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="--:--" />
     </LinearLayout>
 </LinearLayout>

@@ -24,6 +24,10 @@ public class PrayerTimesWidgetProvider extends AppWidgetProvider {
             R.id.widget_pt_t0, R.id.widget_pt_t1, R.id.widget_pt_t2,
             R.id.widget_pt_t3, R.id.widget_pt_t4, R.id.widget_pt_t5
     };
+    static final int[] ITEMS = {
+            R.id.widget_pt_item0, R.id.widget_pt_item1, R.id.widget_pt_item2,
+            R.id.widget_pt_item3, R.id.widget_pt_item4, R.id.widget_pt_item5
+    };
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -52,8 +56,9 @@ public class PrayerTimesWidgetProvider extends AppWidgetProvider {
         for (int i = 0; i < 6; i++) {
             WidgetCore.PrayTime pt = today[i];
             if (pt == null) continue;
+            v.setInt(ITEMS[i], "setBackgroundResource", R.drawable.widget_grid_card);
             v.setTextViewText(LABELS[i], pt.name);
-            v.setTextColor(LABELS[i], pal.muted);
+            v.setTextColor(LABELS[i], pal.accent);
             v.setTextViewText(TIMES[i], WidgetCore.fmtTime(pt.mins));
             if (i == idx) {
                 v.setTextColor(TIMES[i], pal.accent);
