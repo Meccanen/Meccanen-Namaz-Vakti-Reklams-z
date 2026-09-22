@@ -110,6 +110,7 @@ public final class WidgetCore {
     private static RemoteViews buildFor(Context c, Class<?> provider, int id, Data d) {
         if (provider == PrayerTimesWidgetProvider.class) return PrayerTimesWidgetProvider.buildViews(c, id, d);
         if (provider == PrayerClockWidgetProvider.class) return PrayerClockWidgetProvider.buildViews(c, id, d);
+        if (provider == PrayerGridWidgetProvider.class) return PrayerGridWidgetProvider.buildViews(c, id, d);
         return PrayerArcWidgetProvider.buildViews(c, id, d);
     }
 
