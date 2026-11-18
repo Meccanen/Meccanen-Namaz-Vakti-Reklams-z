@@ -1,8 +1,9 @@
 # ajan.md — Meccanen Namaz Vakti · Ajan Bağlam Dosyası
 
 > **Amaç:** Bu dosya, projede çalışan bir yapay zekâ ajanının (veya yeni geliştiricinin)
-> sıfırdan bağlam kazanması için tek giriş noktasıdır. `Ozet.md`'nin tarihsel anlatımı yerine
+> sıfırdan bağlam kazanması için **tam** bağlam dosyasıdır. `Ozet.md`'nin tarihsel anlatımı yerine
 > **18 Kasım 2026 itibarıyla doğrulanmış gerçek durumu** esas alır.
+> Kısa giriş noktası ve değişmez kurallar: **`AGENTS.md`** (bu dosyaya yönlendirir).
 >
 > **Son doğrulama:** 18 Kasım 2026 — kod, build çıktıları, `git status`, imza, `i18n:check` ve
 > `tsc --noEmit` yeniden çalıştırılarak kontrol edildi.
@@ -371,8 +372,9 @@ Kaynak: `docs/notification-system-findings.md` (Eylül 2026, cihazda doğrulanm�
 - **Bilinen sınırlar:**
   - Düz yatıkken 180° çevirme sensörle ayırt edilemez (ivmeölçer yaw görmez).
   - Girişimde ham referans beslenmez; jiro akışı devam eder (yavaş kayma) — ok bu yüzden soluk.
-  - `accuracy` birçok cihazda hep 3 (yüksek) raporlanır; kalibrasyon vurgusu otomatik tetiklenmezse
-    not yalnızca bilgilendirme olarak kalır (bu cihazda ölçülen: hep 3).
+  - `accuracy` birçok cihazda hep 3 (yüksek) raporlanır; o cihazlarda not hiç görünmez.
+    Sensör gerçeğe aykırı raporluyorsa kullanıcıya ulaşmanın yolu yok (kabul edilen sınır;
+    istenirse ileride "Kıble" başlığına dokununca notu açan sessiz bir yol eklenebilir).
   - `prefers-reduced-motion` desteği yok (kilit nabzı + 8 çizimi her zaman animasyonlu).
   - Eşikler Leipzig'de ölçülen değerlerle kalibre edildi; farklı enlemlerde saha testi gerekir.
 
