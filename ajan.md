@@ -19,11 +19,11 @@
 - **Stack:** React 19 + Vite 6 + TypeScript 5.8 + Tailwind CSS v4 + Capacitor 6.
 - **appId:** `meccanen.namaz.vakti.v1` · **Play:** `meccanen.namaz.vakti.v1`
 - **Diller:** 11 (tr, en, de, es, fr, pt, ru, ar, ur, ja, fa) — ar/ur/fa RTL.
-- **Son build:** `2.3.2026111200` (12 Kasım 2026 02:59) — imzası doğrulandı, **Play'e yükleme durumu belirsiz**.
+- **Son build:** `2.3.2026111800` (18 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
 - **Build:** Yerel `./build-local.sh` (GitHub Actions kotası nedeniyle tercih edilir).
 - **Kritik kural:** `versionCode` **10 haneli** `YYYYMMDDCC` olmalı ve Play'deki en yüksekten büyük olmalı.
 - **Kritik kural:** `dist/` hem Vite `webDir`'idir hem build çıktılarının kopyalandığı yerdir; her `npm run build` onu **siler**.
-- **Durum:** Kodda 63 dosya commit edilmemiş; son commit 23 Eylül 2026. TypeScript'te 4 bilinen hata var (aşağıda).
+- **Durum:** Çalışma ağacı temiz; son commit 18 Kasım 2026 (`0cff035`). TypeScript'te 4 bilinen hata var (aşağıda).
 
 ---
 
@@ -33,27 +33,27 @@
 
 | Öğe | Değer | Doğrulama |
 |---|---|---|
-| Son üretilen sürüm | `2.3.2026111200` / versionCode `2026111200` | `aapt2 dump badging` |
-| AAB | `dist/meccanen-release-v2.3.2026111200.aab` (~25,7 MB) | `jarsigner -verify` → exit 0 |
-| APK | `dist/meccanen-release-v2.3.2026111200.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
+| Son üretilen sürüm | `2.3.2026111800` / versionCode `2026111800` | `aapt2 dump badging` |
+| AAB | `dist/meccanen-release-v2.3.2026111800.aab` (~25,7 MB) | `jarsigner -verify` → exit 0 |
+| APK | `dist/meccanen-release-v2.3.2026111800.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
 | AAB sertifikası | SHA-256 `A9:6E:58:...:13:F4`, geçerlilik 2054 | `keytool -printcert -jarfile` |
 | minSdk / target | 24 / 36 (compile 36) | `aapt2 dump badging` |
-| Önceki yayınlanan | `2.3.2026111100` (11 dil + Farsça) | `Ozet.md` |
-| `apk/` kalıcı yedek | En son `2026111100` var; **`2026111200` yok** | `ls apk/` |
+| Önceki yayınlanan | `2.3.2026111200` | `Ozet.md` |
+| `apk/` kalıcı yedek | `2026111100`, `2026111200`, `2026111800` (AAB+APK) | `ls apk/` |
 
-> ⚠️ **Yedekleme borcu:** `2026111200` AAB/APK yalnızca `dist/` içinde. Bir sonraki
-> `npm run build` bunları siler. Önce `apk/` klasörüne kopyala.
+> Keystore: `Play/keys/meccanen-namaz-upload.keystore`, alias `meccanen-namaz-upload`.
+> Parola `Play/keys/meccanen_namaz_release_secrets.txt` içinde (`PAROLA: ...`); yazdırma.
 
 ### 2.2 Kaynak kod durumu
 
 | Kontrol | Sonuç |
 |---|---|
 | `git branch` | `main`, remote `github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z` |
-| Son commit | `fa29dc7` · 23 Eylül 2026 · "Redesign Vakitler widget..." |
-| Commit edilmemiş | **63 dosya** (M/D/??) — i18n refactor, widget'lar, kıble, build scriptleri |
+| Son commit | `0cff035` · 18 Kasım 2026 · "feat(qibla): location-aware interference..." |
+| Commit edilmemiş | **yok** (bu docs commit'i hariç) |
 | `npm run i18n:check` | 11 dil, **hata yok**; uyarılar aşağıda |
 | `npx tsc --noEmit` | **4 hata** (hepsi bilinen/zararsız, aşağıda) |
-| `src/App.tsx` | **2415 satır** (Ozet.md'deki ~2034 eskidir) |
+| `src/App.tsx` | **2408 satır** |
 | Tema sayısı | **16** (`THEMES`, App.tsx) |
 | Widget sayısı | **4** (Arc, Clock, Analog, Grid) |
 
@@ -68,9 +68,9 @@
 
 **i18n uyarıları (`i18n:check`):**
 - `de`: 28 eksik mesaj anahtarı + 5 fazla anahtar (`country`, `timezone`, `searching`, `adFreeTag`, `months`).
-- `ur`: 33 eksik mesaj anahtarı + 4 fazla anahtar.
-- `es, fr, pt, ru, ar, ur, ja, fa`: 4'er eksik **kıble** anahtarı
-  (`qiblaAhead`, `qiblaTurnRight`, `qiblaTurnLeft`, `qiblaBehind`).
+- `ur`: 29 eksik mesaj anahtarı + 4 fazla anahtar (`country`, `timezone`, `searching`, `months`).
+- Kıble anahtarları **11 dilde tam** (18 Kasım 2026'da eski `qiblaTurn*`/`qiblaBehind` kaldırıldı,
+  yerine `qiblaHoldFlat`, `qiblaAhead`, `qiblaMagnetic`, `qiblaCalibrate`, `qiblaCalibrateHow` geldi).
 - `ja.in`: boş metin (bilinçli olabilir).
 - `strict` modda bunlar hata sayılır: `npm run i18n:check:strict`.
 
@@ -505,10 +505,9 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 
 ## 13. Teknik Borç / Yapılacaklar (öncelik sırası)
 
-1. **`2026111200` AAB/APK'yı `apk/`'ya yedekle** — şu an yalnızca `dist/`'te ve silinebilir.
-2. **Play yükleme durumunu doğrula** — `2026111200` yüklendi mi? Yüklenmediyse Play Console'a manuel yükle.
-3. **Commit et** — 63 dosya commit edilmemiş; i18n refactor + widget'lar + kıble değişiklikleri
-   yalnızca çalışma ağacında. Kayıp riski yüksek.
+1. **Play yükleme durumunu doğrula** — `2026111200` yüklendi mi? Yüklenmediyse Play Console'a manuel yükle.
+2. **`2026111800`'ü Play Console'a yükle** (AAB `apk/` ve `dist/` içinde hazır, imza doğrulandı).
+3. **Commit borcu kapandı** — 18 Kasım 2026: `0cff035` (kıble kalite/on-demand not) + bu docs commit'i.
 4. **i18n eksiklerini kapat:** `de` 28, `ur` 33, 8 dilde 4 kıble anahtarı; fazla anahtarları temizle.
 5. **`native.json`'a es/fr/pt/ru/ja ekle** (Android etiketleri İngilizce kalmasın).
 6. **`server.ts` temizliği** — kullanılmıyorsa sil veya `express`/`@google/genai`/`dotenv`
