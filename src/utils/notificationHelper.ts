@@ -1,5 +1,5 @@
 import { LocalNotifications, ScheduleEvery } from "@capacitor/local-notifications";
-import { LangCode } from "./i18n";
+import { LangCode, getNotificationText } from "./i18n";
 
 export type SoundType = "default" | "ezan";
 
@@ -221,6 +221,55 @@ export interface ScheduleResult {
   debug?: string; // Teşhis amaçlı: durum bildiriminin neden dahil edilip/edilmediğini açıklar
 }
 
+// ─── Saat dilimi yardımcıları ────────────────────────────────────────────────
+// Vakitler konumun duvar saatiyle gelir (ör. İstanbul 18:17), bildirimler ise
+// mutlak zaman (Date) ister. Cihazın saat dilimi konumdan farklıysa (seyahat,
+// yurt dışında yaşayan kullanıcı) `setHours` yanlış ana alarm kurar. Aşağıdaki
+// yardımcılar duvar saatini verilen IANA saat dilimindeki gerçek ana çevirir.
+interface DateParts { year: number; month: number; day: number }
+
+function getZonedDateParts(date: Date, tz: string): DateParts {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(date);
+    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0", 10);
+    return { year: get("year"), month: get("month"), day: get("day") };
+  } catch {
+    return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+  }
+}
+
+function addDays(parts: DateParts, days: number): DateParts {
+  const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  d.setUTCDate(d.getUTCDate() + days);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+}
+
+function getTimezoneOffsetMs(tz: string, date: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(date);
+  const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0", 10);
+  const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
+  return asUTC - date.getTime();
+}
+
+function zonedWallTimeToDate(parts: DateParts, hour: number, minute: number, tz: string): Date {
+  try {
+    const wallUTC = Date.UTC(parts.year, parts.month - 1, parts.day, hour, minute, 0, 0);
+    // Ofset DST geçişlerinde değişebilir; iki adımda yakınsa.
+    let ts = wallUTC - getTimezoneOffsetMs(tz, new Date(wallUTC));
+    ts = wallUTC - getTimezoneOffsetMs(tz, new Date(ts));
+    return new Date(ts);
+  } catch {
+    // Geçersiz saat dilimi → cihazın yerel saatine düş (eski davranış).
+    return new Date(parts.year, parts.month - 1, parts.day, hour, minute, 0, 0);
+  }
+}
+
 // Namaz vakitleri için bildirimleri planla
 export async function schedulePrayerNotifications(
   prayerTimes: { key: string; name: string; time: string }[],
@@ -230,6 +279,8 @@ export async function schedulePrayerNotifications(
   tomorrowPrayerTimes?: { key: string; name: string; time: string }[],
   // YENİ: çok günlü vakit listesi. index 0 = BUGÜN. Verilmezse eski davranış (bugün + yarın).
   multiDayTimes?: PrayerTimeEntry[][],
+  // Vakitlerin ait olduğu konumun IANA saat dilimi (ör. "Europe/Istanbul").
+  timezone: string = "Europe/Istanbul",
 ): Promise<ScheduleResult> {
   if (!isNativeAvailable()) return { success: false, scheduledCount: 0, error: "native-unavailable" };
   if (!settings.enabled) { await cancelAllNotifications(); return { success: true, scheduledCount: 0 }; }
@@ -271,43 +322,20 @@ export async function schedulePrayerNotifications(
     } catch {}
   }
 
-  // Bildirim metinleri (çok dilli — tr/en/ar/de/ur, uygulamanın desteklediği 5 dil)
-  const PRAYER_NAMES: Record<string, Record<string, string>> = {
-    imsak:  { tr: "İmsak",   en: "Fajr",    ar: "الفجر",  de: "Fadschr", ur: "فجر"        },
-    gunes:  { tr: "Güneş",   en: "Sunrise", ar: "الشروق", de: "Aufgang", ur: "طلوع آفتاب" },
-    ogle:   { tr: "Öğle",    en: "Dhuhr",   ar: "الظهر",  de: "Dhuhr",   ur: "ظہر"        },
-    ikindi: { tr: "İkindi",  en: "Asr",     ar: "العصر",  de: "Asr",     ur: "عصر"        },
-    aksam:  { tr: "Akşam",   en: "Maghrib", ar: "المغرب", de: "Maghrib", ur: "مغرب"       },
-    yatsi:  { tr: "Yatsı",   en: "Isha",    ar: "العشاء", de: "Isha",    ur: "عشاء"       },
-  };
-  const TEXTS: Record<string, Record<string, string>> = {
-    beforeTitle: {
-      tr: "Namaz Vakti", en: "Prayer Time", ar: "وقت الصلاة",
-      de: "Gebetszeit", ur: "نماز کا وقت",
-    },
-    beforeBody: {
-      tr: "{name} namazına {min} dakika kaldı.", en: "{min} minutes until {name}.",
-      ar: "تبقّى {min} دقيقة على صلاة {name}.", de: "Noch {min} Minuten bis {name}.",
-      ur: "{name} میں {min} منٹ باقی ہیں۔",
-    },
-    atTitle: {
-      tr: "Namaz Vakti", en: "Prayer Time", ar: "وقت الصلاة",
-      de: "Gebetszeit", ur: "نماز کا وقت",
-    },
-    atBody: {
-      tr: "{name} namazı vakti girdi.", en: "It is time for {name}.",
-      ar: "حان وقت صلاة {name}.", de: "Es ist Zeit für {name}.",
-      ur: "{name} کا وقت ہو گیا ہے۔",
-    },
-  };
-  const tx = (key: string, vars: Record<string,string> = {}) => {
-    let s = TEXTS[key][lang] || TEXTS[key].en;
-    Object.entries(vars).forEach(([k,v]) => { s = s.replace(`{${k}}`, v); });
+  // Bildirim metinleri dil modüllerinden gelir (src/i18n/locales/*.ts -> notifications).
+  // Burada çeviri kopyası tutulmaz; eksik dil İngilizceye düşer.
+  const prayerName = (key: string, fallback: string) =>
+    getNotificationText(`prayer_${key}`, lang, fallback);
+  const tx = (key: string, vars: Record<string, string> = {}) => {
+    let s = getNotificationText(key, lang);
+    Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, v); });
     return s;
   };
 
   const notifications: any[] = [];
   const now = new Date();
+  const tz = timezone || "Europe/Istanbul";
+  const today = getZonedDateParts(now, tz);
 
   // "X dakika önce" ve "vakit girdi" bildirimlerini TEK bir kronolojik zincir halinde
   // topluyoruz (tüm ufuk boyunca: bugün + sonraki günler), ki her biri native tarafta
@@ -337,7 +365,7 @@ export async function schedulePrayerNotifications(
     dayTimes.forEach((prayer, idx) => {
       const prayerKey = prayer.key as keyof typeof settings.prayers;
       if (!settings.prayers[prayerKey]) return;
-      const prayerName = PRAYER_NAMES[prayer.key]?.[lang] || prayer.name;
+      const pName = prayerName(prayer.key, prayer.name);
 
       // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe bildirim
       // metninde "İmsak namazına/namazı" demek yerine "İmsak vaktine/vakti" diyoruz.
@@ -346,8 +374,8 @@ export async function schedulePrayerNotifications(
       const isImsakTr = prayer.key === "imsak" && lang === "tr";
       const beforeBodyText = isImsakTr
         ? `İmsak vaktine ${settings.minutesBefore} dakika kaldı.`
-        : tx("beforeBody", { name: prayerName, min: String(settings.minutesBefore) });
-      const atBodyText = isImsakTr ? "İmsak vakti girdi." : tx("atBody", { name: prayerName });
+        : tx("beforeBody", { name: pName, min: String(settings.minutesBefore) });
+      const atBodyText = isImsakTr ? "İmsak vakti girdi." : tx("atBody", { name: pName });
 
       // Güneş (şuruk) vaktinde ezan okunmaz — bu vakit her zaman varsayılan sesi kullanır.
       // "X dakika önce" hatırlatması KASITLI OLARAK her zaman varsayılan sesle çalışır (bkz.
@@ -368,13 +396,18 @@ export async function schedulePrayerNotifications(
 
       // Her gün için "X dakika önce" (varsa) ve "vakit girdi" (varsa) olaylarını ekle.
       // ID şeması: dayIdx*1000 + idx*2 + {1=önce, 2=vakit} → tüm günler için benzersiz.
-      const dayBase = new Date(now);
-      dayBase.setDate(dayBase.getDate() + dayIdx);
+      const dayParts = addDays(today, dayIdx);
 
       // 1) "X dakika önce" bildirimi (minutesBefore > 0 ise)
       if (settings.minutesBefore > 0) {
-        const beforeDate = new Date(dayBase);
-        beforeDate.setHours(hour, min - settings.minutesBefore, 0, 0);
+        // Dakika çıkarma gün sınırını aşabilir (ör. İmsak 05:55 − 30 dk).
+        let totalMin = hour * 60 + min - settings.minutesBefore;
+        const dayShift = Math.floor(totalMin / 1440);
+        totalMin = ((totalMin % 1440) + 1440) % 1440;
+        const beforeDate = zonedWallTimeToDate(
+          addDays(dayParts, dayShift),
+          Math.floor(totalMin / 60), totalMin % 60, tz,
+        );
         const id = (dayIdx * 1000) + (idx * 2) + 1;
 
         if (beforeDate > now) {
@@ -395,8 +428,7 @@ export async function schedulePrayerNotifications(
 
       // 2) Vakit girdiği anda AYRICA bildirim (notifyAtVakit true ise)
       if (settings.notifyAtVakit) {
-        const atDate = new Date(dayBase);
-        atDate.setHours(hour, min, 0, 0);
+        const atDate = zonedWallTimeToDate(dayParts, hour, min, tz);
         const id = (dayIdx * 1000) + (idx * 2) + 2;
 
         if (atDate > now) {
@@ -464,39 +496,16 @@ export async function schedulePrayerNotifications(
   let immediateStatus: any = null;
   if (settings.showStatusNotification) {
    try {
-    const STATUS_TEXTS: Record<string, Record<string, string>> = {
-      title: {
-        tr: "Şu An {name} Vakti", en: "Currently {name} Time", ar: "الآن وقت {name}",
-        de: "Gerade {name}-Zeit", ur: "اس وقت {name} کا وقت ہے",
-      },
-      // Diğer vakitler için "namazı"/"prayer" ekiyle birlikte kullanılır.
-      bodyPrayer: {
-        tr: "{next} Namazı Saat {time}", en: "{next} Prayer at {time}", ar: "صلاة {next} الساعة {time}",
-        de: "{next}-Gebet um {time}", ur: "{next} کی نماز {time} پر",
-      },
-      // Güneş (şuruk) bir namaz vakti DEĞİL, sadece güneşin doğuş anıdır — "namazı"/"prayer"
-      // kelimesi eklenmemeli. Bu yüzden ayrı bir şablon kullanıyoruz (5 dilde de).
-      bodySunrise: {
-        tr: "Güneşin Doğuşu Saat {time}", en: "Sunrise at {time}", ar: "شروق الشمس الساعة {time}",
-        de: "Sonnenaufgang um {time}", ur: "طلوع آفتاب {time} پر",
-      },
-      // İmsak bir namaz vakti değil, orucun/günün başlangıcıdır — Türkçe'de "İmsak
-      // Namazı Saat X" yerine "İmsak Vakti Saat X" diyoruz. Diğer diller zaten prayer
-      // adını doğrudan kullandığı için bu ayrım sadece Türkçe'de gerekiyor.
-      bodyImsakTr: {
-        tr: "İmsak Vakti Saat {time}",
-      },
-    };
     const stx = (key: string, vars: Record<string, string>) => {
-      let s = STATUS_TEXTS[key][lang] || STATUS_TEXTS[key].en;
+      let s = getNotificationText(key, lang);
       Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, v); });
       return s;
     };
     const buildStatusBody = (nextKey: string, nextTime: string) => {
-      const nextName = PRAYER_NAMES[nextKey]?.[lang] || nextKey;
-      if (nextKey === "gunes") return stx("bodySunrise", { time: nextTime });
+      const nextName = prayerName(nextKey, nextKey);
+      if (nextKey === "gunes") return stx("statusBodySunrise", { time: nextTime });
       if (nextKey === "imsak" && lang === "tr") return stx("bodyImsakTr", { time: nextTime });
-      return stx("bodyPrayer", { next: nextName, time: nextTime });
+      return stx("statusBodyPrayer", { next: nextName, time: nextTime });
     };
 
     const timeByDay: Record<string, string>[] = days.map(d => {
@@ -514,8 +523,7 @@ export async function schedulePrayerNotifications(
       const timeStr = timeByKey[STATUS_ORDER[i]];
       if (!timeStr) continue;
       const [h, m] = timeStr.split(":").map(Number);
-      const d = new Date(now);
-      d.setHours(h, m, 0, 0);
+      const d = zonedWallTimeToDate(today, h, m, tz);
       if (d <= now) { currentIdx = i; break; }
     }
     if (currentIdx === -1) currentIdx = STATUS_ORDER.length - 1; // hâlâ dünün yatsı vakti
@@ -560,8 +568,7 @@ export async function schedulePrayerNotifications(
       let pastAnchorStatusId = statusId(0, -1);
       if (currentTimeStr) {
         const [ch, cm] = currentTimeStr.split(":").map(Number);
-        const curD = new Date(now);
-        curD.setHours(ch, cm, 0, 0);
+        const curD = zonedWallTimeToDate(today, ch, cm, tz);
         if (curD <= now) pastAnchorStatusId = statusId(0, currentIdx);
       }
 
@@ -577,12 +584,13 @@ export async function schedulePrayerNotifications(
         } catch {}
       }
       const nt = nextTime.split(":").map(Number);
-      const nextTransitionDate = new Date(now);
-      nextTransitionDate.setHours(nt[0], nt[1], 0, 0);
-      if (nextTransitionDate <= now) nextTransitionDate.setDate(nextTransitionDate.getDate() + 1);
+      let nextTransitionDate = zonedWallTimeToDate(today, nt[0], nt[1], tz);
+      if (nextTransitionDate <= now) {
+        nextTransitionDate = zonedWallTimeToDate(addDays(today, 1), nt[0], nt[1], tz);
+      }
       immediateStatus = {
         id: IMMEDIATE_ID_BASE + currentIdx,
-        title: stx("title", { name: PRAYER_NAMES[currentKey]?.[lang] || currentKey }),
+        title: stx("statusTitle", { name: prayerName(currentKey, currentKey) }),
         body: buildStatusBody(nextKey, nextTime),
         schedule: { at: new Date(now.getTime() + 2000), allowWhileIdle: true },
         channelId: CHANNEL_STATUS,
@@ -606,9 +614,7 @@ export async function schedulePrayerNotifications(
           const timeStr = tMap[key];
           if (!timeStr) return;
           const [h, m] = timeStr.split(":").map(Number);
-          const triggerDate = new Date(now);
-          triggerDate.setDate(triggerDate.getDate() + dIdx);
-          triggerDate.setHours(h, m, 0, 0);
+          const triggerDate = zonedWallTimeToDate(addDays(today, dIdx), h, m, tz);
           if (triggerDate <= now) return; // geçmiş vakit (yalnızca bugünün geçmişi olabilir)
 
           const thisNextIdx = (i + 1) % STATUS_ORDER.length;
@@ -629,7 +635,7 @@ export async function schedulePrayerNotifications(
 
           notifications.push({
             id: statusId(dIdx, i),
-            title: stx("title", { name: PRAYER_NAMES[key]?.[lang] || key }),
+            title: stx("statusTitle", { name: prayerName(key, key) }),
             body: buildStatusBody(thisNextKey, thisNextTime),
             schedule: { at: triggerDate, allowWhileIdle: true },
             channelId: CHANNEL_STATUS,
