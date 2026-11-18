@@ -1,14 +1,20 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from "react";
 import {
-  MapPin, Calendar, Sparkles, Search, Compass,
-  RefreshCw, ChevronsDown, Globe, Map,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Moon, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock
+  MapPin, Calendar, Sparkles, Compass, CircleDot,
+  RefreshCw, ChevronsDown, Globe,
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock, ExternalLink, BatteryCharging, WifiOff
 } from "lucide-react";
+import appNamazIcon from "./assets/app-namaz.png";
+import appHabitIcon from "./assets/app-habit.png";
+import appWeatherIcon from "./assets/app-weather.png";
+import Onboarding from "./components/Onboarding";
+import TesbihModal from "./components/TesbihModal";
+import ReligiousCalendarModal from "./components/ReligiousCalendarModal";
+import AddLocationModal, { LocationManager } from "./components/AddLocationModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoon as faMoonSolid, faSun, faStar } from "@fortawesome/free-solid-svg-icons";
-import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS, resolveDefaultPrayerMethod } from "./utils/prayerHelper";
+import { fetchPrayerTimes, getPrayerTimesFallback, PrayerTime, PRAYER_METHODS, PRAYER_METHODS_ORDERED, PRAYER_METHOD_DIYANET, PRAYER_METHOD_KARACHI, PRAYER_METHOD_MWL, resolveDefaultPrayerMethod, PrayerTimesSource } from "./utils/prayerHelper";
 import { Location } from "./types";
-import { TURKEY_PROVINCES, PAKISTAN_CITIES } from "./utils/weatherHelper";
 import {
   NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS,
   requestNotificationPermission, checkNotificationPermission,
@@ -17,12 +23,13 @@ import {
   cleanupTestNotifications,
   PRAYER_LABELS, NOTIFICATION_HORIZON_DAYS,
 } from "./utils/notificationHelper";
-import { t, detectLanguage, LangCode } from "./utils/i18n";
+import { t, detectLanguage, LangCode, LANGUAGE_LIST, isRTL, getLocale, getHijriMonths } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
+import { magneticDeclination } from "./utils/geomag";
 import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart, exactAlarmsAllowed, openExactAlarmSettings } from "./utils/batteryHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
-import { requestLocationPermission, getCurrentPosition } from "./utils/locationHelper";
+import { requestLocationPermission, getCurrentPosition, getDeviceTimezone, fetchTimezone, guessTimezone, DEFAULT_LOCATION } from "./utils/locationHelper";
 import { buildWidgetPayload, syncWidgets } from "./utils/widgetBridge";
 import {
   getSupporterProducts, purchaseSupporterBadge, checkIsSupporter, restoreSupporterPurchases,
@@ -229,26 +236,7 @@ export const KERAHAT_COLORS: Record<ThemeKey, string> = {
   lavanta: "#6d28d9",
 };
 
-function guessTimezone(lng: number): string {
-  const offset = Math.round(lng / 15);
-  const MAP: Record<string, string> = {
-    "-12":"Etc/GMT+12","-11":"Pacific/Midway","-10":"Pacific/Honolulu","-9":"America/Anchorage",
-    "-8":"America/Los_Angeles","-7":"America/Denver","-6":"America/Chicago","-5":"America/New_York",
-    "-4":"America/Halifax","-3":"America/Sao_Paulo","-2":"Atlantic/South_Georgia","-1":"Atlantic/Azores",
-    "0":"Europe/London","1":"Europe/Berlin","2":"Europe/Helsinki","3":"Europe/Istanbul",
-    "4":"Asia/Dubai","5":"Asia/Karachi","6":"Asia/Dhaka","7":"Asia/Bangkok",
-    "8":"Asia/Singapore","9":"Asia/Tokyo","10":"Australia/Sydney","11":"Pacific/Noumea","12":"Pacific/Auckland",
-  };
-  return MAP[String(offset)] || "Europe/London";
-}
-
 const APP_VERSION = "1.0.22";
-
-const DEFAULT_LOCATION: Location = {
-  name: "İstanbul", country: "Türkiye",
-  latitude: 41.0082, longitude: 28.9784,
-  timezone: "Europe/Istanbul", admin1: "Marmara"
-};
 
   const MOON_PHASE_ICONS: Record<MoonPhase, React.ReactNode> = {
   newMoon: <FontAwesomeIcon icon={faMoonSolid} />, waxingCrescent: <FontAwesomeIcon icon={faMoonSolid} />, firstQuarter: <FontAwesomeIcon icon={faMoonSolid} />,
@@ -378,10 +366,65 @@ function LocationPermissionPrompt({ onAllow, onDeny, lang }: {
   );
 }
 
+function BatteryOptimizationPrompt({ onOpen, onDismiss, lang }: {
+  onOpen: () => void;
+  onDismiss: () => void;
+  lang: LangCode;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onDismiss}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div className="relative w-full max-w-sm rounded-[28px] border border-white/10 bg-slate-900/98 p-6 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+        <BatteryCharging className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-slate-100 mb-2">{t("batteryWarningTitle", lang)}</h3>
+        <p className="text-sm text-slate-400 mb-5 leading-relaxed">{t("batteryWarningDesc", lang)}</p>
+        <div className="flex gap-3">
+          <button onClick={onDismiss}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 font-semibold text-sm hover:bg-white/5 transition-all cursor-pointer">
+            {t("dismiss", lang)}
+          </button>
+          <button onClick={onOpen}
+            className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-400 transition-all cursor-pointer">
+            {t("openSettings", lang)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OfflineMethodNotice({ onOk, onChange, lang }: {
+  onOk: () => void;
+  onChange: () => void;
+  lang: LangCode;
+}) {
+  return (
+    <div className="fixed inset-0 z-[85] flex items-center justify-center p-4" onClick={onOk}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div className="relative w-full max-w-sm rounded-[28px] border border-white/10 bg-slate-900/98 p-6 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+        <WifiOff className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-slate-100 mb-2">{t("offlineNoticeTitle", lang)}</h3>
+        <p className="text-sm text-slate-400 mb-5 leading-relaxed">{t("offlineNoticeDesc", lang)}</p>
+        <div className="flex gap-3">
+          <button onClick={onOk}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 font-semibold text-sm hover:bg-white/5 transition-all cursor-pointer">
+            {t("offlineNoticeOk", lang)}
+          </button>
+          <button onClick={onChange}
+            className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-400 transition-all cursor-pointer">
+            {t("offlineNoticeChange", lang)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsPanel({
   theme, setTheme, location, setLocation,
   savedLocations, setSavedLocations,
   prayerMethod, setPrayerMethod,
+  activeMethod,
   onClose, t: th,
   notificationSettings, setNotificationSettings,
   prayerTimes,
@@ -397,11 +440,13 @@ function SettingsPanel({
   purchasingId,
   onSupporterPurchase,
   onSupporterRestore,
+  onOpenReligious,
 }: {
   theme: ThemeKey; setTheme: (k: ThemeKey) => void;
   location: Location; setLocation: (l: Location) => void;
   savedLocations: Location[]; setSavedLocations: (locs: Location[]) => void;
   prayerMethod: number; setPrayerMethod: (m: number) => void;
+  activeMethod: number;
   onClose: () => void; t: typeof THEMES[ThemeKey];
   notificationSettings: NotificationSettings;
   setNotificationSettings: (s: NotificationSettings) => void;
@@ -412,16 +457,20 @@ function SettingsPanel({
   isDetectingLocation: boolean;
   autoLocationEnabled: boolean;
   onToggleAutoLocation: (val: boolean) => void;
-  initialTab?: "genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda";
+  initialTab?: "genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda"|"meccanen";
   isSupporterUser: boolean;
   supporterLoading: boolean;
   purchasingId: string | null;
   onSupporterPurchase: (productId: SupporterProductId) => void;
   onSupporterRestore: () => void;
+  onOpenReligious: () => void;
 }) {
-  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda">(initialTab || "genel");
+  const [tab, setTab] = useState<"genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda"|"meccanen">(initialTab || "genel");
   const [playingEzanPreview, setPlayingEzanPreview] = useState<string | null>(null);
   const ezanPreviewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Dile göre önerilen varsayılan hesaplama metodu (TR→Diyanet, UR→Karachi, diğer→MWL).
+  const recommendedMethodId = lang === "tr" ? PRAYER_METHOD_DIYANET : lang === "ur" ? PRAYER_METHOD_KARACHI : PRAYER_METHOD_MWL;
 
   // MIUI/HyperOS (Xiaomi) cihazlarda, ezan çalarken kullanıcı ses tuşuna bastığında
   // (veya sistem "arka planda çalışıyor" uyarısını kapattığında) MIUI'nin agresif pil/
@@ -454,13 +503,8 @@ function SettingsPanel({
   useEffect(() => {
     return () => { ezanPreviewAudioRef.current?.pause(); };
   }, []);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Location[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
   const [notification, setNotification] = useState("");
   const [exactAlarmOff, setExactAlarmOff] = useState(false);
-  const MAX_LOCATIONS = 33;
 
   // Panel her açıldığında kesin alarm iznini kontrol et — zaten bildirimleri açık olan
   // kullanıcılar (izni hiç ayarlamamış olanlar) uyarıyı buradan görür.
@@ -470,80 +514,11 @@ function SettingsPanel({
 
   const notify = (msg: string) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
 
-  const performSearch = async () => {
-    const q = searchQuery.trim();
-    if (!q) return;
-    setIsSearching(true); setSearchError(""); setSearchResults([]);
-    try {
-      // Open-meteo geocoding API UR (Urduca) desteklemiyor → UR için AR kullan
-      const apiLang = lang === "ur" ? "ar" : lang;
-      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=${apiLang}`);
-      const data = await res.json();
-      if (data.results?.length) {
-        setSearchResults(data.results.map((r: any) => ({
-          name: r.name, country: r.country || t("unknown", lang),
-          latitude: r.latitude, longitude: r.longitude,
-          timezone: r.timezone && r.timezone !== "GMT" && r.timezone !== "UTC"
-            ? r.timezone : guessTimezone(r.longitude),
-          admin1: r.admin1 || ""
-        })));
-      } else setSearchError(t("noResults", lang));
-    } catch { setSearchError(t("searchError", lang)); }
-    finally { setIsSearching(false); }
-  };
-
-  const addAndSelectCity = (loc: Location) => {
-    const exists = savedLocations.some(l =>
-      l.latitude.toFixed(2) === loc.latitude.toFixed(2) &&
-      l.longitude.toFixed(2) === loc.longitude.toFixed(2)
-    );
-    if (!exists && savedLocations.length >= MAX_LOCATIONS) {
-      notify(t("maxLocations", lang, { n: String(MAX_LOCATIONS) }));
-      return;
-    }
-    const newList = exists ? savedLocations : [...savedLocations, loc];
-    setSavedLocations(newList);
-    setLocation(loc);
-    // Manuel şehir seçilince otomatik konum takibini kapat.
-    localStorage.setItem("mnv_auto_location", "false");
-    setAutoLocationEnabled(false);
-    setSearchResults([]); setSearchQuery("");
-    notify(t("citySelected", lang, { city: loc.name, country: loc.country }));
-  };
-
-  const selectSaved = (loc: Location) => { setLocation(loc); notify(t("citySelected", lang, { city: loc.name, country: loc.country })); };
-
-  const deleteSaved = (idx: number) => {
-    const next = savedLocations.filter((_, i) => i !== idx);
-    setSavedLocations(next);
-    if (location.latitude === savedLocations[idx].latitude) setLocation(next[0] || DEFAULT_LOCATION);
-  };
-
-  const selectProvince = (name: string) => {
-    const p = TURKEY_PROVINCES.find(x => x.name === name);
-    if (!p) return;
-    addAndSelectCity({ name: p.name, country: "Türkiye", latitude: p.latitude, longitude: p.longitude, timezone: "Europe/Istanbul", admin1: "Türkiye" });
-  };
-
-  const selectPakistanCity = (id: number) => {
-    const p = PAKISTAN_CITIES.find(x => x.id === id);
-    if (!p) return;
-    addAndSelectCity({ name: p.urdu, country: "پاکستان", latitude: p.latitude, longitude: p.longitude, timezone: "Asia/Karachi", admin1: "Pakistan" });
-  };
-
   const handleThemeClick = (key: ThemeKey) => {
     const th = THEMES[key];
     setTheme(key);
     notify(t(`theme_${key}`, lang));
   };
-
-  const LANGUAGES: { code: LangCode; label: string }[] = [
-    { code: "tr", label: "Türkçe" },
-    { code: "en", label: "English" },
-    { code: "ar", label: "العربية" },
-    { code: "de", label: "Deutsch" },
-    { code: "ur", label: "اردو" },
-  ];
 
   const tabs = [
     { key: "genel" as const, label: t("theme", lang) },
@@ -552,8 +527,9 @@ function SettingsPanel({
     { key: "bildirim" as const, label: t("notificationsTab", lang) },
     { key: "dil" as const, label: t("language", lang) },
     { key: "hakkinda" as const, label: t("about", lang) },
+    { key: "meccanen" as const, label: t("appsTab", lang) },
   ];
-  type TabKey = "genel" | "konum" | "metot" | "bildirim" | "dil" | "hakkinda";
+  type TabKey = "genel" | "konum" | "metot" | "bildirim" | "dil" | "hakkinda" | "meccanen";
 
   return (
     <>
@@ -610,6 +586,15 @@ function SettingsPanel({
                     );
                   })}
                 </div>
+                <button onClick={onOpenReligious}
+                  className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${th.header}`}>
+                  <Calendar className="w-6 h-6 shrink-0 text-amber-500" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className={`text-base sm:text-lg font-bold ${th.textPrimary}`}>{t("relTitle", lang)}</div>
+                    <div className={`text-sm ${th.textMuted}`}>{t("relPeriod", lang)} · {t("relSettingsDesc", lang)}</div>
+                  </div>
+                  <ChevronsDown className={`w-5 h-5 shrink-0 ${th.textMuted} -rotate-90`} />
+                </button>
               </div>
             )}
 
@@ -619,7 +604,7 @@ function SettingsPanel({
                   <Globe className="w-3.5 h-3.5" />{t("language", lang)}
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {LANGUAGES.map(l => (
+                  {LANGUAGE_LIST.map(l => (
                     <button key={l.code} onClick={() => setLang(l.code)}
                       className={`py-4 rounded-2xl border-2 text-lg font-bold transition-all duration-200 cursor-pointer ${lang === l.code ? `border-current bg-white/15 ${th.textPrimary} shadow-md` : `border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                       {l.label}
@@ -630,131 +615,15 @@ function SettingsPanel({
             )}
 
             {tab === "konum" && (
-              <div className="space-y-4">
-                {/* Otomatik konum toggle — her zaman görünür, tıklanınca açılır/kapanır */}
-                <div className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${autoLocationEnabled ? "bg-sky-500/10 border-sky-500/20" : "bg-white/5 border-white/5"}`}>
-                  <div className="flex items-center gap-2">
-                    <Navigation className={`w-4 h-4 shrink-0 ${autoLocationEnabled ? "text-sky-400" : th.textMuted}`} />
-                    <div>
-                      <div className={`text-base sm:text-lg font-extrabold ${autoLocationEnabled ? "text-sky-400" : th.textPrimary}`}>
-                        {t("autoLocationToggleLabel", lang)}
-                      </div>
-                      <div className={`text-sm ${th.textMuted}`}>
-                        {autoLocationEnabled ? t("autoLocationDesc", lang) : t("autoLocationOffDesc", lang)}
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => {
-                    const next = !autoLocationEnabled;
-                    localStorage.setItem("mnv_auto_location", String(next));
-                    onToggleAutoLocation(next);
-                  }}
-                    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${autoLocationEnabled ? "bg-sky-500 border-sky-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${autoLocationEnabled ? "left-6" : "left-0.5"}`} />
-                  </button>
-                </div>
-
-                <button onClick={onFindLocation} disabled={isDetectingLocation}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all duration-200 cursor-pointer">
-                  <Navigation className={`w-4 h-4 ${isDetectingLocation ? "animate-spin" : ""}`} />
-                  {isDetectingLocation ? t("detecting", lang) : t("findMyLocation", lang)}
-                </button>
-
-                {savedLocations.length > 0 && (
-                  <div>
-                    <h3 className={`text-sm font-bold tracking-wide ${th.textPrimary} flex items-center gap-1.5 mb-2`}>
-                      <Star className="w-3.5 h-3.5" />{t("location", lang)} ({savedLocations.length}/{MAX_LOCATIONS})
-                    </h3>
-                    <div className="space-y-1.5">
-                      {savedLocations.map((loc, idx) => {
-                        const isActive = location.latitude.toFixed(3) === loc.latitude.toFixed(3);
-                        return (
-                          <div key={idx} className={`flex items-center gap-2 p-3 rounded-2xl border transition-all duration-200 ${isActive ? "bg-white/10 border-white/20" : "bg-black/20 border-white/5"}`}>
-                            <button onClick={() => selectSaved(loc)} className="flex-1 text-left cursor-pointer">
-                              <div className="flex items-center gap-2">
-                                {isActive && <div className={`w-2 h-2 rounded-full ${th.accent.replace("text-","bg-")} shrink-0`} />}
-                                <span className={`text-sm font-bold ${isActive ? th.accent : th.textPrimary}`}>{loc.name}</span>
-                                <span className={`text-sm ${th.textMuted}`}>{loc.country}</span>
-                              </div>
-                              <div className={`text-sm ${th.textMuted} font-mono mt-0.5`}>{loc.latitude.toFixed(2)}°N {loc.longitude.toFixed(2)}°E</div>
-                            </button>
-                            <button onClick={() => deleteSaved(idx)} className={`p-1.5 ${th.textMuted} hover:text-red-400 transition-all cursor-pointer shrink-0`}>
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2 mb-2`}>
-                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />{t("searchCity", lang)}
-                  </h3>
-                  <div className="relative mb-2">
-                    <input type="text" value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && performSearch()}
-                      placeholder={t("searchCity", lang)}
-                      className={`w-full bg-black/30 border border-white/10 focus:border-white/30 focus:ring-1 focus:ring-white/20 rounded-2xl pl-10 pr-20 py-2.5 text-sm ${th.textPrimary} placeholder:${th.textMuted} focus:outline-none transition-all duration-200`} />
-                    <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${th.textMuted}`} />
-                    <button onClick={performSearch} disabled={isSearching}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl text-xs font-extrabold uppercase cursor-pointer disabled:opacity-50 text-slate-900 bg-white/80">
-                      {isSearching ? t("updating", lang) : t("search", lang)}
-                    </button>
-                  </div>
-                  {searchResults.length > 0 && (
-                    <div className="bg-black/40 border border-white/10 rounded-2xl p-2 max-h-44 overflow-y-auto space-y-1 mb-2">
-                      {searchResults.map((r, i) => (
-                        <button key={i} onClick={() => addAndSelectCity(r)}
-                          className={`w-full hover:bg-white/10 rounded-xl p-2.5 text-left text-sm ${th.textPrimary} flex justify-between items-center transition-all cursor-pointer`}>
-                          <div>
-                            <span className={`font-bold ${th.textPrimary}`}>{r.name}</span>
-                            {r.admin1 && <span className={`${th.textMuted} ml-1.5 text-sm`}>({r.admin1})</span>}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${th.accent} bg-white/5 border border-white/10`}>{r.country}</span>
-                            <Plus className={`w-3.5 h-3.5 ${th.textMuted}`} />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {searchError && <p className="text-sm text-amber-500 mb-2">{searchError}</p>}
-                  {lang === "tr" && (
-                  <div>
-                    <label className={`text-sm ${th.textMuted} font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5`}>
-                      <Map className="w-3 h-3" />{t("turkeyProvinces", lang)}
-                    </label>
-                    <div className="relative">
-                      <select onChange={e => { if (e.target.value) { selectProvince(e.target.value); e.target.value = ""; } }}
-                        className={`w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm ${th.textPrimary} focus:outline-none cursor-pointer appearance-none`}>
-                        <option value="">{t("select", lang)}</option>
-                        {TURKEY_PROVINCES.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                      </select>
-                      <ChevronsDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${th.textMuted} pointer-events-none`} />
-                    </div>
-                  </div>
-                  )}
-                  {lang === "ur" && (
-                  <div dir="rtl">
-                    <label className={`text-sm ${th.textMuted} font-bold uppercase tracking-wide flex items-center gap-1 mb-1.5`}>
-                      <Map className="w-3 h-3" />{t("pakistanCities", lang)}
-                    </label>
-                    <div className="relative">
-                      <select onChange={e => { if (e.target.value) { selectPakistanCity(Number(e.target.value)); e.target.value = ""; } }}
-                        className={`w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm ${th.textPrimary} focus:outline-none cursor-pointer appearance-none`}
-                        dir="rtl">
-                        <option value="">{t("select", lang)}</option>
-                        {PAKISTAN_CITIES.map(p => <option key={p.id} value={p.id}>{p.urdu}</option>)}
-                      </select>
-                      <ChevronsDown className={`absolute left-3 right-auto top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${th.textMuted} pointer-events-none`} />
-                    </div>
-                  </div>
-                  )}
-                </div>
-              </div>
+              <LocationManager
+                th={th} lang={lang}
+                location={location} setLocation={setLocation}
+                savedLocations={savedLocations} setSavedLocations={setSavedLocations}
+                onFindLocation={onFindLocation}
+                isDetectingLocation={isDetectingLocation}
+                autoLocationEnabled={autoLocationEnabled}
+                onToggleAutoLocation={onToggleAutoLocation}
+              />
             )}
 
             {tab === "metot" && (
@@ -762,16 +631,27 @@ function SettingsPanel({
                 <h3 className={`text-lg sm:text-xl font-extrabold tracking-wide ${th.textPrimary} flex items-center gap-2 mb-3`}>
                   <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />{t("prayerMethod", lang)}
                 </h3>
-                {PRAYER_METHODS.map(m => (
+                {PRAYER_METHODS_ORDERED.map(m => {
+                  const isEffective = activeMethod === m.id && activeMethod !== prayerMethod;
+                  return (
                   <button key={m.id} onClick={() => setPrayerMethod(m.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer text-left ${prayerMethod === m.id ? "border-white/30 bg-white/10" : "border-white/5 bg-white/5 hover:bg-white/10"}`}>
                     <div>
-                      <div className={`text-base sm:text-lg font-extrabold ${th.textPrimary}`}>{m.label[lang] || m.label.en}</div>
+                      <div className={`text-base sm:text-lg font-extrabold ${th.textPrimary} flex items-center gap-2 flex-wrap`}>
+                        {m.label[lang] || m.label.en}
+                        {isEffective && (
+                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full border text-emerald-400 border-emerald-500/40 bg-emerald-500/10">{t("activeMethodBadge", lang)}</span>
+                        )}
+                        {m.id === recommendedMethodId && (
+                          <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${th.accent}`}>{t("recommended", lang)}</span>
+                        )}
+                      </div>
                       <div className={`text-sm sm:text-base ${th.textMuted} mt-0.5`}>{m.description[lang] || m.description.en}</div>
                     </div>
                     {prayerMethod === m.id && <Check className={`w-4 h-4 ${th.accent} shrink-0 ml-2`} />}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -801,7 +681,7 @@ function SettingsPanel({
                       setNotificationSettings(updated);
                       saveNotificationSettings(updated);
                       if (next) {
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                         notify(t("notifyActive", lang));
                         // Pil optimizasyonu muafiyeti iste (tüm Android'lerde geçerli, sessizce
                         // no-op olur eğer zaten muaf ise veya plugin mevcut değilse).
@@ -824,29 +704,21 @@ function SettingsPanel({
                 {showXiaomiHint && (
                   <div className="p-4 rounded-2xl border border-sky-500/30 bg-sky-500/10 space-y-2.5">
                     <div className="text-sm sm:text-base font-bold text-sky-400">
-                      {lang === "tr" ? "Xiaomi/MIUI cihaz tespit edildi" : lang === "de" ? "Xiaomi/MIUI-Gerät erkannt" : lang === "ar" ? "تم اكتشاف جهاز MIUI" : lang === "ur" ? "MIUI ڈیوائس کا پتہ چلا" : "Xiaomi/MIUI device detected"}
+                      {t("xiaomiHintTitle", lang)}
                     </div>
                     <p className={`text-sm ${th.textMuted} leading-relaxed`}>
-                      {lang === "tr"
-                        ? "MIUI, ezan çalarken sesi kapattığında bildirimleri arka planda durdurabiliyor. Bildirimlerin gün boyu güvenilir gelmesi için \"Otomatik Başlatma\"yı açman gerekiyor."
-                        : lang === "de"
-                        ? "MIUI kann Benachrichtigungen im Hintergrund stoppen, wenn du den Ton während des Adhans ausschaltest. Aktiviere \"Autostart\", damit Benachrichtigungen zuverlässig ankommen."
-                        : lang === "ar"
-                        ? "قد يوقف MIUI الإشعارات في الخلفية عند كتم صوت الأذان. فعّل \"بدء التشغيل التلقائي\" لضمان وصول الإشعارات."
-                        : lang === "ur"
-                        ? "MIUI اذان کی آواز بند کرنے پر بیک گراؤنڈ اطلاعات روک سکتا ہے۔ قابل اعتماد اطلاعات کے لیے \"آٹو اسٹارٹ\" آن کریں۔"
-                        : "MIUI can silently stop background notifications when you mute the adhan mid-play. Turn on \"Autostart\" so notifications keep arriving reliably."}
+                      {t("xiaomiHintDesc", lang)}
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={async () => { await promptXiaomiAutostart(); }}
                         className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-sky-500/20 border border-sky-500/40 text-sky-400 hover:bg-sky-500/30 transition-all cursor-pointer">
-                        {lang === "tr" ? "Ayarları Aç" : lang === "de" ? "Einstellungen öffnen" : lang === "ar" ? "فتح الإعدادات" : lang === "ur" ? "ترتیبات کھولیں" : "Open Settings"}
+                        {t("openSettings", lang)}
                       </button>
                       <button
                         onClick={() => { localStorage.setItem("mnv_xiaomi_hint_dismissed", "1"); setShowXiaomiHint(false); }}
                         className={`px-4 py-2.5 rounded-xl text-sm font-bold border border-white/10 bg-white/5 ${th.textMuted} hover:bg-white/10 transition-all cursor-pointer`}>
-                        {lang === "tr" ? "Kapat" : lang === "de" ? "Schließen" : lang === "ar" ? "إغلاق" : lang === "ur" ? "بند کریں" : "Dismiss"}
+                        {t("dismiss", lang)}
                       </button>
                     </div>
                   </div>
@@ -878,7 +750,7 @@ function SettingsPanel({
                             const updated = { ...notificationSettings, minutesBefore: min };
                             setNotificationSettings(updated);
                             saveNotificationSettings(updated);
-                            await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                            await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                             notify(min === 0 ? t("minutesOff", lang) : t("notifyMinutes", lang, { min: String(min) }));
                           }}
                             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.minutesBefore === min ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
@@ -896,7 +768,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, notifyAtVakit: !notificationSettings.notifyAtVakit };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                       }}
                         className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer border-2 shrink-0 ${notificationSettings.notifyAtVakit ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600 hover:border-slate-500"}`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${notificationSettings.notifyAtVakit ? "left-6" : "left-0.5"}`} />
@@ -911,7 +783,7 @@ function SettingsPanel({
                               const updated = { ...notificationSettings, soundTypeAtVakit: st };
                               setNotificationSettings(updated);
                               saveNotificationSettings(updated);
-                              await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                              await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                             }}
                               className={`flex-1 py-3 rounded-2xl text-base sm:text-lg font-bold transition-all duration-200 cursor-pointer border ${notificationSettings.soundTypeAtVakit === st ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : `border-white/5 bg-white/5 ${th.textMuted} hover:bg-white/10`}`}>
                               {st === "ezan" ? t("soundEzan", lang) : t("soundDefault", lang)}
@@ -931,7 +803,7 @@ function SettingsPanel({
                         const updated = { ...notificationSettings, showStatusNotification: turningOn };
                         setNotificationSettings(updated);
                         saveNotificationSettings(updated);
-                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                        const r = await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                         console.log("[Meccanen] Durum bildirimi planlama sonucu:", r);
                         if (!r.success) {
                           notify(t("notifyScheduleError", lang, { error: r.error || "?" }));
@@ -967,7 +839,7 @@ function SettingsPanel({
                                 const updated = { ...notificationSettings, prayers: { ...notificationSettings.prayers, [key]: !isOn } };
                                 setNotificationSettings(updated);
                                 saveNotificationSettings(updated);
-                                await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes);
+                                await schedulePrayerNotifications(prayerTimes, updated, "", lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul");
                               }}
                                 className={`relative w-10 h-5 rounded-full transition-all cursor-pointer border ${isOn ? "bg-amber-500 border-amber-400" : "bg-slate-700 border-slate-600"}`}>
                                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isOn ? "left-5" : "left-0.5"}`} />
@@ -1058,6 +930,46 @@ function SettingsPanel({
                 <p className={`text-center text-sm ${th.textMuted}`}>© 2026 Meccanen</p>
               </div>
             )}
+
+            {tab === "meccanen" && (
+              <div className="space-y-4">
+                <div className={`rounded-2xl border p-4 ${th.card}`}>
+                  <p className={`text-xs leading-relaxed ${th.textSecondary}`}>{t("appsIntro", lang)}</p>
+                </div>
+
+                {([
+                  {
+                    nameKey: "appNamazName", descKey: "appNamazDesc", img: appNamazIcon,
+                    url: "https://play.google.com/store/apps/details?id=meccanen.namaz.vakti.v1",
+                  },
+                  {
+                    nameKey: "appHabitName", descKey: "appHabitDesc", img: appHabitIcon,
+                    url: "https://play.google.com/store/apps/details?id=com.meccanen.habittracker",
+                  },
+                  {
+                    nameKey: "appWeatherName", descKey: "appWeatherDesc", img: appWeatherIcon,
+                    url: "https://play.google.com/store/apps/details?id=com.specialweatherassistant.app",
+                  },
+                ] as const).map((app) => (
+                  <div key={app.nameKey} className={`rounded-2xl border p-4 space-y-3 ${th.card}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img src={app.img} alt="" className="w-11 h-11 shrink-0 rounded-2xl object-cover" />
+                      <div className="min-w-0">
+                        <h4 className={`font-medium text-sm ${th.textPrimary}`}>{t(app.nameKey, lang)}</h4>
+                        <p className={`text-xs leading-relaxed ${th.textSecondary}`}>{t(app.descKey, lang)}</p>
+                      </div>
+                    </div>
+                    <a href={app.url} target="_blank" rel="noopener noreferrer"
+                      className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold transition active:scale-[0.98] ${th.card} ${th.accent}`}>
+                      <ExternalLink size={13} className="shrink-0" />
+                      {t("appsOpen", lang)}
+                    </a>
+                  </div>
+                ))}
+
+                <p className={`text-center text-xs ${th.textMuted}`}>{t("appsFoot", lang)}</p>
+              </div>
+            )}
           </div>
 
           {notification && (
@@ -1082,18 +994,46 @@ export default function App() {
   });
   const setLang = (l: LangCode) => { setLangState(l); localStorage.setItem("mnv_lang", l); };
 
+  useEffect(() => {
+    document.documentElement.lang = getLocale(lang);
+    document.documentElement.dir = isRTL(lang) ? "rtl" : "ltr";
+  }, [lang]);
+
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) setLangMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [langMenuOpen]);
+
+  const [locMenuOpen, setLocMenuOpen] = useState(false);
+  const locMenuRef = useRef<HTMLDivElement>(null);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  useEffect(() => {
+    if (!locMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (locMenuRef.current && !locMenuRef.current.contains(e.target as Node)) setLocMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [locMenuOpen]);
+
   // Erişilebilirlik: yazı boyutu büyütme (yaşlı/görme zorluğu yaşayan kullanıcılar için).
-  // "Aa" düğmesiyle 4 kademe arasında döngü yapılır: Normal, Büyük, Daha Büyük, En Büyük.
+  // "Aa" düğmesiyle 3 kademe arasında döngü yapılır: Normal (%100), Büyük (%115), Daha Büyük (%130).
   // Uygulanması index.css'teki --afs CSS değişkeni üzerinden global olarak yapılıyor
   // (aşağıdaki useEffect'e bakınız) — böylece Ayarlar/Hakkında dahil TÜM metinler
   // otomatik olarak kapsanıyor, tek tek her ekranı değiştirmeye gerek kalmıyor.
-  const FONT_SCALE_LEVELS = [1, 1.15, 1.3, 1.45];
+  const FONT_SCALE_LEVELS = [1, 1.15, 1.3];
   const [fontScale, setFontScale] = useState<number>(() => {
     const saved = parseFloat(localStorage.getItem("mnv_font_scale") || "1");
     return FONT_SCALE_LEVELS.includes(saved) ? saved : 1;
   });
   const [isFontScaleChanging, setIsFontScaleChanging] = useState(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.style.setProperty("--afs", String(fontScale));
   }, [fontScale]);
   const cycleFontScale = () => {
@@ -1103,12 +1043,38 @@ export default function App() {
     setIsFontScaleChanging(true);
     window.setTimeout(() => setIsFontScaleChanging(false), 260);
     localStorage.setItem("mnv_font_scale", String(next));
-    notify(`${t("fontSizeLabel", lang)}: %${Math.round(next * 100)}`);
+    showThemeToast(`${t("fontSizeLabel", lang)}: %${Math.round(next * 100)}`);
   };
+
+  // 3. satır (eylem butonları) taşarsa, sondaki küçük ikonları (Dil/Tema/Ayarlar)
+  // üst satıra — uygulama adının sağına — taşırız. Böylece toplam hep 3 satır kalır.
+  const row3Ref = useRef<HTMLDivElement>(null);
+  const [iconsInHeader, setIconsInHeader] = useState(false);
+  // Dil ya da yazı boyutu değişince yeniden ölç: ikonlar sığıyorsa 3. satıra geri dönsün.
+  // (Ölçüm effect'inden ÖNCE gelmeli ki sıfırlama, ölçümün kararını ezmesin.)
+  useEffect(() => { setIconsInHeader(false); }, [lang, fontScale]);
+  useEffect(() => {
+    if (iconsInHeader) return;
+    const el = row3Ref.current;
+    if (!el) return;
+    const kids = [...el.children] as HTMLElement[];
+    if (kids.length < 6) return;
+    // RTL'de ilk öğe sağda, son öğe solda olur; bu yüzden yön bağımsız
+    // hesaplıyoruz (last.right - first.left RTL'de negatif çıkar).
+    const rects = kids.map((k) => k.getBoundingClientRect());
+    const left = Math.min(...rects.map((r) => r.left));
+    const right = Math.max(...rects.map((r) => r.right));
+    if (right - left > el.clientWidth + 1) setIconsInHeader(true);
+  }, [iconsInHeader, lang, fontScale]);
+  useEffect(() => {
+    const onResize = () => setIconsInHeader(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const [notificationSettings, setNotificationSettingsState] = useState<NotificationSettings>(loadNotificationSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState<"genel"|"konum"|"metot"|"bildirim">("genel");
+  const [settingsInitialTab, setSettingsInitialTab] = useState<"genel"|"konum"|"metot"|"bildirim"|"dil"|"hakkinda"|"meccanen">("genel");
   const [location, setLocation] = useState<Location>(() => {
     try { const s = localStorage.getItem("mnv_location"); return s ? JSON.parse(s) : DEFAULT_LOCATION; }
     catch { return DEFAULT_LOCATION; }
@@ -1120,6 +1086,16 @@ export default function App() {
   const [prayerMethod, setPrayerMethodState] = useState<number>(() =>
     resolveDefaultPrayerMethod(localStorage.getItem("mnv_prayer_method"))
   );
+  // Fiilen kullanılan metot: kullanıcı seçimi 99 ise 99; API/önbellek verisi
+  // varsa seçili metot; matematiksel fallback'e düşüldüyse 99.
+  // `prayerMethod` yalnızca kullanıcı seçimini temsil eder ve fallback'te DEĞİŞMEZ.
+  const [activeMethod, setActiveMethod] = useState<number>(() =>
+    resolveDefaultPrayerMethod(localStorage.getItem("mnv_prayer_method"))
+  );
+  const [activeSource, setActiveSource] = useState<PrayerTimesSource | null>(null);
+  // Matematiksel hesaba düşüldüğünde bir kez gösterilen bilgi penceresi.
+  const [offlineNoticePending, setOfflineNoticePending] = useState(false);
+  const offlineNoticeShownRef = useRef(false);
   const [date, setDate] = useState(new Date());
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>(() =>
     getPrayerTimesFallback(DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude, new Date(), DEFAULT_LOCATION.timezone!)
@@ -1131,11 +1107,35 @@ export default function App() {
   const [nextPrayerStr, setNextPrayerStr] = useState("");
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [qiblaDir, setQiblaDir] = useState(0);
+  const [declination, setDeclination] = useState(0);
   const [compassListening, setCompassListening] = useState(false);
+
+  // Kâbe'ye kalan açı (-180..180, + = sağa dön). İbreyle birebir aynı hesap.
+  const qiblaDelta = compassListening && compassHeading !== null
+    ? ((((qiblaDir - declination - compassHeading + 540) % 360) + 360) % 360) - 180
+    : null;
+  const QIBLA_LOCK_DEG = 3;   // hedefe "vardım" sayılan açı
+  const qiblaLocked = qiblaDelta !== null && Math.abs(qiblaDelta) <= QIBLA_LOCK_DEG;
+  // Uzakken amber, yaklaşırken lime, kilitlenince yeşil (yumuşak ton geçişi).
+  const qiblaT = qiblaDelta === null ? 1 : Math.min(1, Math.max(0, (Math.abs(qiblaDelta) - QIBLA_LOCK_DEG) / 25));
+  const qiblaHue = 160 - 122 * qiblaT;
+  const qiblaColor = `hsl(${qiblaHue.toFixed(1)} ${(64 + 28 * qiblaT).toFixed(1)}% ${(52 - 2 * qiblaT).toFixed(1)}%)`;
+  const qiblaColorDeep = `hsl(${qiblaHue.toFixed(1)} ${(64 + 28 * qiblaT).toFixed(1)}% ${(40 - 2 * qiblaT).toFixed(1)}%)`;
+  // Kilitlenmeye girerken tek atımlık nabız (sürekli animasyon yok).
+  const qiblaTurn = qiblaDelta === null || qiblaLocked ? 0 : (qiblaDelta > 0 ? 1 : -1);
+  const [qiblaPulse, setQiblaPulse] = useState(0);
+  useEffect(() => { if (qiblaLocked) setQiblaPulse(n => n + 1); }, [qiblaLocked]);
   const [compassUnsupported, setCompassUnsupported] = useState(false);
   const [showLocationPrompt, setShowLocationPrompt] = useState(
     () => !localStorage.getItem("mnv_location_prompted")
   );
+  // İlk kurulumda pil optimizasyonu muafiyeti için bilgilendirme penceresi.
+  const [showBatteryPrompt, setShowBatteryPrompt] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem("mnv_onboarded_v1")
+  );
+  const [showTesbih, setShowTesbih] = useState(false);
+  const [showReligious, setShowReligious] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   // Kullanıcı "Konumu Bul" seçtiyse bu flag localStorage'da true kalır.
   // Bu sayede: (1) uygulama her açılışında, (2) her 30 dakikada bir konum otomatik güncellenir.
@@ -1213,14 +1213,47 @@ export default function App() {
   useEffect(() => { const i = setInterval(() => setDate(new Date()), 1000); return () => clearInterval(i); }, []);
 
   const lastFetchKey = useRef("");
+  const wasOfflineRef = useRef(false);
+  const retryOnlineRef = useRef<() => void>(() => {});
+  const methodLabel = (id: number) => {
+    const m = PRAYER_METHODS.find(x => x.id === id);
+    return m ? (m.label[lang] || m.label.en) : "";
+  };
   const loadPrayerTimes = async (loc: Location, method: number, dt: Date, force = false) => {
     const key = `${loc.latitude.toFixed(2)}_${loc.longitude.toFixed(2)}_${dt.getDate()}_${dt.getMonth()}_${dt.getFullYear()}_${method}`;
     if (!force && lastFetchKey.current === key) return;
     lastFetchKey.current = key;
     setPrayerLoading(true);
     try {
-      const times = await fetchPrayerTimes(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul", method);
+      const result = await fetchPrayerTimes(
+        loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul", method,
+        force ? { force: true } : undefined
+      );
+      const { times, source } = result;
       setPrayerTimes(times);
+      setActiveSource(source);
+      // Etkin metot: offline matematik hesabına düşüldüyse 99; aksi halde seçili metot.
+      setActiveMethod(method === 99 || source === "offline" ? 99 : method);
+
+      if (source === "api") {
+        // Yeniden bağlanınca bir sonraki çevrimdışı dönem için pencereyi sıfırla.
+        offlineNoticeShownRef.current = false;
+        setOfflineNoticePending(false);
+        // Gerçekten çevrimdışı/önbellek durumundan API'ye dönüldüyse kısa bildirim.
+        // Kullanıcının bilerek 99 seçip sonra başka metoda geçmesi "yeniden bağlandı" sayılmaz.
+        if (wasOfflineRef.current && method !== 99) {
+          showThemeToast(`${t("backOnlineToast", lang)} · ${methodLabel(method)}`);
+        }
+        wasOfflineRef.current = false;
+      } else if (source === "offline" && method !== 99 && !offlineNoticeShownRef.current) {
+        // Yalnızca gerçekten matematiksel hesap kullanıldığında (önbellek yok) bilgi ver.
+        offlineNoticeShownRef.current = true;
+        setOfflineNoticePending(true);
+      }
+      if (source === "cache" || (source === "offline" && method !== 99)) {
+        wasOfflineRef.current = true;
+      }
+
       // Çok günlü bildirim planlaması için bugünün + ufuktaki günlerin vakitlerini çek.
       // İlk günü yeniden çekmek yerine cache'ten (aynı key) anında gelir; ek günler tek ya
       // da birkaç ağ isteği demektir. Başarısız olursa sessizce geç — scheduler 2 güne düşer.
@@ -1229,14 +1262,30 @@ export default function App() {
         for (let i = 0; i < NOTIFICATION_HORIZON_DAYS; i++) {
           const d = new Date(dt);
           d.setDate(d.getDate() + i);
-          days.push(await fetchPrayerTimes(loc.latitude, loc.longitude, d, loc.timezone || "Europe/Istanbul", method));
+          const dayResult = await fetchPrayerTimes(
+            loc.latitude, loc.longitude, d, loc.timezone || "Europe/Istanbul", method,
+            source !== "api" ? { offlineOnly: true } : undefined
+          );
+          days.push(dayResult.times);
         }
         setMultiDayPrayerTimes(days);
       } catch { /* çok günlü veri yok — yalnızca bugün+yarın planlanır */ }
     } catch {
       setMultiDayPrayerTimes([]);
       setPrayerTimes(getPrayerTimesFallback(loc.latitude, loc.longitude, dt, loc.timezone || "Europe/Istanbul"));
+      setActiveSource("offline");
+      setActiveMethod(99);
     } finally { setPrayerLoading(false); }
+  };
+
+  // İnternet geri geldiğinde / uygulama öne geldiğinde: seçili metot 99 değilse ve
+  // elimizdeki veri API'den gelmiyorsa (önbellek veya matematiksel) zorla yeniden çek.
+  retryOnlineRef.current = () => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    if (prayerMethod === 99) return;
+    if (!activeSource || activeSource === "api") return;
+    lastFetchKey.current = "";
+    loadPrayerTimes(location, prayerMethod, date, true);
   };
 
   // Bildirimleri (varsa durum bildirimi dahil) yeniden planlayan ortak fonksiyon.
@@ -1245,7 +1294,7 @@ export default function App() {
   const rescheduleNotifications = useRef<() => void>(() => {});
   rescheduleNotifications.current = () => {
     if (prayerTimes.length > 0 && notificationSettings.enabled) {
-      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang, undefined, multiDayPrayerTimes)
+      schedulePrayerNotifications(prayerTimes, notificationSettings, location.name, lang, undefined, multiDayPrayerTimes, location.timezone || "Europe/Istanbul")
         .then(r => console.log("[Meccanen] Bildirim planlama sonucu:", r));
     }
   };
@@ -1269,10 +1318,11 @@ export default function App() {
       lang,
       location.timezone || "Europe/Istanbul",
       location.latitude,
-      location.longitude
+      location.longitude,
+      prayerMethod
     );
     syncWidgets(payload);
-  }, [multiDayPrayerTimes, prayerTimes, location, themeKey, lang]);
+  }, [multiDayPrayerTimes, prayerTimes, location, themeKey, lang, prayerMethod]);
 
   // Açılışta, tanılama döneminden kalma test bildirimlerini (7997/7998/7999)
   // cihazın bildirim ekranından temizle.
@@ -1294,6 +1344,21 @@ useEffect(() => {
   })();
 }, [notificationSettings.enabled]);
 
+  // İlk kurulumda (onboarding ve konum penceresi kapandıktan sonra) pil optimizasyonu
+  // muafiyeti için nazik bir bilgilendirme penceresi göster; kullanıcı "Ayarları Aç"a
+  // basınca sistem ekranı (`promptBatteryWhitelist`) açılır. Manifest'te
+  // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS izni olmalı (bkz. add_perms.py); aksi halde
+  // sistem ekranı sessizce açılmaz.
+  useEffect(() => {
+    if (showOnboarding || showLocationPrompt) return;
+    if (localStorage.getItem("mnv_battery_prompted")) return;
+    const id = setTimeout(() => {
+      localStorage.setItem("mnv_battery_prompted", "1");
+      setShowBatteryPrompt(true);
+    }, 700);
+    return () => clearTimeout(id);
+  }, [showOnboarding, showLocationPrompt]);
+
   // ÖNEMLİ: Yukarıdaki effect, React'in `prayerTimes`/`enabled` REFERANS değişikliğine
   // bağlı çalışır — ama uygulama arka plandan öne geldiğinde (basit resume, tam cold
   // start olmadan) bu referanslar değişmeyebilir, effect hiç tetiklenmez. Bu durumda
@@ -1305,13 +1370,19 @@ useEffect(() => {
     const handleVisible = () => {
       if (document.visibilityState === "visible") {
         rescheduleNotifications.current();
+        retryOnlineRef.current();
       }
     };
+    // İnternet geri geldiğinde (cihaz çevrimdışıyken çevrimiçi olunca) seçili
+    // metoda dönmek için yeniden çek.
+    const handleOnline = () => retryOnlineRef.current();
+    window.addEventListener("online", handleOnline);
     document.addEventListener("visibilitychange", handleVisible);
     // Bazı Capacitor/Cordova sürümleri ek olarak bu klasik olayı da yayınlar;
     // varsa yakalarız, yoksa hiçbir şey değişmez (zararsız).
     document.addEventListener("resume", handleVisible);
     return () => {
+      window.removeEventListener("online", handleOnline);
       document.removeEventListener("visibilitychange", handleVisible);
       document.removeEventListener("resume", handleVisible);
     };
@@ -1322,11 +1393,14 @@ useEffect(() => {
 
   useEffect(() => {
     setQiblaDir(calcQiblaDirection(location.latitude, location.longitude));
-  }, [location.latitude, location.longitude]);
+    // Pusula manyetik kuzeyi gösterir, kıble açısı ise gerçek kuzeye göredir. Aradaki
+    // sapma (Türkiye'de ~4-6.5°) düzeltilmezse ibre sistematik olarak kayar.
+    setDeclination(magneticDeclination(location.latitude, location.longitude, date));
+  }, [location.latitude, location.longitude, date]);
 
   useEffect(() => {
     if (!compassListening) return;
-    requestCompassPermission();
+    requestCompassPermission().then(ok => { if (!ok) setCompassUnsupported(true); });
     setCompassUnsupported(false);
     const detach = attachCompassListener((h) => setCompassHeading(h));
 
@@ -1432,6 +1506,13 @@ useEffect(() => {
       const latDiff = Math.abs(coords.latitude - location.latitude);
       const lonDiff = Math.abs(coords.longitude - location.longitude);
       if (latDiff < 0.05 && lonDiff < 0.05) {
+        // Koordinat aynı olsa bile saat dilimi eski sürümde boylamdan yanlış
+        // tahmin edilmiş olabilir (ör. Türkiye → Europe/Helsinki). Cihazın gerçek
+        // saat dilimiyle düzelt.
+        const deviceTz = getDeviceTimezone();
+        if (deviceTz && location.timezone !== deviceTz) {
+          setLocationAndSave({ ...location, timezone: deviceTz });
+        }
         setIsDetectingLocation(false);
         return;
       }
@@ -1460,7 +1541,9 @@ useEffect(() => {
       const newLoc: Location = {
         name, country,
         latitude: coords.latitude, longitude: coords.longitude,
-        timezone: guessTimezone(coords.longitude),
+        // GPS ile bulunulan konumda cihazın saat dilimi doğrudur (ağ gerekmez).
+        // Cihaz saati UTC/geçersizse Open-Meteo'dan çöz.
+        timezone: getDeviceTimezone() || (await fetchTimezone(coords.latitude, coords.longitude)) || guessTimezone(coords.longitude),
       };
       setLocationAndSave(newLoc);
       const exists = savedLocations.some(l =>
@@ -1491,6 +1574,68 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoLocationEnabled]);
 
+  // ─── Tek seferlik saat dilimi migrasyonu ──────────────────────────────────
+  // Eski sürümler GPS konumunun saat dilimini boylamdan tahmin ediyordu
+  // (guessTimezone). Bu, DST uygulamayan ülkelerde (ör. Türkiye → Europe/Helsinki)
+  // yaz saati bitince vakitlerde 1 saat kaymaya yol açıyordu. Kayıtlı konumları
+  // gerçek IANA saat dilimiyle bir kez düzelt. Ağ yoksa bir sonraki açılışta tekrar dener.
+  useEffect(() => {
+    const FLAG = "mnv_tz_fix_v1";
+    if (localStorage.getItem(FLAG) === "1") return;
+    let cancelled = false;
+
+    // Yalnızca boylam tahminiyle birebir eşleşen konumlar şüpheli olabilir;
+    // geocoding'den gelen doğru saat dilimleri (ör. İstanbul ≠ Helsinki) atlanır.
+    const isSuspicious = (loc: Location) => loc.timezone === guessTimezone(loc.longitude);
+
+    (async () => {
+      const targets: Location[] = [];
+      const seen = new Set<string>();
+      const addTarget = (loc: Location) => {
+        const key = `${loc.latitude.toFixed(3)}_${loc.longitude.toFixed(3)}`;
+        if (seen.has(key) || !isSuspicious(loc)) return;
+        seen.add(key);
+        targets.push(loc);
+      };
+      addTarget(location);
+      savedLocations.forEach(addTarget);
+
+      if (targets.length === 0) {
+        localStorage.setItem(FLAG, "1");
+        return;
+      }
+
+      const resolved = new Map<string, string | null>();
+      for (let i = 0; i < targets.length; i += 4) {
+        const chunk = targets.slice(i, i + 4);
+        const tzs = await Promise.all(chunk.map(l => fetchTimezone(l.latitude, l.longitude)));
+        chunk.forEach((l, j) => {
+          resolved.set(`${l.latitude.toFixed(3)}_${l.longitude.toFixed(3)}`, tzs[j]);
+        });
+      }
+      if (cancelled) return;
+
+      // Ağ hatası olduysa hiçbir şeyi değiştirme ve bayrağı koyma → sonraki açılışta tekrar dene.
+      if ([...resolved.values()].some(v => v === null)) return;
+
+      const fix = (loc: Location): Location => {
+        const tz = resolved.get(`${loc.latitude.toFixed(3)}_${loc.longitude.toFixed(3)}`);
+        return tz && tz !== loc.timezone ? { ...loc, timezone: tz } : loc;
+      };
+
+      const fixedLocation = fix(location);
+      if (fixedLocation !== location) setLocationAndSave(fixedLocation);
+
+      const fixedSaved = savedLocations.map(fix);
+      if (fixedSaved.some((l, i) => l !== savedLocations[i])) setSavedLocations(fixedSaved);
+
+      localStorage.setItem(FLAG, "1");
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLocationDenied = () => {
     setShowLocationPrompt(false);
     localStorage.setItem("mnv_location_prompted", "true");
@@ -1501,25 +1646,17 @@ useEffect(() => {
     let hour="--", min="--", sec="--", weekday="—", gregDay="--", gregMonthYear="— —";
     let hijriDay="--", hijriMonth="—", hijriYear="----";
     try {
-      const LOCALE_MAP: Record<string, string> = {
-        tr: "tr-TR", en: "en-US", ar: "ar-SA", de: "de-DE", ur: "ur-PK",
-      };
-      const locale = LOCALE_MAP[lang] || "en-US";
+      const locale = getLocale(lang);
       const tp = new Intl.DateTimeFormat("en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(date);
       hour=tp.find(p=>p.type==="hour")?.value||"--";
       min=tp.find(p=>p.type==="minute")?.value||"--";
       sec=tp.find(p=>p.type==="second")?.value||"--";
       weekday=new Intl.DateTimeFormat(locale,{timeZone:tz,weekday:"long"}).format(date);
-      gregDay=new Intl.DateTimeFormat(locale,{timeZone:tz,day:"numeric"}).format(date);
-      gregMonthYear=new Intl.DateTimeFormat(locale,{timeZone:tz,month:"long",year:"numeric"}).format(date);
-      const HIJRI_MONTHS: Record<string, string[]> = {
-        tr: ["Muharrem","Safer","Rebiülevvel","Rebiülahir","Cemaziyelevvel","Cemaziyelahir","Recep","Şaban","Ramazan","Şevval","Zilkade","Zilhicce"],
-        en: ["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Thania","Rajab","Sha'ban","Ramadan","Shawwal","Dhu al-Qi'dah","Dhu al-Hijjah"],
-        ar: ["محرم","صفر","ربيع الأول","ربيع الثاني","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"],
-        de: ["Muharram","Safar","Rabi al-Awwal","Rabi ath-Thani","Dschumada l-ula","Dschumada th-thaniya","Radschab","Scha'ban","Ramadan","Schawwal","Dhu l-Qa'da","Dhu l-Hijja"],
-        ur: ["محرم","صفر","ربیع الاول","ربیع الثانی","جمادی الاول","جمادی الثانی","رجب","شعبان","رمضان","شوال","ذوالقعدہ","ذوالحجہ"],
-      };
-      const months = HIJRI_MONTHS[lang] || HIJRI_MONTHS.en;
+      // Miladi tarih alanları: fa/ar gibi yerellerde varsayılan takvim
+      // Hicri/Şemsi olabildiği için Gregoryen açıkça sabitlenir.
+      gregDay=new Intl.DateTimeFormat(locale,{timeZone:tz,day:"numeric",calendar:"gregory"}).format(date);
+      gregMonthYear=new Intl.DateTimeFormat(locale,{timeZone:tz,month:"long",year:"numeric",calendar:"gregory"}).format(date);
+      const months = getHijriMonths(lang);
       const hp=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{timeZone:tz,day:"numeric",month:"numeric",year:"numeric"}).formatToParts(date);
       hijriDay=hp.find(p=>p.type==="day")?.value||"--";
       hijriMonth=months[parseInt(hp.find(p=>p.type==="month")?.value||"1")-1]||"—";
@@ -1545,15 +1682,85 @@ useEffect(() => {
   }, [prayerTimes, date]);
 
 
-  const currentMethod = PRAYER_METHODS.find(m => m.id === prayerMethod) || PRAYER_METHODS[0];
+  const effectiveMethodLabel = methodLabel(activeMethod);
+  // Kullanıcı 99'u kendi seçmediyse ve matematiksel hesaba düşüldüyse uyarı tonu kullan.
+  const isAutoOffline = activeMethod === 99 && prayerMethod !== 99;
+
+  // Sondaki küçük ikon butonları (Dil / Tema / Ayarlar) — normalde 3. satırda,
+  // 3. satır taşarsa üst satıra (uygulama adının sağına) taşınırlar.
+  const headerIcons = (
+    <>
+      <div ref={langMenuRef} className="relative shrink-0">
+        <button onClick={() => setLangMenuOpen(o => !o)}
+          title={t("language", lang)}
+          aria-label={t("language", lang)}
+          aria-haspopup="listbox"
+          aria-expanded={langMenuOpen}
+          className={`flex items-center justify-center w-9 h-9 border rounded-full transition-colors cursor-pointer shrink-0 ${langMenuOpen ? `${tTheme.accent} ${hdrBtnBg}` : `${hdrBtnBg} ${hdrBtnText}`}`}>
+          <Globe className="w-5 h-5 shrink-0" />
+        </button>
+        {langMenuOpen && (
+          <div role="listbox"
+            className={`absolute right-0 top-full mt-2 z-[80] min-w-[150px] rounded-2xl border p-1.5 shadow-2xl ${tTheme.settingsCard}`}>
+            {LANGUAGE_LIST.map(l => (
+              <button key={l.code} role="option" aria-selected={lang === l.code}
+                onClick={() => { setLang(l.code); setLangMenuOpen(false); }}
+                className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors cursor-pointer ${lang === l.code ? `${tTheme.accent} ${tTheme.card}` : `${tTheme.textSecondary} hover:bg-white/10`}`}>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="tabular-nums">{l.code.toUpperCase()}</span>
+                  <span className="font-medium opacity-75 truncate">{l.label}</span>
+                </span>
+                {lang === l.code && <Check className="w-4 h-4 shrink-0" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <button onClick={() => {
+          const order = Object.keys(THEMES) as ThemeKey[];
+          const next = order[(order.indexOf(themeKey) + 1) % order.length];
+          setTheme(next);
+          showThemeToast(t(`theme_${next}`, lang));
+        }}
+        aria-label={t("theme", lang)}
+        className={`flex items-center justify-center w-9 h-9 border rounded-full transition-colors cursor-pointer shrink-0 ${hdrBtnBg} ${hdrBtnTextSm}`}>
+        <Palette className="w-5 h-5 shrink-0" />
+      </button>
+      <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
+        aria-label={t("settings", lang)}
+        className={`flex items-center justify-center w-9 h-9 border rounded-full transition-colors cursor-pointer shrink-0 ${hdrBtnBg} ${hdrBtnText}`}>
+        <Settings className="w-5 h-5 shrink-0" />
+      </button>
+    </>
+  );
 
   return (
-    <div dir={lang === "ar" || lang === "ur" ? "rtl" : "ltr"} className={`min-h-screen ${tTheme.bg} ${tTheme.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
+    <div dir={isRTL(lang) ? "rtl" : "ltr"} className={`min-h-screen ${tTheme.bg} ${tTheme.textPrimary} flex flex-col relative overflow-hidden p-3 sm:p-6 md:p-8 transition-colors duration-700`}>
       {showLocationPrompt && (
         <LocationPermissionPrompt
           onAllow={handleLocationAllowed}
           onDeny={handleLocationDenied}
           lang={lang}
+        />
+      )}
+
+      {showBatteryPrompt && (
+        <BatteryOptimizationPrompt
+          lang={lang}
+          onOpen={async () => { setShowBatteryPrompt(false); await promptBatteryWhitelist(); }}
+          onDismiss={() => setShowBatteryPrompt(false)}
+        />
+      )}
+
+      {offlineNoticePending && !showOnboarding && !showLocationPrompt && !showBatteryPrompt && !settingsOpen && (
+        <OfflineMethodNotice
+          lang={lang}
+          onOk={() => setOfflineNoticePending(false)}
+          onChange={() => {
+            setOfflineNoticePending(false);
+            setSettingsInitialTab("metot");
+            setSettingsOpen(true);
+          }}
         />
       )}
 
@@ -1563,6 +1770,7 @@ useEffect(() => {
           location={location} setLocation={setLocationAndSave}
           savedLocations={savedLocations} setSavedLocations={setSavedLocations}
           prayerMethod={prayerMethod} setPrayerMethod={setPrayerMethod}
+          activeMethod={activeMethod}
           notificationSettings={notificationSettings}
           setNotificationSettings={setNotificationSettings}
           prayerTimes={prayerTimes}
@@ -1579,85 +1787,105 @@ useEffect(() => {
           purchasingId={purchasingId}
           onSupporterPurchase={handleSupporterPurchase}
           onSupporterRestore={handleSupporterRestore}
+          onOpenReligious={() => { setSettingsOpen(false); setShowReligious(true); }}
         />
       )}
 
       <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-5 relative z-10 animate-fadeIn">
 
+        {/* Header — 3 satırlık yapı:
+            1) Marka: yalnızca MECCANEN + uygulama adı. İkisi tek satırda kalır
+               (uygulama adı truncate) → asla alt satıra ya da ekran dışına taşmaz.
+            2) Konum: tam genişlik buton, tıklayınca kayıtlı konumlar açılır liste.
+            3) Tüm eylem butonları (tesbih, takvim, yazı boyutu, dil, tema, ayarlar). */}
         <header className="flex flex-col gap-2 pb-4">
-          {/* 1. Satır: Marka + Konum + Ayarlar */}
-          <div className="flex flex-wrap justify-between items-center gap-2">
-            <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-              className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 text-left">
+          {/* 1. Satır — marka */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button onClick={() => { setSettingsInitialTab("meccanen"); setSettingsOpen(true); }}
+              className="cursor-pointer select-none hover:opacity-75 transition-opacity duration-200 shrink-0">
               {/* NOT: Bu başlık kasıtlı olarak text-[Npx] (sabit piksel) kullanıyor —
                   Tailwind'in text-2xl/3xl gibi rem-tabanlı sınıflarını KULLANMIYOR,
-                  bu yüzden üst menüdeki "Aa" yazı boyutu büyütme sisteminden etkilenmez.
-                  Kullanıcı isteği üzerine eski boyuttan (24px/30px) biraz büyütüldü. */}
-              <div className={`text-[26px] sm:text-[32px] font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
+                  bu yüzden üst menüdeki "Aa" yazı boyutu büyütme sisteminden etkilenmez. */}
+              <span className={`text-[26px] sm:text-[32px] font-extrabold tracking-widest ${tTheme.accent} leading-none`}>
                 MECCANEN
-              </div>
+              </span>
             </button>
-            <div className="flex min-w-0 max-w-full items-center gap-2">
-              {savedLocations.length > 1 ? (
-                <button onClick={() => {
-                  const idx = savedLocations.findIndex(l =>
-                    l.latitude.toFixed(3) === location.latitude.toFixed(3) &&
-                    l.longitude.toFixed(3) === location.longitude.toFixed(3)
-                  );
-                  const next = savedLocations[(idx + 1) % savedLocations.length];
-                  setLocationAndSave(next);
-                }}
-                  className={`inline-flex min-w-0 items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${hdrBtnBg} transition-all cursor-pointer`}>
-                  <MapPin className="w-4 h-4 shrink-0" /><span className="min-w-0 truncate">{location.name}</span><ChevronsDown className="w-3.5 h-3.5 shrink-0 -rotate-90" />
-                </button>
-              ) : (
-                <span className={`inline-flex min-w-0 items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-bold ${tTheme.accent} ${hdrBtnBg}`}>
-                  <MapPin className="w-4 h-4 shrink-0" /><span className="min-w-0 truncate">{location.name}</span>
-                </span>
-              )}
-              <button onClick={() => { setSettingsInitialTab("genel"); setSettingsOpen(true); }}
-                className={`p-2.5 border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
+            <span className={`text-sm sm:text-base font-semibold min-w-0 truncate flex-1 ${tTheme.textSecondary}`}>
+              {t("appName", lang)}
+            </span>
+            {iconsInHeader && (
+              <div className="flex items-center gap-2 shrink-0">{headerIcons}</div>
+            )}
           </div>
 
-          {/* 2. Satır: Uygulama adı + Reklamsız + Dil + Tema */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className={`text-sm sm:text-base font-semibold ${tTheme.textSecondary}`}>{t("appName", lang)}</span>
-              <span className={isLight ? "text-slate-400" : "text-slate-600"}>·</span>
-              <span className={`text-sm sm:text-base font-bold flex items-center gap-1.5 ${tTheme.accent}`}>
-                {t("adFree", lang)}
-                {notificationSettings.enabled && <Bell className="w-3.5 h-3.5 text-amber-500" />}
-              </span>
-            </div>
-            <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-              <button onClick={cycleFontScale}
-                title={t("fontSizeLabel", lang)}
-                aria-label={t("fontSizeLabel", lang)}
-                className={`px-3.5 py-1.5 text-sm sm:text-base font-bold border rounded-full transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${isFontScaleChanging ? "scale-110 ring-2 ring-current/30" : ""} ${hdrBtnBg} ${hdrBtnText}`}>
-                Aa
-              </button>
-              <button onClick={() => {
-                  const order: LangCode[] = ["en", "tr", "ar", "de", "ur"];
-                  const next = order[(order.indexOf(lang) + 1) % order.length];
-                  setLang(next);
-                }}
-                className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnText}`}>
-                {lang.toUpperCase()}
-              </button>
-              <button onClick={() => {
-                  const order = Object.keys(THEMES) as ThemeKey[];
-                  const next = order[(order.indexOf(themeKey) + 1) % order.length];
-                  setTheme(next);
-                  showThemeToast(t(`theme_${next}`, lang));
-                }}
-                aria-label={t("theme", lang)}
-                className={`flex items-center justify-center w-9 h-9 border rounded-full transition-all cursor-pointer ${hdrBtnBg} ${hdrBtnTextSm}`}>
-                <Palette className="w-5 h-5 shrink-0" />
-              </button>
-            </div>
+          {/* 2. Satır — konum: tıklayınca kayıtlı konumlar aşağı açılır listede */}
+          <div className="relative" ref={locMenuRef}>
+            <button onClick={() => setLocMenuOpen(o => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={locMenuOpen}
+              className={`inline-flex items-center gap-2 h-12 w-full px-4 border rounded-full text-base font-bold ${tTheme.accent} ${hdrBtnBg} transition-all cursor-pointer min-w-0`}>
+              <MapPin className="w-5 h-5 shrink-0" />
+              <span className="truncate flex-1 text-start">{location.name}{location.country ? `, ${location.country}` : ""}</span>
+              <ChevronsDown className={`w-4 h-4 shrink-0 transition-transform ${locMenuOpen ? "rotate-180" : "-rotate-90"}`} />
+            </button>
+
+            {locMenuOpen && (
+              <div role="listbox" className={`absolute inset-x-0 top-full mt-2 z-[60] rounded-2xl border p-1.5 shadow-2xl ${tTheme.settingsCard}`}>
+                {savedLocations.map((l, i) => {
+                  const active = l.latitude.toFixed(3) === location.latitude.toFixed(3) && l.longitude.toFixed(3) === location.longitude.toFixed(3);
+                  return (
+                    <div key={i} className={`flex items-center rounded-xl ${active ? tTheme.card : ""}`}>
+                      <button role="option" aria-selected={active}
+                        onClick={() => { setLocationAndSave(l); setLocMenuOpen(false); }}
+                        className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2.5 text-sm font-bold text-start transition-colors cursor-pointer ${active ? tTheme.accent : `${tTheme.textSecondary} hover:bg-white/10`}`}>
+                        {active ? <Check className="w-4 h-4 shrink-0" /> : <MapPin className="w-4 h-4 shrink-0" />}
+                        <span className="truncate">{l.name}{l.country ? `, ${l.country}` : ""}</span>
+                      </button>
+                      {savedLocations.length > 1 && (
+                        <button aria-label={t("delete", lang)}
+                          onClick={() => {
+                            const next = savedLocations.filter((_, j) => j !== i);
+                            setSavedLocations(next);
+                            if (active) setLocationAndSave(next[0]);
+                          }}
+                          className={`shrink-0 p-2 me-1 rounded-xl transition-colors cursor-pointer ${tTheme.textMuted} hover:text-red-400`}>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                <div className={`my-1 border-t ${tTheme.header}`} />
+                <button onClick={() => { setLocMenuOpen(false); setShowAddLocation(true); }}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-start transition-colors cursor-pointer ${tTheme.accent} hover:bg-white/10`}>
+                  <Plus className="w-4 h-4 shrink-0" />
+                  {t("addLocation", lang)}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Satır — kalan eylem butonları (taşarsa sondaki ikonlar üst satıra geçer) */}
+          <div ref={row3Ref} className="flex items-center gap-1 flex-nowrap">
+            <button onClick={() => setShowTesbih(true)}
+              title={t("tesbih", lang)}
+              aria-label={t("tesbih", lang)}
+              className={`ms-auto inline-flex items-center gap-1.5 px-3 py-2 border rounded-full text-sm font-bold transition-colors cursor-pointer shrink-0 ${tTheme.accent} ${hdrBtnBg}`}>
+              <CircleDot className="w-4 h-4 shrink-0" /><span className="min-w-0">{t("tesbih", lang)}</span>
+            </button>
+            <button onClick={() => setShowReligious(true)}
+              title={t("relTitle", lang)}
+              aria-label={t("relTitle", lang)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 border rounded-full text-sm font-bold transition-colors cursor-pointer shrink-0 ${tTheme.accent} ${hdrBtnBg}`}>
+              <Calendar className="w-4 h-4 shrink-0" /><span className="min-w-0">{t("relTitle", lang)}</span>
+            </button>
+            <button onClick={cycleFontScale}
+              title={t("fontSizeLabel", lang)}
+              aria-label={t("fontSizeLabel", lang)}
+              className={`px-3 py-1.5 text-sm sm:text-base font-bold border rounded-full transition-transform duration-300 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${isFontScaleChanging ? "scale-110 ring-2 ring-current/30" : ""} ${hdrBtnBg} ${hdrBtnText}`}>
+              Aa
+            </button>
+            {!iconsInHeader && headerIcons}
           </div>
         </header>
 
@@ -1666,7 +1894,29 @@ useEffect(() => {
             <MapPin className="w-4 h-4 shrink-0" />
             <span className="text-sm sm:text-base font-bold truncate max-w-full">{location.name}{location.country ? `, ${location.country}` : ""}</span>
           </div>
-          <div className="flex items-baseline justify-center font-mono select-none mb-1">
+          {/* Etkin hesaplama yöntemi — tıklayınca metot sekmesi açılır. */}
+          <div className="flex justify-center mb-2">
+            <button
+              onClick={() => { setSettingsInitialTab("metot"); setSettingsOpen(true); }}
+              title={t("prayerMethod", lang)}
+              className={`inline-flex items-center gap-1.5 max-w-full px-3 py-1 rounded-full border text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                isAutoOffline
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                  : `${hdrBtnBg} ${hdrBtnText}`
+              }`}>
+              {activeMethod === 99
+                ? <WifiOff className="w-3.5 h-3.5 shrink-0" />
+                : <Sparkles className="w-3.5 h-3.5 shrink-0" />}
+              <span className="truncate">{effectiveMethodLabel}</span>
+              {activeSource === "cache" && activeMethod !== 99 && (
+                <span className="shrink-0 opacity-70 font-semibold">· {t("cacheBadge", lang)}</span>
+              )}
+              <ChevronsDown className="w-3.5 h-3.5 shrink-0 -rotate-90 opacity-70" />
+            </button>
+          </div>
+          {/* Saat her zaman soldan sağa okunur; RTL arayüzde saniyeler
+              saatın soluna kaymasın diye kapsayıcı LTR'ye sabitlenir. */}
+          <div dir="ltr" className="flex items-baseline justify-center font-mono select-none mb-1">
             <span className={`text-6xl sm:text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b ${tTheme.clockGrad} tracking-tight`}>
               {localTime.hour}:{localTime.min}
             </span>
@@ -1677,30 +1927,54 @@ useEffect(() => {
           {nextPrayerStr && (
             <div className={`mb-5 p-4 rounded-2xl border-2 ${tTheme.prayerActive} flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 shadow-lg`}>
               <span className="text-sm sm:text-base font-semibold uppercase tracking-wide text-center opacity-80">
-                {lang === "tr" ? "Sonraki Vakte Kalan Süre:" : `${t("nextPrayer", lang)} ${t("in", lang)}`}
+                {lang === "tr"
+                  ? "Sonraki Vakte Kalan Süre:"
+                  // Farsça'da "in" edatı (تا) isimden ÖNCE gelir: "تا نماز بعدی".
+                  : lang === "fa"
+                    ? `${t("in", lang)} ${t("nextPrayer", lang)}`
+                    : `${t("nextPrayer", lang)} ${t("in", lang)}`}
               </span>
               <span className="text-3xl sm:text-4xl font-mono font-extrabold">{nextPrayerStr.split(": ")[1] || nextPrayerStr}</span>
             </div>
           )}
 
-          <div className={`border-t pt-5 flex justify-between items-start gap-4 ${tTheme.header}`}>
-            <div>
-              <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent2} mb-2 flex items-center gap-2`}>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+            {prayerTimes.map((item, idx) => (
+              <div key={item.key}
+                className={`flex flex-col items-center justify-center py-3 sm:py-4 px-0.5 sm:px-2 rounded-xl border-2 transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
+                <div className={`text-sm sm:text-base font-bold tracking-wide truncate w-full text-center ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{t(`prayer_${item.key}`, lang) || item.name}</div>
+                <div className={`text-2xl sm:text-4xl font-mono font-extrabold mt-1 leading-none ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
+              </div>
+            ))}
+          </div>
+
+          {prayerLoading && (
+            <div className={`flex items-center justify-center gap-2 -mt-3 mb-4 text-sm ${tTheme.textMuted}`}>
+              <RefreshCw className="w-4 h-4 animate-spin" />{t("updating", lang)}
+            </div>
+          )}
+
+          <div className={`border-t pt-5 flex items-start gap-3 ${tTheme.header}`}>
+            <div className="flex-1 text-center">
+              <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent2} mb-2 flex items-center justify-center gap-2`}>
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />{t("gregorian", lang)}
               </div>
-              <div className={`text-4xl sm:text-5xl font-bold ${tTheme.textPrimary}`}>{localTime.gregDay}</div>
-              <div className={`text-base sm:text-lg ${tTheme.textSecondary} mt-1`}>{localTime.gregMonthYear}</div>
+              <div className={`text-4xl sm:text-5xl font-bold font-sans ${tTheme.accent2}`}>{localTime.gregDay}</div>
+              <div className={`text-base sm:text-lg font-sans ${tTheme.accent2} opacity-80 mt-1`}>{localTime.gregMonthYear}</div>
             </div>
-            <div className="text-right">
-              <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.hijriAccent} mb-2 flex items-center justify-end gap-2`}>
+            <div className="flex-1 text-center">
+              {/* Başlık yok; ay figürünün diğer sütunların gün rakamlarıyla aynı hizada
+                  başlaması için etiket satırı kadar görünmez boşluk bırakılır. */}
+              <div className={`text-sm sm:text-base font-semibold tracking-wide mb-2 invisible`} aria-hidden="true">&nbsp;</div>
+              <div className={`text-4xl sm:text-5xl ${tTheme.textPrimary}`} title={t(moonPhase.phase, lang)}>{MOON_PHASE_ICONS[moonPhase.phase]}</div>
+              <div className={`text-sm sm:text-base mt-1 ${tTheme.textSecondary}`}>{t(moonPhase.phase, lang)} · %{moonPhase.illumination}</div>
+            </div>
+            <div className="flex-1 text-center">
+              <div className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.hijriAccent} mb-2 flex items-center justify-center gap-2`}>
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />{t("hijri", lang)}
               </div>
-              <div className={`text-4xl sm:text-5xl font-bold ${tTheme.hijriAccent} flex items-center justify-end gap-2`}>
-                {localTime.hijriDay}
-                <span className="text-3xl sm:text-4xl" title={t(moonPhase.phase, lang)}>{MOON_PHASE_ICONS[moonPhase.phase]}</span>
-              </div>
-              <div className={`text-base sm:text-lg mt-1 ${tTheme.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
-              <div className={`text-sm sm:text-base mt-1.5 ${tTheme.hijriAccent} opacity-60`}>{t(moonPhase.phase, lang)} · %{moonPhase.illumination}</div>
+              <div className={`text-4xl sm:text-5xl font-bold font-sans ${tTheme.hijriAccent}`}>{localTime.hijriDay}</div>
+              <div className={`text-base sm:text-lg font-sans mt-1 ${tTheme.hijriAccent} opacity-80`}>{localTime.hijriMonth} ({localTime.hijriYear} AH)</div>
             </div>
           </div>
         </section>
@@ -1846,32 +2120,6 @@ useEffect(() => {
           <p className={`text-base sm:text-lg ${tTheme.textMuted} mt-2 leading-snug text-center`}>{t("kerahatDesc", lang)}</p>
         </section>
 
-        <section className={`${tTheme.card} border rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-xl`}>
-          <div className="flex justify-between items-center mb-5">
-            <button onClick={() => { setSettingsInitialTab("metot"); setSettingsOpen(true); }}
-              className={`text-sm sm:text-base font-semibold tracking-wide ${tTheme.accent} flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all`}>
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />{currentMethod.label[lang] || currentMethod.label.en}
-            </button>
-            <span className={`text-xs sm:text-sm ${tTheme.textMuted} font-mono`}>{location.name}, {location.country}</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
-            {prayerTimes.map((item, idx) => (
-              <div key={item.key}
-                className={`flex flex-col items-center py-5 sm:py-6 px-3 rounded-xl border transition-all duration-200 ${activePrayerIndex === idx ? `${tTheme.prayerActive} ring-2` : "border-transparent bg-black/20"}`}>
-                <div className={`text-lg sm:text-xl font-semibold tracking-wide mb-2 text-center leading-tight ${activePrayerIndex === idx ? "" : tTheme.textMuted}`}>{t(`prayer_${item.key}`, lang) || item.name}</div>
-                <div className={`text-2xl sm:text-3xl font-mono font-bold ${activePrayerIndex === idx ? "" : tTheme.textSecondary}`}>{item.time}</div>
-              </div>
-            ))}
-          </div>
-
-          {prayerLoading && (
-            <div className="flex items-center justify-center gap-2 mt-4 text-sm text-slate-500">
-              <RefreshCw className="w-4 h-4 animate-spin" />{t("updating", lang)}
-            </div>
-          )}
-        </section>
-
         {esmaSaati && (
           <section className={`${tTheme.card} border rounded-xl p-6 sm:p-8 transition-all duration-300 shadow-md`}>
             <div className="text-base sm:text-lg font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-5">
@@ -1898,29 +2146,6 @@ useEffect(() => {
         )}
 
         <section className={`${tTheme.card} border rounded-xl p-6 sm:p-7 transition-all duration-300 shadow-md`}>
-          <div className="flex justify-between items-center">
-            <div className="text-base sm:text-lg font-semibold tracking-wide text-slate-400 flex items-center gap-2">
-              <Globe className={`w-5 h-5 sm:w-6 sm:h-6 ${tTheme.accent}`} />{t("location", lang)}
-            </div>
-            <button onClick={() => { setSettingsInitialTab("konum"); setSettingsOpen(true); }}
-              className={`text-base sm:text-lg font-semibold ${tTheme.accent} cursor-pointer hover:opacity-80 transition-all`}>
-              {t("change", lang)} →
-            </button>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <div>
-              <div className="text-sm sm:text-base text-slate-500 tracking-wide font-medium">{t("city", lang)}</div>
-              <div className={`text-2xl sm:text-3xl font-bold ${tTheme.accent}`}>{location.name}, {location.country}</div>
-            </div>
-            <div className="ml-auto text-right">
-              <div className="text-sm sm:text-base text-slate-500 tracking-wide font-medium">{t("coordinates", lang)}</div>
-              <div className={`text-base sm:text-lg font-mono ${tTheme.textSecondary}`}>{location.latitude.toFixed(4)}°N {location.longitude.toFixed(4)}°E</div>
-              <div className="text-sm sm:text-base text-slate-600">{location.timezone}</div>
-            </div>
-          </div>
-        </section>
-
-        <section className={`${tTheme.card} border rounded-xl p-6 sm:p-7 transition-all duration-300 shadow-md`}>
           <div className="text-base sm:text-lg font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
             <Compass className={`w-6 h-6 sm:w-7 sm:h-7 ${tTheme.accent}`} />{t("qibla", lang)}
           </div>
@@ -1934,13 +2159,13 @@ useEffect(() => {
                     <stop offset="100%" stopColor="rgba(255,255,255,0.00)" />
                   </radialGradient>
                   <linearGradient id="needleTip" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#d97706" />
-                    <stop offset="100%" stopColor="#fbbf24" />
+                    <stop offset="0%" stopColor={qiblaColorDeep} />
+                    <stop offset="100%" stopColor={qiblaColor} />
                   </linearGradient>
                 </defs>
 
                 {/* Dış çerçeve + zemin */}
-                <circle cx="100" cy="100" r="94" fill="url(#compassBg)" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" />
+                <circle cx="100" cy="100" r="94" fill="url(#compassBg)" stroke={qiblaLocked ? qiblaColor : (isLight ? "rgba(15,23,42,0.16)" : "rgba(255,255,255,0.14)")} strokeOpacity={qiblaLocked ? 0.92 : 1} strokeWidth={qiblaLocked ? 5 : 1.5} />
                 <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
 
                 {/* Derece çentikleri (dekoratif) */}
@@ -1960,17 +2185,98 @@ useEffect(() => {
                   );
                 })}
 
+                {/* Kâbe'ye kalan açı: ibre ile üstteki hedef arasındaki dilim.
+                    "Ne kadar, hangi yöne döneceğim" yazı okumadan görülsün. */}
+                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (
+                  <path
+                    d={qiblaArcPath(qiblaDelta, 74, 90, 100, 100)}
+                    fill={qiblaColor}
+                    fillOpacity={0.16 + 0.16 * (1 - qiblaT)}
+                  />
+                )}
+                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (
+                  <line
+                    x1="100" y1="100"
+                    x2={100 + 74 * Math.sin((qiblaDelta * Math.PI) / 180)}
+                    y2={100 - 74 * Math.cos((qiblaDelta * Math.PI) / 180)}
+                    stroke={qiblaColor} strokeOpacity={0.5}
+                    strokeWidth="1.5" strokeDasharray="3 4" strokeLinecap="round" />
+                )}
+
+                {/* (d) Dönüş yönü: gereken tarafta akan kesikli oklar; hedefe varınca kaybolur. */}
+                {qiblaTurn !== 0 && (() => {
+                  const r = 74, a0 = 36, a1 = 86;
+                  const pt = (deg: number): [number, number] => [
+                    100 + r * Math.sin((deg * Math.PI) / 180),
+                    100 - r * Math.cos((deg * Math.PI) / 180),
+                  ];
+                  // Yay, uzak uçtan hedefe (üste) doğru çizilir; kesikli akış da o yöne akar.
+                  const [sx, sy] = pt(qiblaTurn > 0 ? a1 : -a1);
+                  const [ex, ey] = pt(qiblaTurn > 0 ? a0 : -a0);
+                  return (
+                    <g>
+                      <path d={`M ${sx} ${sy} A ${r} ${r} 0 0 ${qiblaTurn > 0 ? 0 : 1} ${ex} ${ey}`}
+                        fill="none" stroke={qiblaColor} strokeWidth="5" strokeLinecap="round"
+                        strokeDasharray="6 9" strokeOpacity="0.7" className="qibla-turn-flow" />
+                      <g transform={`translate(${ex} ${ey}) rotate(${qiblaTurn > 0 ? a0 + 180 : -a0})`}>
+                        <polygon points="0,-5.5 8,0 0,5.5" fill={qiblaColor} opacity="0.85" />
+                      </g>
+                    </g>
+                  );
+                })()}
+
+                {/* (1) Kabul penceresi: halkanın üzerinde kalın bir hedef dilimi (±10°). */}
+                {(() => {
+                  const pt = (deg: number) => [100 + 94 * Math.sin((deg * Math.PI) / 180), 100 - 94 * Math.cos((deg * Math.PI) / 180)];
+                  const [x1, y1] = pt(-10);
+                  const [x2, y2] = pt(10);
+                  return (
+                    <path d={`M ${x1} ${y1} A 94 94 0 0 1 ${x2} ${y2}`} fill="none"
+                      stroke={qiblaColor}
+                      strokeWidth={qiblaLocked ? 5 : 3.5}
+                      strokeOpacity={qiblaLocked ? 0.92 : 0.38}
+                      strokeLinecap="round" />
+                  );
+                })()}
+
+                {/* (2) Dilimin ibre ucundaki ok başı: dönüş yönü her açıda net. */}
+                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (() => {
+                  const a = ((qiblaDelta - 90) * Math.PI) / 180;
+                  const rot = qiblaDelta > 0 ? qiblaDelta : qiblaDelta - 180;
+                  return (
+                    <g transform={`translate(${100 + 82 * Math.cos(a)} ${100 + 82 * Math.sin(a)}) rotate(${rot})`}>
+                      <polygon points="0,-4.5 7,0 0,4.5" fill={qiblaColor} opacity="0.95" />
+                    </g>
+                  );
+                })()}
+
+                {/* (4) Kilitlenince tek atımlık nabız. */}
+                {qiblaPulse > 0 && (
+                  <circle key={qiblaPulse} cx="100" cy="100" r="94" fill="none"
+                    stroke="#34d399" strokeWidth="3" className="qibla-lock-pulse" />
+                )}
+
                 {/* Kıble ibresi — hesaplama App'in geri kalanıyla birebir aynı, sadece görsel değişti */}
                 <g style={{
-                  transform: `rotate(${compassHeading !== null ? qiblaDir - compassHeading : qiblaDir}deg)`,
+                  // Cihaz yönü manyetik kuzeye göre (compassHeading), kıble açısı gerçek kuzeye
+                  // göre; bu yüzden aradaki fark ibreden düşülür. Sensör yoksa mutlak açı gösterilir.
+                  transform: `rotate(${compassHeading !== null ? qiblaDir - declination - compassHeading : qiblaDir}deg)`,
                   transformOrigin: "100px 100px",
-                  transition: "transform 0.3s ease-out",
+                  transition: "transform 0.15s ease-out",
                 }}>
                   <polygon points="100,22 109,100 100,88 91,100" fill="url(#needleTip)" />
                   <polygon points="100,155 109,100 100,112 91,100" fill="rgba(255,255,255,0.22)" />
                   <g transform="translate(100,22)">
-                    <rect x="-9" y="-17" width="18" height="15" rx="1.5" fill="#1c1917" stroke="#f59e0b" strokeWidth="1.2" />
-                    <rect x="-9" y="-17" width="18" height="4.5" fill="#f59e0b" />
+                    {/* Kâbe badge: halkadan ayrışsın diye koyu zemin */}
+                    <circle cx="0" cy="-10.6" r="12" fill="rgba(8,8,10,0.62)" />
+                    {/* Kâbe: siyah küp gövde, altın kuşak (hizam), altın kapı, çatı çizgisi */}
+                    <path d="M -9.2 -18.8 L -6.2 -21 L 10 -21 L 9.2 -18.8 Z"
+                      fill="#26241f" stroke={qiblaColor} strokeWidth="0.9" strokeLinejoin="round" />
+                    <rect x="-9.2" y="-18.8" width="18.4" height="16.4" rx="0.8"
+                      fill="#111013" stroke={qiblaColor} strokeWidth="1.1" />
+                    <rect x="-9.2" y="-13.8" width="18.4" height="2.8" fill={qiblaColor} opacity="0.92" />
+                    <rect x="1.4" y="-10" width="5" height="7.2" rx="0.5" fill={qiblaColor} opacity="0.95" />
+                    <line x1="-9.2" y1="-10" x2="1.4" y2="-10" stroke={qiblaColor} strokeWidth="0.5" opacity="0.3" />
                   </g>
                 </g>
 
@@ -1983,6 +2289,25 @@ useEffect(() => {
               className={`text-sm sm:text-base font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
               {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
             </button>
+
+            {compassListening && compassHeading !== null && (() => {
+              // İbre ekranda nereyi gösteriyor + kullanıcı ne yapmalı. Kâbe arkadayken
+              // ibrenin ekranın altına bakması doğrudur ama yazıyla da söylenmeli.
+              const delta = (((qiblaDir - declination - compassHeading + 540) % 360) + 360) % 360 - 180;
+              const ad = Math.abs(delta);
+              const hint = ad <= 3
+                ? t("qiblaAhead", lang)
+                : ad >= 150
+                  ? t("qiblaBehind", lang)
+                  : delta > 0
+                    ? t("qiblaTurnRight", lang, { n: String(Math.round(delta)) })
+                    : t("qiblaTurnLeft", lang, { n: String(Math.round(-delta)) });
+              return (
+                <div className={`text-sm sm:text-base font-semibold text-center leading-snug `} style={{ color: qiblaColor }}>
+                  {hint}
+                </div>
+              );
+            })()}
             {compassListening && compassUnsupported && (
               <div className={`text-xs sm:text-sm text-center leading-snug px-2 ${tTheme.textMuted}`}>
                 {t("compassNoSensor", lang)}
@@ -2035,6 +2360,56 @@ useEffect(() => {
           {themeToast}
         </div>
       )}
+
+      {showTesbih && (
+        <TesbihModal theme={tTheme} isLight={isLight} lang={lang} onClose={() => setShowTesbih(false)} />
+      )}
+
+      {showAddLocation && (
+        <AddLocationModal
+          th={tTheme} lang={lang}
+          location={location} setLocation={setLocationAndSave}
+          savedLocations={savedLocations} setSavedLocations={setSavedLocations}
+          onFindLocation={handleFindLocation}
+          isDetectingLocation={isDetectingLocation}
+          autoLocationEnabled={autoLocationEnabled}
+          onToggleAutoLocation={handleToggleAutoLocation}
+          onClose={() => setShowAddLocation(false)}
+        />
+      )}
+
+      {showReligious && (
+        <ReligiousCalendarModal
+          theme={tTheme}
+          isLight={isLight}
+          lang={lang}
+          tz={location.timezone || "Europe/Istanbul"}
+          onClose={() => setShowReligious(false)}
+        />
+      )}
+
+      {showOnboarding && (
+        <Onboarding
+          theme={tTheme}
+          isLight={isLight}
+          lang={lang}
+          onDone={() => { localStorage.setItem("mnv_onboarded_v1", "1"); setShowOnboarding(false); }}
+        />
+      )}
     </div>
   );
+}
+
+/** 0° (üst) ile `delta` arasındaki halka dilimini çizer (+ = saat yönü). */
+function qiblaArcPath(delta: number, r1: number, r2: number, cx: number, cy: number): string {
+  const xy = (r: number, deg: number): [number, number] => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+  const sweep = delta > 0 ? 1 : 0;
+  const [x1, y1] = xy(r2, 0);
+  const [x2, y2] = xy(r2, delta);
+  const [x3, y3] = xy(r1, delta);
+  const [x4, y4] = xy(r1, 0);
+  return `M ${x1} ${y1} A ${r2} ${r2} 0 0 ${sweep} ${x2} ${y2} L ${x3} ${y3} A ${r1} ${r1} 0 0 ${sweep ? 0 : 1} ${x4} ${y4} Z`;
 }
