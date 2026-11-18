@@ -1,2 +1,9 @@
 node_modules/
 dist/
+apk/
+.openchamber/
+android/
+*.log
+.env
+.env.*
+local-plugins/*/android/build/
