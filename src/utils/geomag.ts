@@ -260,3 +260,24 @@ export function magneticDeclination(latDeg: number, lonDeg: number, date: Date =
   const f = geomagneticComponents(latDeg, lonDeg, date, altKm);
   return Math.atan2(f.east, f.north) / RAD;
 }
+
+/**
+ * Manyetik alanın yatay (yönü belirleyen) bileşeni, μT. Girişim tespitinde toplam
+ * şiddet yerine bu kullanılıyor: Almanya'da alanın ~%92'si dikey, dikey bozulma
+ * yönü neredeyse hiç etkilemez; yatay bozulma ise doğrudan yönü kaydırır.
+ */
+export function magneticFieldHorizontal(latDeg: number, lonDeg: number, date: Date = new Date(), altKm = 0): number {
+  const f = geomagneticComponents(latDeg, lonDeg, date, altKm);
+  return Math.hypot(f.north, f.east) / 1000;
+}
+
+/**
+ * Manyetik alanın toplam şiddeti (μT). Konuma göre 22–67 μT arasında değişir
+ * (ekvator çevresinde zayıf, kutup/Atlantik anomalisinde güçlü). Telefonun ölçtüğü
+ * alanla karşılaştırıp metal girişimini mutlak eşik yerine oransal olarak yakalamak için.
+ */
+export function magneticFieldIntensity(latDeg: number, lonDeg: number, date: Date = new Date(), altKm = 0): number {
+  const f = geomagneticComponents(latDeg, lonDeg, date, altKm);
+  // geomagneticComponents nT döner; uygulamada sensörler μT verdiği için 1000'e bölünür.
+  return Math.hypot(f.north, f.east, f.down) / 1000;
+}

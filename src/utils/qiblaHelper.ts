@@ -1,4 +1,4 @@
-import { nativeCompassHeading, stopNativeCompass } from "./nativeCompass";
+import { nativeCompassSample, stopNativeCompass, type NativeCompassSample } from "./nativeCompass";
 
 const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
@@ -7,6 +7,20 @@ const toRad = Math.PI / 180;
 const toDeg = 180 / Math.PI;
 const norm360 = (a: number) => ((a % 360) + 360) % 360;
 const norm180 = (a: number) => ((((a + 540) % 360) + 360) % 360) - 180;
+
+// Manyetik alan şiddeti konuma göre 22–67 μT arasında değişir (ekvator çevresinde
+// zayıf, kutup/Atlantik anomalisinde güçlü). Bu yüzden sabit bir μT eşiği global
+// uygulamada yanlış olur: Brezilya'da 23 μT normaldir, Almanya'da 48 μT.
+// Konumun beklenen alanı biliniyorsa oransal sapma, bilinmiyorsa mutlak yedek kullanılır.
+//
+// Ölçüt olarak önce alanın YATAY bileşeni kullanılır (yönü bozan büyüklük odur);
+// yatay bilgi yoksa toplam şiddete düşülür.
+const HORIZ_TOLERANCE = 0.40;   // yatay sapma %40'ı geçince girişim başlar
+const HORIZ_RELEASE = 0.28;     // %28'in altına dönünce biter (eşikte titremesin)
+const FIELD_TOLERANCE = 0.38;   // toplam şiddet için giriş
+const FIELD_RELEASE = 0.25;     // toplam şiddet için çıkış
+const FALLBACK_MIN_UT = 30;
+const FALLBACK_MAX_UT = 62;
 
 /** Kâbe'nin gerçek (coğrafi) kuzeye göre kerterizi. Cihaz yönü manyetik olduğu için
  *  geomag.magneticDeclination() ile düzeltilmeden doğrudan kullanılmamalıdır. */
@@ -87,7 +101,22 @@ export function getCompassHeading(e: DeviceOrientationEvent): number | null {
  * kullanılamaz. Bu yüzden mutlak olaylardan bir sapma (offset) öğrenilip sürekli gelen
  * göreli olaylara uygulanıyor: hem akıcı hem mutlak referanslı bir yön elde ediliyor.
  */
-export function attachCompassListener(callback: (heading: number) => void): () => void {
+export interface CompassQuality {
+  /** Manyetik alan normal aralığın dışında: ölçülen yön güvenilir değil. */
+  interference: boolean;
+  /** Manyetometre kalibrasyonu zayıf: "8 çiz" hareketiyle yeniden kalibre edilmeli. */
+  calibrationNeeded: boolean;
+}
+
+export function attachCompassListener(
+  callback: (heading: number) => void,
+  onQuality?: (q: CompassQuality) => void,
+  options?: { expectedFieldUt?: number | null; expectedHorizontalUt?: number | null },
+): () => void {
+  const num = (v: number | null | undefined, min: number) =>
+    v !== null && v !== undefined && Number.isFinite(v) && v > min ? v : null;
+  const expectedTotal = num(options?.expectedFieldUt, 10);
+  const expectedHoriz = num(options?.expectedHorizontalUt, 5);
   const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
   let offset: number | null = null;          // mutlak - göreli referans farkı
@@ -178,6 +207,43 @@ export function attachCompassListener(callback: (heading: number) => void): () =
   let nativeBusy = false;
   let nativeHist: number[] = [];     // son güvenilir örnekler (medyan için)
 
+  // Manyetik girişim tespiti: son ~1.2 s'lik pencerenin medyanı normal aralığın
+  // dışındaysa uyarı. Pencere + medyan, tek tük gürültülü örneğin uyarıyı yakıp
+  // söndürmesini engelliyor (debounce).
+  const MAG_WINDOW = 5;              // 5 × 250 ms ≈ 1.2 s
+  let magWindow: number[] = [];
+
+  // Kalibrasyon: ardışık 5 kötü örnek (~1.25 s) uyarıyı açar, 3 iyi örnek (~0.75 s)
+  // kapatır. Tek bir "düşük" raporu notu yakıp söndürmesin.
+  let badAccuracy = 0;
+  let goodAccuracy = 0;
+
+  const quality: CompassQuality = { interference: false, calibrationNeeded: false };
+  const publishQuality = () => onQuality?.({ ...quality });
+  const setInterference = (on: boolean) => {
+    if (on === quality.interference) return;
+    quality.interference = on;
+    publishQuality();
+  };
+  const setCalibrationNeeded = (on: boolean) => {
+    if (on === quality.calibrationNeeded) return;
+    quality.calibrationNeeded = on;
+    publishQuality();
+  };
+
+  // Histerezis: giriş eşiği geniş, çıkış eşiği dar — alan eşik civarında salınırken
+// uyarı açılıp kapanıp titremesin (masa üstünde ölçüldü: alan 64–70 μT arası oynuyor).
+// Girişim kararı için ölçülecek büyüklük: yatay bileşen (yönü bozar), yoksa toplam.
+  const fieldRef = (s: NativeCompassSample) => {
+    if (expectedHoriz !== null && s.horizontal !== null)
+      return { value: s.horizontal, ref: expectedHoriz, tolerance: HORIZ_TOLERANCE, release: HORIZ_RELEASE };
+    if (expectedTotal !== null && s.total !== null)
+      return { value: s.total, ref: expectedTotal, tolerance: FIELD_TOLERANCE, release: FIELD_RELEASE };
+    return null;
+  };
+  // Konum/beklenen alan yoksa mutlak yedek aralık.
+  const absoluteBad = (total: number) => total < FALLBACK_MIN_UT || total > FALLBACK_MAX_UT;
+
   // Referansı yalnızca GERÇEK bir füzyon kaymasında (~180°) sıfırlıyoruz. Eşik 45°
   // iken elde telefon tutmak manyetik alanı bozuyor (ölçüldü: 46→82 µT) ve ham
   // referans 30-40° kayıyor; 45° eşiği bu kaymayı "gerçek" sanıp ibreyi iki yönde
@@ -190,8 +256,48 @@ export function attachCompassListener(callback: (heading: number) => void): () =
     if (nativeBusy) return;
     nativeBusy = true;
     try {
-      const h = await nativeCompassHeading();
-      if (h === null) { nativeHist = []; return; }
+      const sample = await nativeCompassSample();
+      if (sample === null) { nativeHist = []; return; }
+
+      // Alan kalitesi: son ~1.2 s'nin medyanı ile beklenen alan karşılaştırılır.
+      // Histerezisli (giriş/çıkış eşiği ayrı) — eşik civarında uyarı titremesin.
+      const field = fieldRef(sample);
+      if (field !== null) {
+        magWindow.push(field.value);
+        if (magWindow.length > MAG_WINDOW) magWindow.shift();
+        if (magWindow.length >= 3) {
+          const sortedMag = [...magWindow].sort((x, y) => x - y);
+          const mid = sortedMag[Math.floor(sortedMag.length / 2)];
+          const dev = Math.abs(mid - field.ref) / field.ref;
+          setInterference(quality.interference ? dev > field.release : dev > field.tolerance);
+        }
+      } else if (sample.total !== null) {
+        magWindow.push(sample.total);
+        if (magWindow.length > MAG_WINDOW) magWindow.shift();
+        if (magWindow.length >= 3) {
+          const sortedMag = [...magWindow].sort((x, y) => x - y);
+          setInterference(absoluteBad(sortedMag[Math.floor(sortedMag.length / 2)]));
+        }
+      }
+
+      // Manyetometre kalibrasyonu: 0 güvenilmez, 1 düşük -> "8 çiz" gerekir.
+      if (sample.accuracy !== null) {
+        if (sample.accuracy <= 1) { badAccuracy++; goodAccuracy = 0; }
+        else { goodAccuracy++; badAccuracy = 0; }
+        if (!quality.calibrationNeeded && badAccuracy >= 5) setCalibrationNeeded(true);
+        else if (quality.calibrationNeeded && goodAccuracy >= 3) setCalibrationNeeded(false);
+      }
+
+      // Girişimli alanda yön hesabı güvenilmez: ham referansı besleme.
+      const fieldOut = field !== null
+        ? Math.abs(field.value - field.ref) / field.ref > field.tolerance
+        : sample.total !== null && absoluteBad(sample.total);
+      if (fieldOut) {
+        nativeHist = [];
+        return;
+      }
+
+      const h = sample.heading;
 
       // Kararlılık kapısı: tek bir gürültülü örnek referansı bozmasın.
       nativeHist.push(h);

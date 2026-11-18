@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallba
 import {
   MapPin, Calendar, Sparkles, Compass, CircleDot,
   RefreshCw, ChevronsDown, Globe,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock, ExternalLink, BatteryCharging, WifiOff
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock, ExternalLink, BatteryCharging, WifiOff, Smartphone, Magnet
 } from "lucide-react";
 import appNamazIcon from "./assets/app-namaz.png";
 import appHabitIcon from "./assets/app-habit.png";
@@ -25,7 +25,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode, LANGUAGE_LIST, isRTL, getLocale, getHijriMonths } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
-import { magneticDeclination } from "./utils/geomag";
+import { magneticDeclination, magneticFieldIntensity, magneticFieldHorizontal } from "./utils/geomag";
 import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart, exactAlarmsAllowed, openExactAlarmSettings } from "./utils/batteryHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
 import { calcMoonPhase, calcSolarTimes, MoonPhase } from "./utils/astronomyHelper";
@@ -1108,24 +1108,57 @@ export default function App() {
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [qiblaDir, setQiblaDir] = useState(0);
   const [declination, setDeclination] = useState(0);
-  const [compassListening, setCompassListening] = useState(false);
+  const [deviceBeta, setDeviceBeta] = useState<number | null>(null);
+  // Manyetik alan bozukken (metal/mıknatıs yakını) ölçülen yön güvenilmez:
+  // oku soluklaştırıp uyarı gösteriyoruz, yanlış yönü "doğru" gibi göstermiyoruz.
+  const [qiblaInterference, setQiblaInterference] = useState(false);
+  // Manyetometre kalibrasyonu zayıf: pusula "8 çiz" hareketi istiyor.
+  const [qiblaCalibration, setQiblaCalibration] = useState(false);
 
-  // Kâbe'ye kalan açı (-180..180, + = sağa dön). İbreyle birebir aynı hesap.
-  const qiblaDelta = compassListening && compassHeading !== null
+  // Kâbe'ye kalan açı (-180..180, + = sağa dön). Okla birebir aynı hesap.
+  // Pusula uygulama açılır açılmaz çalıştığı için "aç/kapa" durumu yok.
+  const qiblaDelta = compassHeading !== null
     ? ((((qiblaDir - declination - compassHeading + 540) % 360) + 360) % 360) - 180
     : null;
-  const QIBLA_LOCK_DEG = 3;   // hedefe "vardım" sayılan açı
-  const qiblaLocked = qiblaDelta !== null && Math.abs(qiblaDelta) <= QIBLA_LOCK_DEG;
+  const QIBLA_LOCK_DEG = 5;   // hedefe "vardım" sayılan açı
+  const qiblaLocked = !qiblaInterference && !qiblaCalibration && qiblaDelta !== null && Math.abs(qiblaDelta) <= QIBLA_LOCK_DEG;
   // Uzakken amber, yaklaşırken lime, kilitlenince yeşil (yumuşak ton geçişi).
   const qiblaT = qiblaDelta === null ? 1 : Math.min(1, Math.max(0, (Math.abs(qiblaDelta) - QIBLA_LOCK_DEG) / 25));
   const qiblaHue = 160 - 122 * qiblaT;
   const qiblaColor = `hsl(${qiblaHue.toFixed(1)} ${(64 + 28 * qiblaT).toFixed(1)}% ${(52 - 2 * qiblaT).toFixed(1)}%)`;
   const qiblaColorDeep = `hsl(${qiblaHue.toFixed(1)} ${(64 + 28 * qiblaT).toFixed(1)}% ${(40 - 2 * qiblaT).toFixed(1)}%)`;
+  // Telefon dik tutulduğunda ekranın "üstü" gökyüzünü gösterir; kıble okunun
+  // ekran düzlemindeki karşılığı ~90° kayar. Kullanıcıyı düz tutuşa yönlendir.
+  // Sensör hiç yoksa uyarı anlamsız olur, o yüzden yalnızca veri varken gösteriliyor.
+  const qiblaHoldFlat = compassHeading !== null && deviceBeta !== null && Math.abs(deviceBeta) > 40;
   // Kilitlenmeye girerken tek atımlık nabız (sürekli animasyon yok).
-  const qiblaTurn = qiblaDelta === null || qiblaLocked ? 0 : (qiblaDelta > 0 ? 1 : -1);
   const [qiblaPulse, setQiblaPulse] = useState(0);
   useEffect(() => { if (qiblaLocked) setQiblaPulse(n => n + 1); }, [qiblaLocked]);
+  // Kilitlenince kısa titreşim: ekrana bakmadan da "tamam" geri bildirimi.
+  useEffect(() => {
+    if (!qiblaLocked) return;
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") navigator.vibrate(60);
+  }, [qiblaLocked]);
+  useEffect(() => {
+    const onOrientation = (e: DeviceOrientationEvent) => {
+      if (typeof e.beta === "number") setDeviceBeta(e.beta);
+    };
+    window.addEventListener("deviceorientation", onOrientation as EventListener);
+    return () => window.removeEventListener("deviceorientation", onOrientation as EventListener);
+  }, []);
   const [compassUnsupported, setCompassUnsupported] = useState(false);
+  // Bulunulan noktanın beklenen manyetik alan şiddeti (μT). Girişim uyarısı mutlak
+  // bir μT eşiği yerine buna göre oransal hesaplanır: alan Brezilya'da ~23,
+  // Almanya'da ~48 μT olabilir; tek bir sabit sayı global uygulamada yanıltıcı.
+  const expectedFieldUt = useMemo(
+    () => magneticFieldIntensity(location.latitude, location.longitude),
+    [location.latitude, location.longitude]
+  );
+  // Yönü bozan asıl büyüklük alanın yatay bileşeni; girişim önce buna göre ölçülür.
+  const expectedHorizontalUt = useMemo(
+    () => magneticFieldHorizontal(location.latitude, location.longitude),
+    [location.latitude, location.longitude]
+  );
   const [showLocationPrompt, setShowLocationPrompt] = useState(
     () => !localStorage.getItem("mnv_location_prompted")
   );
@@ -1399,28 +1432,60 @@ useEffect(() => {
   }, [location.latitude, location.longitude, date]);
 
   useEffect(() => {
-    if (!compassListening) return;
-    requestCompassPermission().then(ok => { if (!ok) setCompassUnsupported(true); });
-    setCompassUnsupported(false);
-    const detach = attachCompassListener((h) => setCompassHeading(h));
+    // Pusula uygulama açık olduğu sürece çalışır: "göster" butonu yok.
+    // Uygulama arka plana atıldığında dinleyici bırakılır (native poll 250 ms'de bir
+    // manyetometre okuyor; boşuna pil harcamasın), öne gelince yeniden başlar.
+    let detach: (() => void) | null = null;
+    let unsupportedTimer: number | null = null;
 
-    // Bazı cihazlarda (manyetometre çipi olmayan veya sisteme erişilemeyen eski/bütçe
-    // Android telefon ve tabletler) yön sensörü hiç veri döndürmez — tarayıcı bunu
-    // belirtmek için tek seferlik, tüm alanları boş bir olay gönderir ve bir daha
-    // hiç tetiklenmez. Bu durumda ibreyi sonsuza dek "bekleniyor" gösterip kullanıcıyı
-    // yanıltmak yerine, birkaç saniye içinde gerçek veri gelmezse uyarı gösteriyoruz.
-    const unsupportedTimer = setTimeout(() => {
-      setCompassHeading(prev => {
-        if (prev === null) setCompassUnsupported(true);
-        return prev;
-      });
-    }, 2500);
+    const start = () => {
+      if (detach) return;
+      setCompassUnsupported(false);
+      // Her yeniden başlatmada temiz durum: dinleyici kaliteyi ~1 s içinde
+      // yeniden bildirir; böylece arka plandan dönerken eski uyarı takılı kalmaz.
+      setQiblaInterference(false);
+      setQiblaCalibration(false);
+      requestCompassPermission().then(ok => { if (!ok) setCompassUnsupported(true); });
+      detach = attachCompassListener(
+        (h) => setCompassHeading(h),
+        (q) => {
+          setQiblaInterference(q.interference);
+          setQiblaCalibration(q.calibrationNeeded);
+        },
+        { expectedFieldUt, expectedHorizontalUt },
+      );
+
+      // Bazı cihazlarda (manyetometre çipi olmayan veya sisteme erişilemeyen eski/bütçe
+      // Android telefon ve tabletler) yön sensörü hiç veri döndürmez — tarayıcı bunu
+      // belirtmek için tek seferlik, tüm alanları boş bir olay gönderir ve bir daha
+      // hiç tetiklenmez. Bu durumda oku sonsuza dek "bekleniyor" göstermek yerine,
+      // birkaç saniye içinde gerçek veri gelmezse uyarı gösteriyoruz.
+      unsupportedTimer = window.setTimeout(() => {
+        setCompassHeading(prev => {
+          if (prev === null) setCompassUnsupported(true);
+          return prev;
+        });
+      }, 2500);
+    };
+
+    const stop = () => {
+      if (detach) { detach(); detach = null; }
+      if (unsupportedTimer !== null) { clearTimeout(unsupportedTimer); unsupportedTimer = null; }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      detach();
-      clearTimeout(unsupportedTimer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      stop();
     };
-  }, [compassListening]);
+  }, [expectedFieldUt]);
 
   useEffect(() => {
     if (!prayerTimes.length) { setNextPrayerStr(""); return; }
@@ -2149,8 +2214,10 @@ useEffect(() => {
           <div className="text-base sm:text-lg font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
             <Compass className={`w-6 h-6 sm:w-7 sm:h-7 ${tTheme.accent}`} />{t("qibla", lang)}
           </div>
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative w-40 h-40 sm:w-48 sm:h-48">
+          <div className="flex flex-col items-center gap-3">
+            {/* Pusula her zaman açık: ok kıbleye döner, üstü gösterdiğinde yön doğrudur.
+                Buton, "pusula açık" etiketi ve derece metni yok — tek bakışta okunur. */}
+            <div className="relative w-48 h-48 sm:w-60 sm:h-60">
               <svg viewBox="0 0 200 200" className="w-full h-full">
                 <defs>
                   <radialGradient id="compassBg" cx="50%" cy="50%" r="50%">
@@ -2164,151 +2231,91 @@ useEffect(() => {
                   </linearGradient>
                 </defs>
 
-                {/* Dış çerçeve + zemin */}
-                <circle cx="100" cy="100" r="94" fill="url(#compassBg)" stroke={qiblaLocked ? qiblaColor : (isLight ? "rgba(15,23,42,0.16)" : "rgba(255,255,255,0.14)")} strokeOpacity={qiblaLocked ? 0.92 : 1} strokeWidth={qiblaLocked ? 5 : 1.5} />
-                <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                {/* Zemin + dış halka: kilitlenince kalınlaşıp yeşile döner.
+                    Manyetik girişimde tüm gösterge soluklaşır: bu yön doğru değil. */}
+                <circle cx="100" cy="100" r="92" fill="url(#compassBg)" stroke={isLight ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.10)"} strokeWidth="1" />
+                <g style={{ opacity: qiblaInterference ? 0.28 : qiblaCalibration ? 0.5 : 1, transition: "opacity 0.35s ease" }}>
+                <circle cx="100" cy="100" r="86" fill="none"
+                  stroke={qiblaLocked ? qiblaColor : (isLight ? "rgba(15,23,42,0.16)" : "rgba(255,255,255,0.14)")}
+                  strokeOpacity={qiblaLocked ? 0.95 : 1}
+                  strokeWidth={qiblaLocked ? 5 : 1.5} />
 
-                {/* Derece çentikleri (dekoratif) */}
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const angle = i * 15;
-                  const isMajor = angle % 90 === 0;
-                  const isMid = angle % 30 === 0;
-                  const len = isMajor ? 15 : isMid ? 9 : 4;
-                  const rad = ((angle - 90) * Math.PI) / 180;
-                  const r1 = 94, r2 = 94 - len;
-                  return (
-                    <line key={i}
-                      x1={100 + r1 * Math.cos(rad)} y1={100 + r1 * Math.sin(rad)}
-                      x2={100 + r2 * Math.cos(rad)} y2={100 + r2 * Math.sin(rad)}
-                      stroke={isMajor ? "#f59e0b" : isMid ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)"}
-                      strokeWidth={isMajor ? 2.5 : isMid ? 1.5 : 1} strokeLinecap="round" opacity={isMajor ? 0.9 : 1} />
-                  );
-                })}
-
-                {/* Kâbe'ye kalan açı: ibre ile üstteki hedef arasındaki dilim.
-                    "Ne kadar, hangi yöne döneceğim" yazı okumadan görülsün. */}
-                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (
-                  <path
-                    d={qiblaArcPath(qiblaDelta, 74, 90, 100, 100)}
-                    fill={qiblaColor}
-                    fillOpacity={0.16 + 0.16 * (1 - qiblaT)}
-                  />
-                )}
-                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (
-                  <line
-                    x1="100" y1="100"
-                    x2={100 + 74 * Math.sin((qiblaDelta * Math.PI) / 180)}
-                    y2={100 - 74 * Math.cos((qiblaDelta * Math.PI) / 180)}
-                    stroke={qiblaColor} strokeOpacity={0.5}
-                    strokeWidth="1.5" strokeDasharray="3 4" strokeLinecap="round" />
-                )}
-
-                {/* (d) Dönüş yönü: gereken tarafta akan kesikli oklar; hedefe varınca kaybolur. */}
-                {qiblaTurn !== 0 && (() => {
-                  const r = 74, a0 = 36, a1 = 86;
-                  const pt = (deg: number): [number, number] => [
-                    100 + r * Math.sin((deg * Math.PI) / 180),
-                    100 - r * Math.cos((deg * Math.PI) / 180),
-                  ];
-                  // Yay, uzak uçtan hedefe (üste) doğru çizilir; kesikli akış da o yöne akar.
-                  const [sx, sy] = pt(qiblaTurn > 0 ? a1 : -a1);
-                  const [ex, ey] = pt(qiblaTurn > 0 ? a0 : -a0);
-                  return (
-                    <g>
-                      <path d={`M ${sx} ${sy} A ${r} ${r} 0 0 ${qiblaTurn > 0 ? 0 : 1} ${ex} ${ey}`}
-                        fill="none" stroke={qiblaColor} strokeWidth="5" strokeLinecap="round"
-                        strokeDasharray="6 9" strokeOpacity="0.7" className="qibla-turn-flow" />
-                      <g transform={`translate(${ex} ${ey}) rotate(${qiblaTurn > 0 ? a0 + 180 : -a0})`}>
-                        <polygon points="0,-5.5 8,0 0,5.5" fill={qiblaColor} opacity="0.85" />
-                      </g>
-                    </g>
-                  );
-                })()}
-
-                {/* (1) Kabul penceresi: halkanın üzerinde kalın bir hedef dilimi (±10°). */}
-                {(() => {
-                  const pt = (deg: number) => [100 + 94 * Math.sin((deg * Math.PI) / 180), 100 - 94 * Math.cos((deg * Math.PI) / 180)];
-                  const [x1, y1] = pt(-10);
-                  const [x2, y2] = pt(10);
-                  return (
-                    <path d={`M ${x1} ${y1} A 94 94 0 0 1 ${x2} ${y2}`} fill="none"
-                      stroke={qiblaColor}
-                      strokeWidth={qiblaLocked ? 5 : 3.5}
-                      strokeOpacity={qiblaLocked ? 0.92 : 0.38}
-                      strokeLinecap="round" />
-                  );
-                })()}
-
-                {/* (2) Dilimin ibre ucundaki ok başı: dönüş yönü her açıda net. */}
-                {qiblaDelta !== null && Math.abs(qiblaDelta) > 4 && Math.abs(qiblaDelta) < 175 && (() => {
-                  const a = ((qiblaDelta - 90) * Math.PI) / 180;
-                  const rot = qiblaDelta > 0 ? qiblaDelta : qiblaDelta - 180;
-                  return (
-                    <g transform={`translate(${100 + 82 * Math.cos(a)} ${100 + 82 * Math.sin(a)}) rotate(${rot})`}>
-                      <polygon points="0,-4.5 7,0 0,4.5" fill={qiblaColor} opacity="0.95" />
-                    </g>
-                  );
-                })()}
-
-                {/* (4) Kilitlenince tek atımlık nabız. */}
+                {/* Kilitlenince tek atımlık nabız */}
                 {qiblaPulse > 0 && (
-                  <circle key={qiblaPulse} cx="100" cy="100" r="94" fill="none"
+                  <circle key={qiblaPulse} cx="100" cy="100" r="92" fill="none"
                     stroke="#34d399" strokeWidth="3" className="qibla-lock-pulse" />
                 )}
 
-                {/* Kıble ibresi — hesaplama App'in geri kalanıyla birebir aynı, sadece görsel değişti */}
+                {/* TEK BÜYÜK OK — ucu halkanın içine kadar uzanır, kıbleye döner. */}
                 <g style={{
-                  // Cihaz yönü manyetik kuzeye göre (compassHeading), kıble açısı gerçek kuzeye
-                  // göre; bu yüzden aradaki fark ibreden düşülür. Sensör yoksa mutlak açı gösterilir.
                   transform: `rotate(${compassHeading !== null ? qiblaDir - declination - compassHeading : qiblaDir}deg)`,
                   transformOrigin: "100px 100px",
-                  transition: "transform 0.15s ease-out",
+                  transition: "transform 0.18s ease-out",
                 }}>
-                  <polygon points="100,22 109,100 100,88 91,100" fill="url(#needleTip)" />
-                  <polygon points="100,155 109,100 100,112 91,100" fill="rgba(255,255,255,0.22)" />
-                  <g transform="translate(100,22)">
-                    {/* Kâbe badge: halkadan ayrışsın diye koyu zemin */}
-                    <circle cx="0" cy="-10.6" r="12" fill="rgba(8,8,10,0.62)" />
-                    {/* Kâbe: siyah küp gövde, altın kuşak (hizam), altın kapı, çatı çizgisi */}
-                    <path d="M -9.2 -18.8 L -6.2 -21 L 10 -21 L 9.2 -18.8 Z"
-                      fill="#26241f" stroke={qiblaColor} strokeWidth="0.9" strokeLinejoin="round" />
-                    <rect x="-9.2" y="-18.8" width="18.4" height="16.4" rx="0.8"
-                      fill="#111013" stroke={qiblaColor} strokeWidth="1.1" />
-                    <rect x="-9.2" y="-13.8" width="18.4" height="2.8" fill={qiblaColor} opacity="0.92" />
-                    <rect x="1.4" y="-10" width="5" height="7.2" rx="0.5" fill={qiblaColor} opacity="0.95" />
-                    <line x1="-9.2" y1="-10" x2="1.4" y2="-10" stroke={qiblaColor} strokeWidth="0.5" opacity="0.3" />
-                  </g>
+                  {/* Ok başı + gövde: tek parça, ucu halkaya dayanır */}
+                  <polygon points="100,10 119,58 100,48 81,58"
+                    fill="url(#needleTip)"
+                    stroke={qiblaLocked ? qiblaColor : "rgba(0,0,0,0.10)"}
+                    strokeWidth="1" strokeLinejoin="round" />
+                  <rect x="94" y="50" width="12" height="44" rx="4"
+                    fill="url(#needleTip)"
+                    stroke={qiblaLocked ? qiblaColor : "rgba(0,0,0,0.10)"}
+                    strokeWidth="1" />
                 </g>
 
-                <circle cx="100" cy="100" r="10" fill="rgba(15,23,42,0.85)" stroke="#f59e0b" strokeWidth="1.5" />
-                <circle cx="100" cy="100" r="3.5" fill="#f59e0b" />
+                {/* Merkez göbeği */}
+                <circle cx="100" cy="100" r="9" fill="rgba(15,23,42,0.9)" stroke={qiblaColor} strokeWidth="1.5" />
+                <circle cx="100" cy="100" r="3" fill={qiblaColor} />
+                </g>
               </svg>
             </div>
-            <button
-              onClick={() => setCompassListening(!compassListening)}
-              className={`text-sm sm:text-base font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${compassListening ? "bg-sky-500/20 border-sky-500/30 text-sky-400" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>
-              {compassListening ? `${Math.round(qiblaDir)}° ${t("qibla", lang)}` : t("qiblaDesc", lang)}
-            </button>
 
-            {compassListening && compassHeading !== null && (() => {
-              // İbre ekranda nereyi gösteriyor + kullanıcı ne yapmalı. Kâbe arkadayken
-              // ibrenin ekranın altına bakması doğrudur ama yazıyla da söylenmeli.
-              const delta = (((qiblaDir - declination - compassHeading + 540) % 360) + 360) % 360 - 180;
-              const ad = Math.abs(delta);
-              const hint = ad <= 3
-                ? t("qiblaAhead", lang)
-                : ad >= 150
-                  ? t("qiblaBehind", lang)
-                  : delta > 0
-                    ? t("qiblaTurnRight", lang, { n: String(Math.round(delta)) })
-                    : t("qiblaTurnLeft", lang, { n: String(Math.round(-delta)) });
-              return (
-                <div className={`text-sm sm:text-base font-semibold text-center leading-snug `} style={{ color: qiblaColor }}>
-                  {hint}
+            {/* Girişim uyarısı önce gelir: alan bozuksa "düz tut" demenin anlamı yok. */}
+            {qiblaInterference && (
+              <div className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl border text-base sm:text-lg font-semibold leading-snug text-left ${isLight ? "bg-amber-500/10 border-amber-500/40 text-amber-800" : "bg-amber-500/10 border-amber-500/35 text-amber-300"}`}>
+                <Magnet className="w-5 h-5 shrink-0" />
+                {t("qiblaMagnetic", lang)}
+              </div>
+            )}
+
+            {/* Kalibrasyon notu: YALNIZCA sensör kalibrasyon istediğinde çıkar
+                (accuracy <= 1). Kalibrasyon tek seferlik bir iş; not hep durunca
+                kullanıcı "her açılışta yapmam gerek" sanıyordu. Göründüğünde de
+                yaşlı kullanıcı okuyabilsin diye büyük tutuluyor. */}
+            {!qiblaInterference && qiblaCalibration && (
+              <div className={`flex items-center gap-4 w-full px-4 py-4 rounded-xl border text-left ${isLight ? "bg-sky-500/10 border-sky-500/45 text-sky-800" : "bg-sky-500/10 border-sky-500/40 text-sky-200"}`}>
+                {/* 8 çizme hareketi: nokta lemniskat üzerinde tur atıyor */}
+                <svg viewBox="0 0 120 64" className="w-28 h-16 sm:w-32 sm:h-20 shrink-0" aria-hidden="true">
+                  <path id="qiblaCalEight"
+                    d="M24 32 C24 10 53 10 60 32 C67 54 96 54 96 32 C96 10 67 10 60 32 C53 54 24 54 24 32 Z"
+                    fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+                  <circle r="5" fill="currentColor">
+                    <animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto">
+                      <mpath href="#qiblaCalEight" />
+                    </animateMotion>
+                  </circle>
+                </svg>
+                <div className="leading-snug">
+                  <div className="text-lg sm:text-xl font-bold">{t("qiblaCalibrate", lang)}</div>
+                  <div className="text-base sm:text-lg opacity-90 mt-1">{t("qiblaCalibrateHow", lang)}</div>
                 </div>
-              );
-            })()}
-            {compassListening && compassUnsupported && (
+              </div>
+            )}
+
+            {!qiblaInterference && !qiblaCalibration && qiblaHoldFlat && (
+              <div className={`flex items-center gap-2.5 text-base sm:text-lg font-semibold text-center leading-snug px-3.5 py-2.5 rounded-xl border ${isLight ? "bg-amber-500/10 border-amber-500/40 text-amber-800" : "bg-amber-500/10 border-amber-500/30 text-amber-300"}`}>
+                <Smartphone className="w-5 h-5 shrink-0" />
+                {t("qiblaHoldFlat", lang)}
+              </div>
+            )}
+
+            {compassHeading !== null && qiblaLocked && (
+              <div className="text-lg sm:text-xl font-extrabold tracking-tight" style={{ color: qiblaColor }}>
+                {t("qiblaAhead", lang)}
+              </div>
+            )}
+
+            {compassHeading === null && compassUnsupported && !qiblaInterference && (
               <div className={`text-xs sm:text-sm text-center leading-snug px-2 ${tTheme.textMuted}`}>
                 {t("compassNoSensor", lang)}
               </div>
@@ -2398,18 +2405,4 @@ useEffect(() => {
       )}
     </div>
   );
-}
-
-/** 0° (üst) ile `delta` arasındaki halka dilimini çizer (+ = saat yönü). */
-function qiblaArcPath(delta: number, r1: number, r2: number, cx: number, cy: number): string {
-  const xy = (r: number, deg: number): [number, number] => {
-    const a = ((deg - 90) * Math.PI) / 180;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  };
-  const sweep = delta > 0 ? 1 : 0;
-  const [x1, y1] = xy(r2, 0);
-  const [x2, y2] = xy(r2, delta);
-  const [x3, y3] = xy(r1, delta);
-  const [x4, y4] = xy(r1, 0);
-  return `M ${x1} ${y1} A ${r2} ${r2} 0 0 ${sweep} ${x2} ${y2} L ${x3} ${y3} A ${r1} ${r1} 0 0 ${sweep ? 0 : 1} ${x4} ${y4} Z`;
 }

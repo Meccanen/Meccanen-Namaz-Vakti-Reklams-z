@@ -42,6 +42,9 @@ public class QiblaSensorPlugin extends Plugin implements SensorEventListener {
     private SensorManager sensorManager;
     private float[] accValues = null;
     private float[] magValues = null;
+    // Manyetometre kalibrasyon durumu (0 = güvenilmez, 1 = düşük, 2 = orta, 3 = yüksek).
+    // Android bunu sürücüden/hub'dan bildirir; düşükse "8 çiz" kalibrasyonu gerekir.
+    private int magAccuracy = 0;
     private boolean registered = false;
 
     @Override
@@ -144,6 +147,13 @@ public class QiblaSensorPlugin extends Plugin implements SensorEventListener {
         res.put("ok", true);
         res.put("heading", deg);
         res.put("total", Math.sqrt(mx * mx + my * my + mz * mz));
+        // Yatay bileşen: yönü bozan asıl büyüklük bu. Dikey bileşen (Almanya'da
+        // alanın ~%92'si) yönü neredeyse hiç etkilemez, o yüzden girişim kararı
+        // toplam yerine yatay alanın beklenen değerden sapmasına bakmalı.
+        double hN = mx * nx + my * ny + mz * nz;
+        double hE = mx * ex + my * ey + mz * ez;
+        res.put("horizontal", Math.sqrt(hN * hN + hE * hE));
+        res.put("accuracy", magAccuracy);
         call.resolve(res);
     }
 
@@ -153,6 +163,7 @@ public class QiblaSensorPlugin extends Plugin implements SensorEventListener {
             accValues = event.values.clone();
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             magValues = event.values.clone();
+            magAccuracy = event.accuracy;
         }
     }
 

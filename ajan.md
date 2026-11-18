@@ -336,24 +336,45 @@ Kaynak: `docs/notification-system-findings.md` (Eylül 2026, cihazda doğrulanm�
 
 ## 8. Kıble Pusulası — Mimari ve Sınırlar
 
-- **Sorun:** OS `rotation-vector` füzyonu Samsung A015'te yaw'ı ~183° kaydırdı. Formül değil,
-  sensör bozuktu.
-- **Çözüm katmanları:**
-  1. **Native `QiblaSensor` plugin** — ham manyetometre + ivmeölçer; `getHeading()` →
-     `{ ok, heading, total }`. `total` (µT) kalite kapısı: **30–62 µT** dışı örnek referans sayılmaz.
-     Kaynak: `scripts/local-build/add_qibla_plugin.py` → `src/utils/nativeCompass.ts`.
-  2. **Referans sıçraması reddi** — `(mutlak − göreli)` farkı sabit olmalı; ani büyük değişim =
-     referans zıpladı, örneği at.
-  3. **WMM-2025 sapma** — `src/utils/geomag.ts`, çevrimdışı; `magneticDeclination(lat,lng,alt,tarih)`.
-     İbre: `needle = qiblaDir − declination − compassHeading`.
-  4. **Hibrit eksen** — düz tutuşta +y, dik tutuşta −z; `|cosβ|` ile geçiş (45°). Ekran açısı eklenir.
+- **Sorun:** OS `rotation-vector` füzyonu bu cihazda (MTK + QMC6308) yaw'ı ~183° kaydırıyordu;
+  formül değil sensör bozuktu.
+- **Kart tasarımı (18 Kasım 2026):** tek bakışta okunur — başlık + halka + tek büyük ok.
+  "Göster" butonu, "pusula açık" etiketi, derece metni ve Kâbe ikonu **yok**; pusula uygulama
+  açılır açılmaz çalışır. Uygulama arka plana atılınca dinleyiciler bırakılır (native poll
+  250 ms), öne gelince yeniden bağlanır (`visibilitychange`).
+- **Ok:** göbekten çıkan gövde + ok başı (`rect x=94 y=50 w=12 h=44 rx=4`,
+  `polygon 100,10 119,58 100,48 81,58`). `needle = qiblaDir − declination − compassHeading`.
+- **Kilit:** `QIBLA_LOCK_DEG = 5°`; halka kalınlaşıp yeşile döner, `navigator.vibrate(60)`,
+  "Kâbe tam önünde ✓" yalnızca kilitliyken.
+- **Katmanlar:** native `QiblaSensor` (ham mag + acc; `getHeading()` →
+  `{ ok, heading, total, horizontal, accuracy }`) → referans sıçraması reddi (mutlak − göreli
+  farkı) → WMM-2025 sapma (`geomag.ts`) → hibrit eksen (düz tutuşta +y, dik tutuşta −z).
+- **Kalite sinyalleri** (`attachCompassListener(cb, onQuality, { expectedFieldUt, expectedHorizontalUt })`):
+  1. **Manyetik girişim** — beklenen alan konuma göre `magneticFieldHorizontal()` /
+     `magneticFieldIntensity()` ile hesaplanır (mutlak μT eşiği global uygulamada yanlış:
+     Brezilya'da 23 μT, Almanya'da 50 μT normal). Ölçüt önce **yatay** bileşen (yönü bozan
+     büyüklük), yoksa toplam. Giriş %40 (yatay) / %38 (toplam), çıkış %28 / %25 — histerezisli;
+     ~1,2 s medyan (5 örnek). Ok %28 opaklığa iner, amber "Manyetik girişim" satırı çıkar,
+     kilit devre dışı. Leipzig'de beklenen: 19,3 μT yatay / 49,8 μT toplam; temiz alanda ölçülen
+     18,9 / 47,5; laptop yanında ölçülen 31,7 / 64,5 (uyarı doğru tetiklenir).
+  2. **Kalibrasyon** — `SensorEvent.accuracy ≤ 1` (güvenilmez/düşük); 5 kötü örnek (~1,25 s)
+     uyarıyı açar, 3 iyi örnek (~0,75 s) kapatır. Ok %50 opaklık, "8 çiz" notu vurgulanır.
+- **"8 çiz" notu** — **yalnızca sensör kalibrasyon istediğinde** (`accuracy ≤ 1`) görünür;
+  kalibrasyon tek seferlik bir iş olduğu için sürekli göstermek kullanıcıyı "her açılışta
+  yapmam gerek" diye yanıltıyordu (18 Kasım 2026 kararı). Göründüğünde yaşlı kullanıcı için
+  büyük: ∞ çizimi 112–128 px, başlık 18–20 px, metin 16–18 px. Nokta `animateMotion` +
+  `mpath` ile 8'in üzerinde döner. Girişim uyarısı varken not gizlenir (önce metal uzaklaşmalı).
+  Metinler: `qiblaCalibrate` / `qiblaCalibrateHow` (11 dilde).
 - **Sabitler (`qiblaHelper.ts`):** `MAX_REF_JUMP=12°`, `NATIVE_FLIP=100°`, `NATIVE_STABLE=12°`,
-  `NATIVE_DRIFT_GAIN=0.05`, EMA 0.18 s, `QIBLA_LOCK_DEG=3°`.
+  `NATIVE_DRIFT_GAIN=0.05`, EMA 0,18 s, `HORIZ_TOLERANCE=0.40` / `HORIZ_RELEASE=0.28`,
+  `FIELD_TOLERANCE=0.38` / `FIELD_RELEASE=0.25`, yedek mutlak aralık 30–62 μT.
 - **Bilinen sınırlar:**
-  - Düz yatıkken 180° çevirme sensörle ayırt edilemez (ivmeölçer yaw görmez); metin okumayı netleştirir.
-  - Elde tutarken alan >62 µT ise ham referans kullanılmaz; jiro akışı devam eder (yavaş kayma).
-  - `prefers-reduced-motion` desteği yok (nabız + akan oklar her zaman animasyonlu).
-  - Kıble metinleri yalnız tr/en/de'de tam; 8 dilde 4 anahtar eksik (bkz. §2.3).
+  - Düz yatıkken 180° çevirme sensörle ayırt edilemez (ivmeölçer yaw görmez).
+  - Girişimde ham referans beslenmez; jiro akışı devam eder (yavaş kayma) — ok bu yüzden soluk.
+  - `accuracy` birçok cihazda hep 3 (yüksek) raporlanır; kalibrasyon vurgusu otomatik tetiklenmezse
+    not yalnızca bilgilendirme olarak kalır (bu cihazda ölçülen: hep 3).
+  - `prefers-reduced-motion` desteği yok (kilit nabzı + 8 çizimi her zaman animasyonlu).
+  - Eşikler Leipzig'de ölçülen değerlerle kalibre edildi; farklı enlemlerde saha testi gerekir.
 
 ---
 
