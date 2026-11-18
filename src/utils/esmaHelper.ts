@@ -24,6 +24,7 @@
  */
 
 import { ESMA_MEANINGS, EsmaMeaning } from "./esmaData";
+import { getEsmaLabel, LANGUAGE_ORDER, type LangCode } from "./i18n";
 
 export type PlanetKey = "gunes" | "musteri" | "zuhre" | "mirrih" | "kamer" | "utarid" | "zuhal";
 export type SegmentKey = "sabah" | "kusluk" | "zeval" | "ogle" | "mabeyn" | "ikindi" | "aksam";
@@ -33,25 +34,20 @@ export interface PlanetItem {
   count: number | null; // kaynaktaki zikir sayısı (ebced değeri); null = kaynakta belirsiz/okunamıyor
 }
 
-export const PLANET_LABELS: Record<PlanetKey, { tr: string; en: string; ar: string }> = {
-  gunes: { tr: "Güneş", en: "The Sun", ar: "الشمس" },
-  musteri: { tr: "Müşterî (Jüpiter)", en: "Jupiter", ar: "المشتري" },
-  zuhre: { tr: "Zühre (Venüs)", en: "Venus", ar: "الزهرة" },
-  mirrih: { tr: "Mirrîh (Merih)", en: "Mars", ar: "المريخ" },
-  kamer: { tr: "Kamer (Ay)", en: "The Moon", ar: "القمر" },
-  utarid: { tr: "Utârid (Merkür)", en: "Mercury", ar: "عطارد" },
-  zuhal: { tr: "Zuhal (Satürn)", en: "Saturn", ar: "زحل" },
-};
+// Etiketler dil modüllerinden (esmaLabels) gelir; burada çeviri kopyası yoktur.
+const PLANET_KEYS: PlanetKey[] = ["gunes", "musteri", "zuhre", "mirrih", "kamer", "utarid", "zuhal"];
+const SEGMENT_KEYS: SegmentKey[] = ["sabah", "kusluk", "zeval", "ogle", "mabeyn", "ikindi", "aksam"];
 
-export const SEGMENT_LABELS: Record<SegmentKey, { tr: string; en: string; ar: string }> = {
-  sabah: { tr: "Sabah", en: "Morning (Sabah)", ar: "الصباح" },
-  kusluk: { tr: "Kuşluk", en: "Forenoon (Kuşluk)", ar: "الضحى" },
-  zeval: { tr: "Zevâl", en: "Solar Noon (Zevâl)", ar: "الزوال" },
-  ogle: { tr: "Öğle", en: "Midday (Öğle)", ar: "الظهر" },
-  mabeyn: { tr: "Mâ-beyn", en: "Mid-Afternoon (Mâ-beyn)", ar: "ما بين الظهر والعصر" },
-  ikindi: { tr: "İkindi", en: "Afternoon (İkindi)", ar: "العصر" },
-  aksam: { tr: "Akşam", en: "Evening & Night (Akşam)", ar: "المساء والليل" },
-};
+const labelSet = <K extends string>(kind: "planets" | "segments", keys: K[]) =>
+  Object.fromEntries(
+    keys.map((key) => [
+      key,
+      Object.fromEntries(LANGUAGE_ORDER.map((lang) => [lang, getEsmaLabel(kind, key, lang)])),
+    ]),
+  ) as Record<K, Record<LangCode, string>>;
+
+export const PLANET_LABELS = labelSet("planets", PLANET_KEYS);
+export const SEGMENT_LABELS = labelSet("segments", SEGMENT_KEYS);
 
 const SEGMENT_ORDER: SegmentKey[] = ["sabah", "kusluk", "zeval", "ogle", "mabeyn", "ikindi", "aksam"];
 

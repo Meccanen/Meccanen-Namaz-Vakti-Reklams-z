@@ -1,0 +1,44 @@
+{
+  "tr": {
+    "appName": "Meccanen Namaz Vakti",
+    "widgetArc": "Vakit Halkası",
+    "widgetClock": "Saat & Takvim",
+    "widgetAnalog": "Analog Saat",
+    "widgetGrid": "Vakit Kartları"
+  },
+  "en": {
+    "appName": "Meccanen Prayer Times",
+    "widgetArc": "Prayer Circle",
+    "widgetClock": "Clock & Calendar",
+    "widgetAnalog": "Analog Clock",
+    "widgetGrid": "Prayer Cards"
+  },
+  "de": {
+    "appName": "Meccanen Gebetszeiten",
+    "widgetArc": "Gebetskreis",
+    "widgetClock": "Uhr & Kalender",
+    "widgetAnalog": "Analoguhr",
+    "widgetGrid": "Gebetskarten"
+  },
+  "ar": {
+    "appName": "Meccanen مواقيت الصلاة",
+    "widgetArc": "دائرة الأوقات",
+    "widgetClock": "الساعة والتقويم",
+    "widgetAnalog": "ساعة عقارب",
+    "widgetGrid": "بطاقات الأوقات"
+  },
+  "ur": {
+    "appName": "Meccanen اوقات نماز",
+    "widgetArc": "اوقات کا دائرہ",
+    "widgetClock": "گھڑی اور کیلنڈر",
+    "widgetAnalog": "اینالاگ گھڑی",
+    "widgetGrid": "اوقات کارڈز"
+  },
+  "fa": {
+    "appName": "Meccanen اوقات نماز",
+    "widgetArc": "حلقه اوقات",
+    "widgetClock": "ساعت و تقویم",
+    "widgetAnalog": "ساعت عقربه‌ای",
+    "widgetGrid": "کارت‌های اوقات"
+  }
+}
