@@ -16,6 +16,8 @@ if "SCHEDULE_EXACT_ALARM" not in content:
     alarm_perms = '    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n'
     content = content.replace("</manifest>", alarm_perms + "</manifest>")
     open(path, "w").write(content)
+if "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" not in content:
+    content = content.replace("</manifest>", '    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />\n</manifest>')
 with open(path, "w") as f:
     f.write(content)
 print("perms ok")

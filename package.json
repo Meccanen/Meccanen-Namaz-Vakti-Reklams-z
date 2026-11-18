@@ -9,14 +9,18 @@
     "preview": "vite preview",
     "cap:add": "cap add android",
     "cap:sync": "cap sync",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:check:strict": "node scripts/i18n-check.mjs --strict",
+    "i18n:export": "node scripts/i18n-export.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/cli": "^6.0.0",
     "@capacitor/core": "^6.0.0",
-    "@capacitor/local-notifications": "^6.0.0",
     "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/local-notifications": "^6.0.0",
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.3.1",

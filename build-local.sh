@@ -36,14 +36,31 @@ esac
 
 JAVA_HOME="${JAVA_HOME:-/tmp/opencode/jdk17}"
 ANDROID_HOME="${ANDROID_HOME:-/tmp/opencode/sdk}"
+# Varsayılan yollar yoksa yaygın yerel kurulumları dene (jlink şart: Android
+# Gradle eklentisi JDK imajı üretirken jlink arar, salt JRE yetmez).
+if [[ ! -x "$JAVA_HOME/bin/jlink" ]]; then
+  for candidate in "$HOME/.local/opt/jdk-17" "$HOME/.local/jdk17" "$HOME/.jdks"/*; do
+    if [[ -x "$candidate/bin/jlink" ]]; then JAVA_HOME="$candidate"; break; fi
+  done
+fi
+if [[ ! -d "$ANDROID_HOME/platforms" ]]; then
+  for candidate in "$HOME/Android/Sdk" "/usr/lib/android-sdk" "$HOME/Library/Android/sdk"; do
+    if [[ -d "$candidate/platforms" ]]; then ANDROID_HOME="$candidate"; break; fi
+  done
+fi
 export JAVA_HOME ANDROID_HOME ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$JAVA_HOME/bin:$PATH"
 
-VERSION_CODE="${VERSION_CODE:-$(date +%Y%m%d)}"
+# versionCode 10 hane olmali: YYYYMMDDCC (CC = gun ici sayac). Kisa yazmak (8 hane)
+# sayisal olarak DAHA KUCUK olur ve Play "existing users cannot upgrade" hatasi verir.
+VERSION_CODE="${VERSION_CODE:-$(date +%Y%m%d)00}"
 VERSION_NAME="${VERSION_NAME:-2.3.$VERSION_CODE}"
 mkdir -p dist
 
 echo ">>> Mod: $MODE | versionCode: $VERSION_CODE | versionName: $VERSION_NAME"
+if [[ ! "$VERSION_CODE" =~ ^[0-9]{10}$ ]]; then
+  echo ">>> UYARI: versionCode 10 haneli olmali (YYYYMMDDCC); Play mevcut surumden buyuk olmasini sart kosar." >&2
+fi
 
 if [[ "$MODE" == "release" || "$MODE" == "all" ]]; then
   : "${KEYSTORE_PATH:?Release icin KEYSTORE_PATH ortam degiskeni gerekli}"
@@ -64,16 +81,18 @@ npx cap sync android >/dev/null
 echo ">>> Local Notifications yamalari (cancelPreviousId + timeoutAfter)"
 python3 "$SCRIPT_DIR/patch_notif.py"
 
-echo ">>> Yerlestirilmis uygulama adi (5 dil) + widget isimleri + manifest label"
+echo ">>> Yerlestirilmis uygulama adi + widget isimleri + manifest label"
 python3 - << 'PY'
-import os, re, xml.etree.ElementTree as ET
+import json, os, re, xml.etree.ElementTree as ET
 base = os.path.join(os.getcwd(), "android", "app", "src", "main", "res")
-names = {"tr": "Meccanen Namaz Vakti", "en": "Meccanen Prayer Times", "de": "Meccanen Gebetszeiten", "ar": "Meccanen مواقيت الصلاة", "ur": "Meccanen اوقات نماز"}
-# Widget isimleri — launcher ekleme ekraninda widget'lar ayristirilsin diye.
-WIDGET_T = {"tr": "Vakitler", "en": "Prayer Times", "de": "Gebetszeiten", "ar": "مواقيت الصلاة", "ur": "اوقات نماز"}
-WIDGET_A = {"tr": "Vakit Halkası", "en": "Prayer Circle", "de": "Gebetskreis", "ar": "دائرة الأوقات", "ur": "اوقات کا دائرہ"}
-WIDGET_C = {"tr": "Saat & Takvim", "en": "Clock & Calendar", "de": "Uhr & Kalender", "ar": "الساعة والتقويم", "ur": "گھڑی اور کیلنڈر"}
-WIDGET_G = {"tr": "Vakit Kartları", "en": "Prayer Cards", "de": "Gebetskarten", "ar": "بطاقات الأوقات", "ur": "اوقات کارڈز"}
+# Tek kaynak: src/i18n/native.json (dil basina uygulama + widget adlari).
+with open(os.path.join("src", "i18n", "native.json"), encoding="utf-8") as f:
+    native = json.load(f)
+names = {k: v["appName"] for k, v in native.items()}
+WIDGET_A = {k: v["widgetArc"] for k, v in native.items()}
+WIDGET_C = {k: v["widgetClock"] for k, v in native.items()}
+WIDGET_AN = {k: v["widgetAnalog"] for k, v in native.items()}
+WIDGET_G = {k: v["widgetGrid"] for k, v in native.items()}
 ET.register_namespace("", "http://schemas.android.com/apk/res/android")
 def write_values(loc, entries):
     d = os.path.join(base, f"values-{loc}" if loc else "values"); os.makedirs(d, exist_ok=True)
@@ -89,9 +108,9 @@ def write_values(loc, entries):
         if node is None: node = ET.SubElement(root, "string", {"name": k})
         node.text = v
     ET.ElementTree(root).write(p, encoding="utf-8", xml_declaration=True)
-for loc in ("", "tr", "en", "de", "ar", "ur"):
+for loc in ("", *names.keys()):
     l = loc or "en"
-    entries = {"app_name": names[l], "widget_times": WIDGET_T[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l], "widget_grid": WIDGET_G[l]}
+    entries = {"app_name": names[l], "widget_arc": WIDGET_A[l], "widget_clock": WIDGET_C[l], "widget_analog": WIDGET_AN[l], "widget_grid": WIDGET_G[l]}
     write_values(loc, entries)
 mp = os.path.normpath(os.path.join(base, "..", "AndroidManifest.xml"))
 xml_ = open(mp).read()
@@ -106,8 +125,14 @@ PY
 echo ">>> BatteryHelper plugin (MIUI bildirim fix'i)"
 python3 "$SCRIPT_DIR/add_battery_plugin.py"
 
+echo ">>> QiblaSensor plugin (ham manyetometre tabanli yon)"
+python3 "$SCRIPT_DIR/add_qibla_plugin.py"
+
 echo ">>> Widget'lar (native kaynaklar + manifest + WidgetBridge)"
 python3 "$SCRIPT_DIR/add_widgets.py"
+
+echo ">>> Gradle bellek ayarlari (release D8/R8 icin 1536m yetmiyor)"
+sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx2560m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8/' android/gradle.properties
 
 echo ">>> variables.gradle (min 24 / compile-target 36)"
 cat > android/variables.gradle << 'GRADLEEOF'
@@ -158,12 +183,14 @@ if [[ "$MODE" == "debug" || "$MODE" == "all" ]]; then
 fi
 
 if [[ "$MODE" == "release" || "$MODE" == "all" ]]; then
-  echo ">>> bundleRelease (imzali)"
-  (cd android && ./gradlew bundleRelease \
+  echo ">>> assembleRelease + bundleRelease (imzali)"
+  (cd android && ./gradlew assembleRelease bundleRelease \
     -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
     -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
     -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
     -Pandroid.injected.signing.key.password="$KEY_PASSWORD")
+  cp android/app/build/outputs/apk/release/app-release.apk "dist/meccanen-release-v$VERSION_NAME.apk"
+  echo ">>> RELEASE APK: dist/meccanen-release-v$VERSION_NAME.apk"
   cp android/app/build/outputs/bundle/release/app-release.aab "dist/meccanen-release-v$VERSION_NAME.aab"
   echo ">>> RELEASE AAB: dist/meccanen-release-v$VERSION_NAME.aab"
 fi
