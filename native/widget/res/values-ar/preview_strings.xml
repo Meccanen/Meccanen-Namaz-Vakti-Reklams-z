@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_preview_city">إسطنبول</string>
+    <string name="widget_preview_fajr">الفجر</string>
+    <string name="widget_preview_sunrise">الشروق</string>
+    <string name="widget_preview_sunrise_short">الشروق</string>
+    <string name="widget_preview_dhuhr">الظهر</string>
+    <string name="widget_preview_asr">العصر</string>
+    <string name="widget_preview_maghrib">المغرب</string>
+    <string name="widget_preview_isha">العشاء</string>
+    <string name="widget_preview_weekday">الجمعة</string>
+    <string name="widget_preview_gregorian">ميلادي</string>
+    <string name="widget_preview_hijri">هجري</string>
+    <string name="widget_preview_greg_month">مارس 2026</string>
+    <string name="widget_preview_hijri_month">رمضان 1447</string>
+
+    <string name="widget_arc_desc">دائرة أوقات الصلاة على مدار 24 ساعة مع الصلاة القادمة</string>
+    <string name="widget_clock_desc">ساعة مباشرة مع التاريخ الميلادي والهجري</string>
+    <string name="widget_analog_desc">ساعة بعقارب مع الثواني وطور القمر وأوقات الصلاة</string>
+    <string name="widget_grid_desc">أوقات الصلوات الست في بطاقات</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_preview_city">استنبول</string>
+    <string name="widget_preview_fajr">فجر</string>
+    <string name="widget_preview_sunrise">طلوع آفتاب</string>
+    <string name="widget_preview_sunrise_short">طلوع</string>
+    <string name="widget_preview_dhuhr">ظہر</string>
+    <string name="widget_preview_asr">عصر</string>
+    <string name="widget_preview_maghrib">مغرب</string>
+    <string name="widget_preview_isha">عشاء</string>
+    <string name="widget_preview_weekday">جمعہ</string>
+    <string name="widget_preview_gregorian">عیسوی</string>
+    <string name="widget_preview_hijri">ہجری</string>
+    <string name="widget_preview_greg_month">مارچ 2026</string>
+    <string name="widget_preview_hijri_month">رمضان 1447</string>
+
+    <string name="widget_arc_desc">اگلے وقت کے ساتھ 24 گھنٹے کا اوقات دائرہ</string>
+    <string name="widget_clock_desc">عیسوی اور ہجری تاریخ کے ساتھ زندہ گھڑی</string>
+    <string name="widget_analog_desc">سیکنڈوں، چاند کی حالت اور اوقات کے ساتھ اینالاگ گھڑی</string>
+    <string name="widget_grid_desc">چھ اوقات، کارڈز کی شکل میں</string>
+</resources>

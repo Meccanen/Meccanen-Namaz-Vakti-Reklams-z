@@ -1,50 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Saat & Takvim: canlı saat, Miladi/Hicri tarih ve altta 6 sütunlu iki
+     satır: vakit adları ve saatleri. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_clock_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center_horizontal"
+    android:gravity="center_horizontal|center_vertical"
     android:padding="12dp">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/widget_clock_city"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/widget_clock_city"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:singleLine="true"
-            android:ellipsize="end"
-            android:gravity="start"
-            android:textSize="13sp"
-            android:includeFontPadding="false"
-            android:textColor="#94A3B8"
-            android:text="–" />
-
-        <TextView
-            android:id="@+id/widget_clock_next"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:singleLine="true"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:includeFontPadding="false"
-            android:textColor="#38BDF8"
-            android:text="–" />
-    </LinearLayout>
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:includeFontPadding="false"
+        android:textColor="#38BDF8"
+        android:text="–" />
 
     <TextView
         android:id="@+id/widget_clock_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:typeface="monospace"
-        android:textSize="58sp"
+        android:textSize="46sp"
         android:textStyle="bold"
         android:letterSpacing="0.02"
         android:includeFontPadding="false"
@@ -53,18 +38,22 @@
 
     <TextView
         android:id="@+id/widget_clock_weekday"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:textSize="15sp"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
         android:textColor="#94A3B8"
         android:text="–" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
         android:background="#22FFFFFF"
         android:text="" />
 
@@ -78,7 +67,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
             <TextView
                 android:id="@+id/widget_clock_glabel"
@@ -97,10 +87,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:typeface="monospace"
-                android:textSize="38sp"
+                android:textSize="34sp"
                 android:textStyle="bold"
                 android:includeFontPadding="false"
-                android:textColor="#F1F5F9"
+                android:textColor="#38BDF8"
                 android:text="--" />
 
             <TextView
@@ -109,10 +99,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
-                android:textColor="#94A3B8"
+                android:textColor="#38BDF8"
                 android:text="–" />
         </LinearLayout>
 
@@ -121,7 +113,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="end">
+            android:gravity="center_horizontal">
 
             <TextView
                 android:id="@+id/widget_clock_hlabel"
@@ -130,7 +122,6 @@
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:singleLine="true"
-                android:gravity="end"
                 android:includeFontPadding="false"
                 android:textColor="#38BDF8"
                 android:text="–" />
@@ -141,9 +132,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:typeface="monospace"
-                android:textSize="38sp"
+                android:textSize="34sp"
                 android:textStyle="bold"
-                android:gravity="end"
                 android:includeFontPadding="false"
                 android:textColor="#38BDF8"
                 android:text="--" />
@@ -154,23 +144,204 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
                 android:singleLine="true"
                 android:ellipsize="end"
-                android:gravity="end"
                 android:includeFontPadding="false"
                 android:textColor="#38BDF8"
                 android:text="–" />
-
-            <TextView
-                android:id="@+id/widget_clock_moon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:singleLine="true"
-                android:ellipsize="end"
-                android:includeFontPadding="false"
-                android:textColor="#94A3B8"
-                android:text="–" />
         </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#22FFFFFF"
+        android:text="" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_clock_l0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_l1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_l2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_l3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_l4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_l5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_clock_t0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_t1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_t2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_t3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_t4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_clock_t5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
     </LinearLayout>
 </LinearLayout>

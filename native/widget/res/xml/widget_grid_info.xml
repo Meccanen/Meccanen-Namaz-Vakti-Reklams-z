@@ -8,5 +8,8 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_grid_layout"
+    android:previewLayout="@layout/widget_grid_preview"
+    android:previewImage="@drawable/widget_grid_preview_img"
+    android:description="@string/widget_grid_desc"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

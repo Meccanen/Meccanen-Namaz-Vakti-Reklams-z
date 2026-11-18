@@ -9,6 +9,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import meccanen.namaz.vakti.v1.widgets.WidgetCore;
+import meccanen.namaz.vakti.v1.widgets.WidgetSyncWorker;
 
 /**
  * JS tarafının vakit/tema/şehir verisini yerel widget'lara ilettiği köprü.
@@ -23,6 +24,8 @@ public class WidgetBridgePlugin extends Plugin {
         if (payload == null) { call.reject("payload required"); return; }
         Context ctx = getContext().getApplicationContext();
         WidgetCore.saveAndUpdate(ctx, payload);
+        // Uygulama kapalıyken de verinin tazelenmesi için günlük işi garanti et.
+        WidgetSyncWorker.schedule(ctx);
         JSObject res = new JSObject();
         res.put("ok", true);
         call.resolve(res);

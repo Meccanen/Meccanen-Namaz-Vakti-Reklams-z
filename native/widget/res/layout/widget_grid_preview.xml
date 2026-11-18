@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçici için statik "Vakit Kartları" önizlemesi. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_gece"
+    android:orientation="vertical"
+    android:padding="9dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textSize="10sp"
+        android:includeFontPadding="false"
+        android:textColor="#94A3B8"
+        android:text="@string/widget_preview_city" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_fajr" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_sunrise" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_dhuhr" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_asr" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="1dp"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_maghrib" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_grid_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="#38BDF8"
+                android:text="@string/widget_preview_isha" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#22FFFFFF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="05:42" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="07:08" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="12:56" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="15:48" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#38BDF8"
+            android:text="18:42" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#F1F5F9"
+            android:text="20:12" />
+    </LinearLayout>
+</LinearLayout>

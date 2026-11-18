@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Vakit Halkası: üstte şehir, ortada 24 saatlik halka (merkezde sıradaki
+     vakit), altta 6 sütunlu iki satır: vakit adları ve saatleri. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_arc_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="8dp">
 
     <TextView
         android:id="@+id/widget_arc_city"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
         android:gravity="center_horizontal"
         android:textSize="13sp"
         android:textStyle="bold"
@@ -18,52 +20,231 @@
         android:includeFontPadding="false"
         android:text="–" />
 
-    <ImageView
-        android:id="@+id/widget_arc_image"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
-        android:contentDescription=""
-        android:layout_gravity="center" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical"
-        android:gravity="center">
+        <ImageView
+            android:id="@+id/widget_arc_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:contentDescription=""
+            android:layout_gravity="center" />
 
-        <TextView
-            android:id="@+id/widget_arc_next"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/widget_arc_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#38BDF8"
+                android:includeFontPadding="false"
+                android:text="–" />
+
+            <TextView
+                android:id="@+id/widget_arc_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#F1F5F9"
+                android:includeFontPadding="false"
+                android:text="–" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_arc_l0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="#38BDF8"
             android:includeFontPadding="false"
             android:text="–" />
 
         <TextView
-            android:id="@+id/widget_arc_detail"
-            android:layout_width="wrap_content"
+            android:id="@+id/widget_arc_l1"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textSize="14sp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
             android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_l2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_l3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_l4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_l5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_arc_t0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
             android:textColor="#F1F5F9"
             android:includeFontPadding="false"
             android:text="–" />
 
         <TextView
-            android:id="@+id/widget_arc_remaining"
-            android:layout_width="wrap_content"
+            android:id="@+id/widget_arc_t1"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
             android:textSize="12sp"
-            android:textColor="#38BDF8"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_t2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_t3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_t4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+
+        <TextView
+            android:id="@+id/widget_arc_t5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
             android:includeFontPadding="false"
             android:text="–" />
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>

@@ -9,9 +9,9 @@ import android.widget.RemoteViews;
 import meccanen.namaz.vakti.v1.R;
 
 /**
- * Vakit Kartları widget'ı (kompakt): sol-üst konum, sağ-üst sonraki vakte kalan
- * süre, 6 başlık kartı (İmsak..Yatsı) ve her kartın altında ortalanmış vakitler.
- * Tasarım ilk (sayısal) widget'ın verisini kullanır ama görsel düzeni farklıdır.
+ * Vakit Kartları widget'ı (kompakt): sol-üst konum, 6 başlık kartı (İmsak..Yatsı)
+ * ve her kartın altında ortalanmış vakitler. Tasarım ilk (sayısal) widget'ın
+ * verisini kullanır ama görsel düzeni farklıdır.
  */
 public class PrayerGridWidgetProvider extends AppWidgetProvider {
 
@@ -19,7 +19,6 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
 
     static final int ROOT      = R.id.widget_grid_root;
     static final int CITY      = R.id.widget_grid_city;
-    static final int REMAINING = R.id.widget_grid_remaining;
 
     static final int[] CARDS = {
             R.id.widget_grid_c0, R.id.widget_grid_c1, R.id.widget_grid_c2,
@@ -38,6 +37,13 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         WidgetCore.refreshAll(context);
+        // Widget eklendiğinde/launcher tazelediğinde günlük işin kurulu olduğundan emin ol.
+        WidgetSyncWorker.schedule(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        WidgetCore.scheduleRefreshAlarms(context);
     }
 
     @Override
@@ -57,16 +63,12 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
                 v.setTextColor(TIMES[i], pal.text);
             }
             v.setTextColor(CITY, pal.muted);
-            v.setTextColor(REMAINING, pal.accent);
 
-            if (d == null) return v; // veri henüz yok — yer tutucularla görün
+            if (d == null) { WidgetCore.setOpenAppClick(c, v, ROOT, CARDS); return v; } // veri henüz yok — yer tutucularla görün
 
             v.setTextViewText(CITY, d.city);
 
             int idx = WidgetCore.nextIndex(d);
-            String dur = PrayerTimesWidgetProvider.fmtDurHuman(WidgetCore.remainingMinutes(d, idx), d.lang);
-            WidgetCore.PrayTime np = WidgetCore.nextPrayer(d, idx);
-            v.setTextViewText(REMAINING, np == null ? "–" : dur);
 
             WidgetCore.PrayTime[] today = WidgetCore.today(d);
             boolean nextMarked = false;
@@ -84,6 +86,7 @@ public class PrayerGridWidgetProvider extends AppWidgetProvider {
             Log.e(TAG, "buildViews hatasi widgetId=" + widgetId, e);
             // hata anında da boş görünüm sunulsun — asla null dönme
         }
+        WidgetCore.setOpenAppClick(c, v, ROOT, CARDS);
         return v;
     }
 }

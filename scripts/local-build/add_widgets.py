@@ -1,4 +1,4 @@
-import json, os, shutil, glob
+import json, os, re, shutil, glob
 with open("capacitor.config.json") as f:
     cfg = json.load(f)
 app_id = cfg["appId"]
@@ -16,7 +16,8 @@ for root, dirs, files in os.walk("native/widget/java"):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copy2(os.path.join(root, fn), dest)
         print(f">>> kopyalandı: {dest}")
-for sub in ("layout", "xml", "drawable"):
+for sub in ("layout", "xml", "drawable", "drawable-nodpi", "drawable-tr-nodpi",
+            "values", "values-tr", "values-de", "values-ar", "values-ur", "values-fa"):
     src = os.path.join("native/widget/res", sub)
     dest = os.path.join("android/app/src/main/res", sub)
     if not os.path.isdir(src):
@@ -30,18 +31,9 @@ xml = open(mp).read()
 if "RECEIVE_BOOT_COMPLETED" not in xml:
     xml = xml.replace("</manifest>", '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n</manifest>')
     print(">>> RECEIVE_BOOT_COMPLETED izni eklendi.")
-if "widgets.PrayerTimesWidgetProvider" not in xml:
+if "widgets.PrayerArcWidgetProvider" not in xml:
     receivers = f'''
 <receiver
-                android:name="{app_id}.widgets.PrayerTimesWidgetProvider"
-                android:exported="false"
-                android:label="@string/widget_times">
-                <intent-filter>
-                    <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                </intent-filter>
-                <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_pt_info" />
-            </receiver>
-            <receiver
                 android:name="{app_id}.widgets.PrayerArcWidgetProvider"
                 android:exported="false"
                 android:label="@string/widget_arc">
@@ -52,7 +44,7 @@ if "widgets.PrayerTimesWidgetProvider" not in xml:
             </receiver>
     <receiver
         android:name="{app_id}.widgets.WidgetRefreshReceiver"
-        android:exported="false">
+        android:exported="true">
         <intent-filter>
             <action android:name="{app_id}.widgets.REFRESH" />
         </intent-filter>
@@ -61,6 +53,7 @@ if "widgets.PrayerTimesWidgetProvider" not in xml:
             <action android:name="android.intent.action.DATE_CHANGED" />
             <action android:name="android.intent.action.TIME_SET" />
             <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
         </intent-filter>
     </receiver>'''
     xml = xml.replace("</application>", receivers + "\n    </application>")
@@ -86,6 +79,23 @@ else:
     open(mp, "w").write(xml)
     print(">>> Saat widget receiver'i manifest'e eklendi.")
 
+if "widgets.PrayerAnalogWidgetProvider" in xml:
+    print(">>> Analog widget receiver'i zaten mevcut, dokunulmadi.")
+else:
+    analog_rx = f'''
+        <receiver
+            android:name="{app_id}.widgets.PrayerAnalogWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_analog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_analog_info" />
+        </receiver>'''
+    xml = xml.replace("</application>", analog_rx + "\n    </application>")
+    open(mp, "w").write(xml)
+    print(">>> Analog widget receiver'i manifest'e eklendi.")
+
 if "widgets.PrayerGridWidgetProvider" in xml:
     print(">>> Kart widget receiver'i zaten mevcut, dokunulmadi.")
 else:
@@ -102,6 +112,36 @@ else:
     xml = xml.replace("</application>", grid_rx + "\n    </application>")
     open(mp, "w").write(xml)
     print(">>> Kart widget receiver'i manifest'e eklendi.")
+
+# --- Manifest düzeltmeleri (idempotent): boot/güncelleme alıcısı sistem
+# yayınlarını alabilsin ve uygulama güncellenince de tetiklensin. ---
+xml = open(mp).read()
+if "MY_PACKAGE_REPLACED" not in xml:
+    xml = xml.replace(
+        '<action android:name="android.intent.action.TIMEZONE_CHANGED" />',
+        '<action android:name="android.intent.action.TIMEZONE_CHANGED" />\n'
+        '            <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />',
+        1)
+xml = re.sub(
+    r'(<receiver[^>]*android:name="[^"]*WidgetRefreshReceiver"[^>]*android:exported=")false(")',
+    r'\1true\2', xml)
+open(mp, "w").write(xml)
+print(">>> WidgetRefreshReceiver exported=true, MY_PACKAGE_REPLACED eklendi.")
+
+# --- WorkManager: uygulama kapalıyken günlük widget tazelemesi. ---
+gradle_path = "android/app/build.gradle"
+gradle = open(gradle_path).read()
+if "androidx.work:work-runtime" in gradle:
+    print(">>> WorkManager bağımlılığı zaten mevcut.")
+elif "dependencies {" in gradle:
+    gradle = gradle.replace(
+        "dependencies {",
+        'dependencies {\n    implementation "androidx.work:work-runtime:2.9.1"',
+        1)
+    open(gradle_path, "w").write(gradle)
+    print(">>> WorkManager bağımlılığı eklendi.")
+else:
+    raise SystemExit(">>> HATA: app/build.gradle içinde dependencies bloğu bulunamadı.")
 
 main_matches = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
 main_path = main_matches[0]

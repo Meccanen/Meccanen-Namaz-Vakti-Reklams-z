@@ -8,5 +8,8 @@
     android:targetCellHeight="4"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_clock_layout"
+    android:previewLayout="@layout/widget_clock_preview"
+    android:previewImage="@drawable/widget_clock_preview_img"
+    android:description="@string/widget_clock_desc"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

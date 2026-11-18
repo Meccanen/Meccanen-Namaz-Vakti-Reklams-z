@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçici (picker) önizlemelerinde kullanılan örnek metinler. -->
+<resources>
+    <string name="widget_preview_city">Istanbul</string>
+    <string name="widget_preview_fajr">Fajr</string>
+    <string name="widget_preview_sunrise">Sunrise</string>
+    <string name="widget_preview_sunrise_short">Sunrise</string>
+    <string name="widget_preview_dhuhr">Dhuhr</string>
+    <string name="widget_preview_asr">Asr</string>
+    <string name="widget_preview_maghrib">Maghrib</string>
+    <string name="widget_preview_isha">Isha</string>
+    <string name="widget_preview_weekday">Friday</string>
+    <string name="widget_preview_gregorian">Gregorian</string>
+    <string name="widget_preview_hijri">Hijri</string>
+    <string name="widget_preview_greg_month">March 2026</string>
+    <string name="widget_preview_hijri_month">Ramadan 1447</string>
+
+    <string name="widget_arc_desc">24-hour prayer ring with the next prayer</string>
+    <string name="widget_clock_desc">Live clock with Gregorian and Hijri dates</string>
+    <string name="widget_analog_desc">Analog clock with seconds, moon phase and prayer times</string>
+    <string name="widget_grid_desc">Six prayer times shown as cards</string>
+</resources>

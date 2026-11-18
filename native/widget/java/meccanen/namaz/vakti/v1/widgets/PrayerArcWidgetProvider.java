@@ -24,6 +24,14 @@ import meccanen.namaz.vakti.v1.R;
 public class PrayerArcWidgetProvider extends AppWidgetProvider {
 
     private static final int KERAHAT_WINDOW_MIN = 45;
+    static final int[] LABELS = {
+        R.id.widget_arc_l0, R.id.widget_arc_l1, R.id.widget_arc_l2,
+        R.id.widget_arc_l3, R.id.widget_arc_l4, R.id.widget_arc_l5
+    };
+    static final int[] TIMES = {
+        R.id.widget_arc_t0, R.id.widget_arc_t1, R.id.widget_arc_t2,
+        R.id.widget_arc_t3, R.id.widget_arc_t4, R.id.widget_arc_t5
+    };
     // Sağdan-sola diller (ar/ur): gün doğudan doğduğu için imsak sağda, ilerleme sağdan sola.
     // Soldan-sağa diller (tr/en/de): İngilizce orijinali gibi soldan başlar, sağa ilerler.
     private static boolean RTL;
@@ -31,6 +39,13 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         WidgetCore.refreshAll(context);
+        // Widget eklendiğinde/launcher tazelediğinde günlük işin kurulu olduğundan emin ol.
+        WidgetSyncWorker.schedule(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        WidgetCore.scheduleRefreshAlarms(context);
     }
 
     @Override
@@ -53,20 +68,34 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         v.setTextColor(R.id.widget_arc_city, pal.accent);
 
         int idx = WidgetCore.nextIndex(d);
-        String dur = WidgetCore.fmtDur(WidgetCore.remainingMinutes(d, idx));
         WidgetCore.PrayTime np = WidgetCore.nextPrayer(d, idx);
-        if (np == null) return null;
 
-        v.setTextViewText(R.id.widget_arc_next, np.name);
+        v.setTextViewText(R.id.widget_arc_next, np != null ? np.name : "–");
         v.setTextColor(R.id.widget_arc_next, pal.accent);
-        v.setTextViewText(R.id.widget_arc_detail, WidgetCore.fmtTime(np.mins));
+        v.setTextViewText(R.id.widget_arc_detail, np != null ? WidgetCore.fmtTime(np.mins) : "");
         v.setTextColor(R.id.widget_arc_detail, pal.text);
-        v.setTextViewText(R.id.widget_arc_remaining, dur);
-        v.setTextColor(R.id.widget_arc_remaining, pal.accent);
 
         Bitmap bmp = buildArcBitmap(d, pal, idx);
         v.setImageViewBitmap(R.id.widget_arc_image, bmp);
+
+        for (int i = 0; i < 6; i++) {
+            WidgetCore.PrayTime pt = today[i];
+            if (pt == null) continue;
+            v.setTextViewText(LABELS[i], widgetName(pt.name, d.lang));
+            v.setTextColor(LABELS[i], pal.accent);
+            v.setTextViewText(TIMES[i], WidgetCore.fmtTime(pt.mins));
+            v.setTextColor(TIMES[i], i == idx ? pal.accent : pal.text);
+        }
+        WidgetCore.setOpenAppClick(c, v, R.id.widget_arc_root);
         return v;
+    }
+
+    /** Alt satırda yere sığmayan uzun adlar için kısa karşılık. */
+    static String widgetName(String name, String lang) {
+        if (name == null) return "–";
+        if ("de".equals(lang) && "Sonnenaufgang".equals(name)) return "Aufgang";
+        if ("ur".equals(lang) && "طلوع آفتاب".equals(name)) return "طلوع";
+        return name;
     }
 
     private static Bitmap buildArcBitmap(WidgetCore.Data d, WidgetPalettes.Pal pal, int nextIdx) {
@@ -83,10 +112,10 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         int nowMin = WidgetCore.nowMins(d.tz);
 
         float cx = size / 2f, cy = size / 2f;
+        // Saat etiketleri halkanın dış kenarında: halka kareye sığacak boyutta.
         float radius = size * 0.30f;
         float stroke = size * 0.13f;
         float innerR = radius - stroke / 2f;
-        float outerR = radius + stroke / 2f;
         int[] prayerColors = WidgetPalettes.prayers(pal);
 
         // ---- 1) ARKA PLAN halka (tam daire).
@@ -126,13 +155,8 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
             if (nowMin >= kb[0] && nowMin <= kb[1]) inKerahat = true;
             float a1 = ang(kb[0]), a2 = ang(kb[1]);
 
-            // yarı saydam kırmızı dilim (merkezden dış yaya) — segmentlerin üstünde.
-            Paint wedgeP = new Paint(Paint.ANTI_ALIAS_FLAG);
-            wedgeP.setStyle(Paint.Style.FILL);
-            wedgeP.setColor((pal.light ? 0x3A : 0x4D) << 24 | 0x00000000 | (0xFFB91C1C & 0x00FFFFFF));
-            canvas.drawPath(wedgePath(cx, cy, outerR, a1, a2), wedgeP);
-
-            // halka üzerinde kırmızı şerit.
+            // halka üzerinde kırmızı şerit (merkeze kama çizilmez; ibre ve
+            // merkez yazısı temiz kalsın).
             Paint kbP = new Paint(Paint.ANTI_ALIAS_FLAG);
             kbP.setStyle(Paint.Style.STROKE);
             kbP.setStrokeWidth(stroke * 0.55f);
@@ -146,7 +170,7 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
         tickP.setColor(pal.text);
         tickP.setStrokeWidth(size * 0.006f);
         Paint timeP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        timeP.setTextSize(size * 0.044f);
+        timeP.setTextSize(size * 0.040f);
         timeP.setTextAlign(Paint.Align.CENTER);
         timeP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         timeP.setColor(pal.text);
@@ -158,41 +182,37 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
             canvas.drawLine(
                 cx + tickIn * cosDeg(a), cy - tickIn * sinDeg(a),
                 cx + tickOut * cosDeg(a), cy - tickOut * sinDeg(a), tickP);
-            float tx = cx + timeR * cosDeg(a);
-            float ty = cy - timeR * sinDeg(a);
+            String label = WidgetCore.fmtTime(mins[i]);
             timeP.setColor(i == nextIdx ? pal.accent : pal.text);
-            canvas.drawText(WidgetCore.fmtTime(mins[i]), tx, ty + size * 0.016f, timeP);
+            // Yatay yazı sağ/sol yönde halkaya binmesin: yarım genişlik kadar dışa
+            // kaydır, ancak bitmap kenarından taşmayacak şekilde sınırla.
+            float halfW = timeP.measureText(label) / 2f;
+            float rr = Math.min(
+                timeR + halfW * Math.abs(cosDeg(a)),
+                size * 0.5f - halfW - size * 0.004f);
+            float tx = cx + rr * cosDeg(a);
+            float ty = cy - rr * sinDeg(a);
+            canvas.drawText(label, tx, ty + size * 0.016f, timeP);
         }
 
-        // ---- 5) VAKİT ADLARI (dilim içinde, iç halka kenarında).
-        Paint nameP = new Paint(Paint.ANTI_ALIAS_FLAG);
-        nameP.setTextSize(size * 0.045f);
-        nameP.setTextAlign(Paint.Align.CENTER);
-        nameP.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        float nameR = innerR - size * 0.016f;
-        for (int i = 0; i < 6; i++) {
-            int mid = i == 1 ? mins[1] + KERAHAT_WINDOW_MIN / 2
-                             : (mins[i] + ((i < 5) ? mins[i + 1] : t6)) / 2;
-            float a = ang(mid);
-            float nx = cx + nameR * cosDeg(a);
-            float ny = cy - nameR * sinDeg(a);
-            nameP.setColor(i == nextIdx ? pal.accent : pal.text);
-            canvas.drawText(t[i].name, nx, ny + size * 0.012f, nameP);
-        }
+        // ---- 5) VAKİT ADLARI halkada yazılmaz: her dilimin sınırında tam saat
+        // zaten yazılı; sıradaki vakit merkezde gösterilir. Böylece uzun adlar
+        // (ör. "Sonnenaufgang") taşmaz ve merkez yazısıyla çakışmaz.
 
-        // ---- 6) İBRE — kerahat bandındayken kırmızı.
+        // ---- 6) "ŞİMDİ" İBRESİ — merkez yazısını kapatmamak için yalnızca
+        // iç kenarda kısa bir işaret (kerahat bandındayken kırmızı).
         int needleColor = inKerahat ? 0xFFDC2626 : pal.accent;
         float a = ang(Math.max(-120, Math.min(nowMin, t6)));
-        float len = innerR - 6f;
-        float tx = cx + len * cosDeg(a);
-        float ty = cy - len * sinDeg(a);
+        float len0 = innerR - size * 0.065f;
+        float len1 = innerR + size * 0.006f;
         Paint needle = new Paint(Paint.ANTI_ALIAS_FLAG);
         needle.setColor(needleColor);
-        needle.setStrokeWidth(size * 0.012f);
+        needle.setStrokeWidth(size * 0.010f);
         needle.setStrokeCap(Paint.Cap.ROUND);
-        canvas.drawLine(cx, cy, tx, ty, needle);
-        canvas.drawCircle(tx, ty, size * 0.045f, needle);
-        canvas.drawCircle(cx, cy, size * 0.014f, needle);
+        canvas.drawLine(
+            cx + len0 * cosDeg(a), cy - len0 * sinDeg(a),
+            cx + len1 * cosDeg(a), cy - len1 * sinDeg(a), needle);
+        canvas.drawCircle(cx + len1 * cosDeg(a), cy - len1 * sinDeg(a), size * 0.022f, needle);
 
         return bmp;
     }
@@ -214,19 +234,6 @@ public class PrayerArcWidgetProvider extends AppWidgetProvider {
             else path.lineTo(cx + r * cosDeg(a), cy - r * sinDeg(a));
         }
         canvas.drawPath(path, p);
-    }
-
-    /** Merkezden dış yaya giden yarı saydam kerahat dilimi. */
-    private static Path wedgePath(float cx, float cy, float outerR, float a1, float a2) {
-        Path p = new Path();
-        p.moveTo(cx, cy);
-        int steps = Math.max(2, (int) Math.abs(a2 - a1));
-        for (int k = 0; k <= steps; k++) {
-            float a = a1 + (a2 - a1) * k / steps;
-            p.lineTo(cx + outerR * cosDeg(a), cy - outerR * sinDeg(a));
-        }
-        p.close();
-        return p;
     }
 
     private static float cosDeg(float a) { return (float) Math.cos(Math.toRadians(a)); }

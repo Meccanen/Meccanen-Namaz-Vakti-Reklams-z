@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_preview_city">استانبول</string>
+    <string name="widget_preview_fajr">فجر</string>
+    <string name="widget_preview_sunrise">طلوع آفتاب</string>
+    <string name="widget_preview_sunrise_short">طلوع</string>
+    <string name="widget_preview_dhuhr">ظهر</string>
+    <string name="widget_preview_asr">عصر</string>
+    <string name="widget_preview_maghrib">مغرب</string>
+    <string name="widget_preview_isha">عشاء</string>
+    <string name="widget_preview_weekday">جمعه</string>
+    <string name="widget_preview_gregorian">میلادی</string>
+    <string name="widget_preview_hijri">هجری</string>
+    <string name="widget_preview_greg_month">مارس ۲۰۲۶</string>
+    <string name="widget_preview_hijri_month">رمضان ۱۴۴۷</string>
+
+    <string name="widget_arc_desc">حلقه ۲۴ ساعته اوقات نماز همراه با وقت بعدی</string>
+    <string name="widget_clock_desc">ساعت زنده با تاریخ میلادی و هجری</string>
+    <string name="widget_analog_desc">ساعت عقربه‌ای با ثانیه‌ها، فاز ماه و اوقات نماز</string>
+    <string name="widget_grid_desc">شش وقت نماز در قالب کارت</string>
+</resources>

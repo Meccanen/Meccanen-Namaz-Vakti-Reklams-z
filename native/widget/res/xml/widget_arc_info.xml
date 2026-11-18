@@ -8,5 +8,8 @@
     android:targetCellHeight="3"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_arc_layout"
+    android:previewLayout="@layout/widget_arc_preview"
+    android:previewImage="@drawable/widget_arc_preview_img"
+    android:description="@string/widget_arc_desc"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

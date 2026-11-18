@@ -6,8 +6,9 @@ import android.content.Intent;
 
 /**
  * 1) WidgetCore tarafından programlanan exact alarmları (vakit geçişleri + gece yarısı)
- * 2) boot, tarih/saat/dilim değişikliği
- * aldığında widget'ları tazeler ve bir sonraki günün alarmlarını yeniden kurar.
+ * 2) boot, tarih/saat/dilim değişikliği, uygulama güncellemesi
+ * aldığında widget'ları tazeler, günlük WorkManager işini kurar ve gerekiyorsa
+ * hemen bir kez veri tazeleme isteği gönderir.
  */
 public class WidgetRefreshReceiver extends BroadcastReceiver {
 
@@ -20,15 +21,23 @@ public class WidgetRefreshReceiver extends BroadcastReceiver {
                 Intent.ACTION_BOOT_COMPLETED.equals(action) ||
                 Intent.ACTION_DATE_CHANGED.equals(action) ||
                 Intent.ACTION_TIME_CHANGED.equals(action) ||
-                Intent.ACTION_TIMEZONE_CHANGED.equals(action);
+                Intent.ACTION_TIMEZONE_CHANGED.equals(action) ||
+                Intent.ACTION_MY_PACKAGE_REPLACED.equals(action);
 
         if (!relevant) return;
 
         try {
+            // refreshAll zaten alarmları (dakika-başı + vakit geçişleri) yeniden kurar.
             WidgetCore.refreshAll(context);
-            WidgetCore.scheduleRefreshAlarms(context);
         } catch (Exception ignored) {
             // widget verisi yoksa sessizce geç
+        }
+
+        // Periyodik iş her cihazda bir kez kurulur. Alarm dışı olaylarda veri
+        // günlerce bayatlamış olabilir; hemen bir kez de tazele.
+        if (!WidgetCore.ACTION_REFRESH.equals(action)) {
+            WidgetSyncWorker.schedule(context);
+            WidgetSyncWorker.scheduleNow(context);
         }
     }
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_preview_city">İstanbul</string>
+    <string name="widget_preview_fajr">İmsak</string>
+    <string name="widget_preview_sunrise">Güneş</string>
+    <string name="widget_preview_sunrise_short">Güneş</string>
+    <string name="widget_preview_dhuhr">Öğle</string>
+    <string name="widget_preview_asr">İkindi</string>
+    <string name="widget_preview_maghrib">Akşam</string>
+    <string name="widget_preview_isha">Yatsı</string>
+    <string name="widget_preview_weekday">Cuma</string>
+    <string name="widget_preview_gregorian">Miladi</string>
+    <string name="widget_preview_hijri">Hicri</string>
+    <string name="widget_preview_greg_month">Mart 2026</string>
+    <string name="widget_preview_hijri_month">Ramazan 1447</string>
+
+    <string name="widget_arc_desc">Sıradaki vakitle 24 saatlik vakit halkası</string>
+    <string name="widget_clock_desc">Miladi ve hicri tarihli canlı saat</string>
+    <string name="widget_analog_desc">Saniyeli analog saat, ay evresi ve namaz vakitleri</string>
+    <string name="widget_grid_desc">Altı vakit, kart görünümünde</string>
+</resources>

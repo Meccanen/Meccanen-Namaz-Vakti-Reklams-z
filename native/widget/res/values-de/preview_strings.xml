@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_preview_city">Istanbul</string>
+    <string name="widget_preview_fajr">Fadschr</string>
+    <string name="widget_preview_sunrise">Sonnenaufgang</string>
+    <string name="widget_preview_sunrise_short">Aufgang</string>
+    <string name="widget_preview_dhuhr">Dhuhr</string>
+    <string name="widget_preview_asr">Asr</string>
+    <string name="widget_preview_maghrib">Maghrib</string>
+    <string name="widget_preview_isha">Isha</string>
+    <string name="widget_preview_weekday">Freitag</string>
+    <string name="widget_preview_gregorian">Gregorianisch</string>
+    <string name="widget_preview_hijri">Hijri</string>
+    <string name="widget_preview_greg_month">März 2026</string>
+    <string name="widget_preview_hijri_month">Ramadan 1447</string>
+
+    <string name="widget_arc_desc">24-Stunden-Gebetskreis mit dem nächsten Gebet</string>
+    <string name="widget_clock_desc">Live-Uhr mit gregorianischem und hijri Datum</string>
+    <string name="widget_analog_desc">Analoguhr mit Sekunden, Mondphase und Gebetszeiten</string>
+    <string name="widget_grid_desc">Sechs Gebetszeiten als Karten</string>
+</resources>

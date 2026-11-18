@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog Saat: üstte şehir, ortada temalı analog kadran (akrep + yelkovan)
+     ve üzerinde saniyede bir kare değiştiren hareketli saniye ibresi; en altta
+     6 sütunlu iki satır namaz vakti. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_analog_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal|center_vertical"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/widget_analog_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:includeFontPadding="false"
+        android:textColor="#38BDF8"
+        android:text="–" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp">
+
+        <ImageView
+            android:id="@+id/widget_analog_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:contentDescription="" />
+
+        <!-- Saniye ibresi: her kare 6° döndürülmüş aynı ibre görselidir.
+             ViewFlipper autoStart + 1000 ms ile launcher içinde akar; uygulama
+             her saniye uyanmadan ibre hareket eder. -->
+        <ViewFlipper
+            android:id="@+id/widget_analog_seconds_flipper"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autoStart="true"
+            android:flipInterval="1000"
+            android:animateFirstView="false">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="0"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="6"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="12"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="18"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="24"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="30"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="36"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="42"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="48"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="54"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="60"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="66"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="72"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="78"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="84"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="90"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="96"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="102"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="108"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="114"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="120"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="126"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="132"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="138"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="144"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="150"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="156"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="162"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="168"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="174"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="180"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="186"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="192"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="198"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="204"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="210"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="216"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="222"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="228"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="234"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="240"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="246"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="252"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="258"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="264"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="270"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="276"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="282"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="288"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="294"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="300"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="306"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="312"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="318"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="324"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="330"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="336"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="342"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="348"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:rotation="354"
+                android:contentDescription=""
+                android:src="@drawable/widget_analog_second_hand" />
+        </ViewFlipper>
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#22FFFFFF"
+        android:text="" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_analog_l0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_l1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_l2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_l3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_l4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_l5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:textColor="#38BDF8"
+            android:includeFontPadding="false"
+            android:text="–" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <TextView
+            android:id="@+id/widget_analog_t0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_t1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_t2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_t3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_t4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+        <TextView
+            android:id="@+id/widget_analog_t5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:textColor="#F1F5F9"
+            android:includeFontPadding="false"
+            android:text="–" />
+    </LinearLayout>
+</LinearLayout>

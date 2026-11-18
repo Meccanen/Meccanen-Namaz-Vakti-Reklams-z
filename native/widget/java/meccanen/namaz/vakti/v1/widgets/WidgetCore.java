@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.widget.RemoteViews;
 
 import org.json.JSONArray;
@@ -17,18 +18,22 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 /**
- * Widget'ların ortak beyni: JS'den gelen JSON payload'ı saklar, o anki vakte/şimdiki
- * vakte göre "sonraki vakit" + kalan süreyi hesaplar, her vakit geçişinde ve gece
- * yarısında widget'ları tazelemek için exact alarmlar programlar.
+ * Widget'ların ortak beyni: JS'den gelen JSON payload'ı saklar, o anki vakte göre
+ * "sonraki vakit"i hesaplar, her vakit geçişinde ve gece yarısında widget'ları
+ * tazelemek için exact alarmlar programlar.
  *
- * Payload şeması (JS `widgetBridge`'den):
+ * Payload şeması (JS `widgetBridge`'den veya native `WidgetSyncWorker`'dan):
  * {
- *   "days": [ { "date":"2026-09-18", "times":[ {"n":"İmsak","t":"04:49"}, ... 6 ] }, x3 ],
+ *   "days": [ { "date":"2026-09-18", "times":[ {"n":"İmsak","t":"04:49"}, ... 6 ] }, xN ],
  *   "city": "Istanbul, Türkiye",
  *   "theme": "gece",
  *   "lang": "tr",
- *   "tz": "Europe/Istanbul"
+ *   "tz": "Europe/Istanbul",
+ *   "lat": 41.0082, "lng": 28.9784, "method": 13
  * }
+ *
+ * `days` en fazla `MAX_DAYS` gün tutulur. JS 7 gün gönderir; native worker günde
+ * bir kez 30 güne kadar tazeler. Böylece uygulama açılmadan da widget bayatlamaz.
  */
 public final class WidgetCore {
 
@@ -38,6 +43,9 @@ public final class WidgetCore {
     public static final String KEY_PAYLOAD = "payload";
     public static final String ACTION_REFRESH = "meccanen.namaz.vakti.v1.widgets.REFRESH";
     public static final int ALARM_REQ_BASE = 7100;
+
+    /** Widget'ın taşıyabileceği en fazla gün. 30 gün ≈ 6-8 KB payload. */
+    public static final int MAX_DAYS = 30;
 
     public static final String[] KEYS = {"imsak", "gunes", "ogle", "ikindi", "aksam", "yatsi"};
 
@@ -56,19 +64,21 @@ public final class WidgetCore {
         public String theme;
         public String lang;
         public String tz;
-        public final PrayTime[][] days = new PrayTime[3][6];
-        public final int[] noonMins = new int[3]; // her günün istiva/zeval dakikası
-        // Saat/takvim widget'ı için gün bazlı yerelleştirilmiş alanlar (JS'den gelir).
-        public final String[] wd = new String[3]; // haftanın günü
-        public final String[] gd = new String[3]; // miladi gün
-        public final String[] gm = new String[3]; // miladi ay + yıl
-        public final String[] hd = new String[3]; // hicri gün
-        public final String[] hm = new String[3]; // hicri ay
-        public final String[] hy = new String[3]; // hicri yıl
-        public final String[] mp = new String[3]; // ay fazı
-        public final int[] mi = new int[3];       // ay aydınlanma %
-        public int todayIndex = 0;   // bugünle eşleşen gün (0..2)
+        public final PrayTime[][] days = new PrayTime[MAX_DAYS][6];
+        public final int[] noonMins = new int[MAX_DAYS]; // her günün istiva/zeval dakikası
+        // Saat/takvim widget'ı için gün bazlı yerelleştirilmiş alanlar (JS/worker'dan gelir).
+        public final String[] dates = new String[MAX_DAYS]; // YYYY-MM-DD
+        public final String[] wd = new String[MAX_DAYS]; // haftanın günü
+        public final String[] gd = new String[MAX_DAYS]; // miladi gün
+        public final String[] gm = new String[MAX_DAYS]; // miladi ay + yıl
+        public final String[] hd = new String[MAX_DAYS]; // hicri gün
+        public final String[] hm = new String[MAX_DAYS]; // hicri ay
+        public final String[] hy = new String[MAX_DAYS]; // hicri yıl
+        public final String[] mp = new String[MAX_DAYS]; // ay fazı
+        public final int[] mi = new int[MAX_DAYS];       // ay aydınlanma %
+        public int todayIndex = 0;   // bugünle eşleşen gün (0..decoded-1)
         public int decoded = 0;      // kaç gün başarıyla çözüldü
+        public boolean stale = false; // payload bugünü kapsamıyor (son gün gösteriliyor)
     }
 
     public static SharedPreferences prefs(Context c) {
@@ -79,21 +89,102 @@ public final class WidgetCore {
         return prefs(c).getString(KEY_PAYLOAD, null);
     }
 
-    /** Payload'ı sakla, alarmları programla ve widget'ları anında tazele. */
+    /**
+     * JS'den gelen payload'ı sakla. Gelen veri daha kısa olsa bile (ör. çok günlük
+     * istek başarısız olduğunda 1 gün) önceki uzun payload'daki ileri günleri korur;
+     * böylece widget bir anda 30 günlük veriyi kaybetmez.
+     */
     public static void saveAndUpdate(Context c, String payload) {
+        String merged = mergePayloads(c, payload);
+        prefs(c).edit().putString(KEY_PAYLOAD, merged).apply();
+        refreshAll(c);
+    }
+
+    /**
+     * Native worker'ın ürettiği tam payload'ı saklar. Worker çalışırken kullanıcı
+     * tema/dil/konum değiştirdiyse eski ayarlarla üretilmiş veriyi yazmaz.
+     */
+    public static void saveFromWorker(Context c, String payload) {
+        String existing = savedPayload(c);
+        if (existing != null) {
+            try {
+                JSONObject prev = new JSONObject(existing);
+                // Eski sürüm payload'ında konum yoksa aynıConfig karşılaştırması
+                // yapılamaz; worker'ın taze verisini yazmasına izin ver.
+                boolean prevHasLocation = !Double.isNaN(prev.optDouble("lat", Double.NaN))
+                        && !Double.isNaN(prev.optDouble("lng", Double.NaN));
+                if (prevHasLocation && !sameConfig(prev, new JSONObject(payload))) return;
+            } catch (Exception ignored) {
+                // eski payload bozuksa yeni veri yine de yazılsın
+            }
+        }
         prefs(c).edit().putString(KEY_PAYLOAD, payload).apply();
         refreshAll(c);
-        scheduleRefreshAlarms(c);
+    }
+
+    /**
+     * Yeni payload'ın kapsamadığı ileri günleri eski payload'dan ekler. Yalnızca
+     * şehir/tema/dil/zaman dilimi/konum/metot aynıysa birleştirir; ayar değiştiyse
+     * eski günlerin etiketleri geçersiz olacağı için yeni payload tek başına kalır.
+     */
+    private static String mergePayloads(Context c, String incoming) {
+        String old = savedPayload(c);
+        if (old == null) return incoming;
+        try {
+            JSONObject neu = new JSONObject(incoming);
+            JSONObject prev = new JSONObject(old);
+            JSONArray nd = neu.optJSONArray("days");
+            JSONArray pd = prev.optJSONArray("days");
+            if (nd == null || nd.length() == 0) return incoming;
+            if (pd == null || pd.length() <= nd.length()) return incoming;
+            if (!sameConfig(prev, neu)) return incoming;
+
+            JSONObject lastNew = nd.optJSONObject(nd.length() - 1);
+            String lastDate = lastNew == null ? "" : lastNew.optString("date", "");
+
+            JSONArray merged = new JSONArray();
+            for (int i = 0; i < nd.length() && merged.length() < MAX_DAYS; i++) {
+                merged.put(nd.get(i));
+            }
+            for (int i = 0; i < pd.length() && merged.length() < MAX_DAYS; i++) {
+                JSONObject day = pd.optJSONObject(i);
+                if (day == null) continue;
+                if (day.optString("date", "").compareTo(lastDate) > 0) merged.put(day);
+            }
+            if (merged.length() <= nd.length()) return incoming;
+            neu.put("days", merged);
+            return neu.toString();
+        } catch (Exception e) {
+            return incoming;
+        }
+    }
+
+    static boolean sameConfig(JSONObject a, JSONObject b) {
+        if (!a.optString("city", "").equals(b.optString("city", ""))) return false;
+        if (!a.optString("theme", "").equals(b.optString("theme", ""))) return false;
+        if (!a.optString("lang", "").equals(b.optString("lang", ""))) return false;
+        if (!a.optString("tz", "").equals(b.optString("tz", ""))) return false;
+        if (a.optInt("method", 13) != b.optInt("method", 13)) return false;
+        double alat = a.optDouble("lat", Double.NaN);
+        double blat = b.optDouble("lat", Double.NaN);
+        double alng = a.optDouble("lng", Double.NaN);
+        double blng = b.optDouble("lng", Double.NaN);
+        if (Double.isNaN(alat) || Double.isNaN(blat) || Math.abs(alat - blat) > 0.0005) return false;
+        if (Double.isNaN(alng) || Double.isNaN(blng) || Math.abs(alng - blng) > 0.0005) return false;
+        return true;
     }
 
     public static void refreshAll(Context c) {
         Data d = loadData(c);
         if (d == null) return;
         AppWidgetManager mgr = AppWidgetManager.getInstance(c);
-        updateProvider(c, mgr, PrayerTimesWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerArcWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerClockWidgetProvider.class, d);
+        updateProvider(c, mgr, PrayerAnalogWidgetProvider.class, d);
         updateProvider(c, mgr, PrayerGridWidgetProvider.class, d);
+        // Widget eklendi/kaldırıldı ya da veri değişti → dakika-başı + vakit alarmlarını
+        // yeniden kur. Bu, "widget eklenince alarm kurulmuyor" hatasını önler.
+        scheduleRefreshAlarms(c);
     }
 
     private static void updateProvider(Context c, AppWidgetManager mgr, Class<?> provider, Data d) {
@@ -109,10 +200,29 @@ public final class WidgetCore {
     }
 
     private static RemoteViews buildFor(Context c, Class<?> provider, int id, Data d) {
-        if (provider == PrayerTimesWidgetProvider.class) return PrayerTimesWidgetProvider.buildViews(c, id, d);
         if (provider == PrayerClockWidgetProvider.class) return PrayerClockWidgetProvider.buildViews(c, id, d);
+        if (provider == PrayerAnalogWidgetProvider.class) return PrayerAnalogWidgetProvider.buildViews(c, id, d);
         if (provider == PrayerGridWidgetProvider.class) return PrayerGridWidgetProvider.buildViews(c, id, d);
         return PrayerArcWidgetProvider.buildViews(c, id, d);
+    }
+
+    /**
+     * Widget'a tıklanınca ana uygulamayı açar. Bütün Android sürümlerinde (bilhassa
+     * Android 12+ / eski model cihazlarda) çalışması için manifest launcher intent'i
+     * doğrudan kullanılır; PendingIntent mutlaka FLAG_IMMUTABLE içermeli.
+     */
+    public static void setOpenAppClick(Context c, RemoteViews views, int rootViewId, int... extraViewIds) {
+        Intent intent = c.getPackageManager().getLaunchIntentForPackage(c.getPackageName());
+        if (intent != null) {
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pi = PendingIntent.getActivity(
+                    c, 0, intent,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            views.setOnClickPendingIntent(rootViewId, pi);
+            for (int id : extraViewIds) {
+                views.setOnClickPendingIntent(id, pi);
+            }
+        }
     }
 
     // ---------------------------------------------------------------- veri çözümleme
@@ -130,7 +240,7 @@ public final class WidgetCore {
             d.tz = raw.optString("tz", "");
             JSONArray days = raw.optJSONArray("days");
             if (days == null) return null;
-            int n = Math.min(days.length(), 3);
+            int n = Math.min(days.length(), MAX_DAYS);
             for (int i = 0; i < n; i++) {
                 JSONObject day = days.optJSONObject(i);
                 if (day == null) continue;
@@ -143,6 +253,7 @@ public final class WidgetCore {
                     mn = (sr + se) / 2;
                 }
                 d.noonMins[i] = mn;
+                d.dates[i] = day.optString("date", "");
                 d.wd[i] = day.optString("wd", "");
                 d.gd[i] = day.optString("gd", "");
                 d.gm[i] = day.optString("gm", "");
@@ -176,17 +287,32 @@ public final class WidgetCore {
 
     private static void pickToday(Data d) {
         String today = todayDateStr(d.tz);
+        d.stale = false;
+        if (d.decoded <= 0) { d.todayIndex = 0; return; }
         for (int i = 0; i < d.decoded; i++) {
-            String date = d.raw.optJSONArray("days").optJSONObject(i).optString("date", "");
-            if (date.equals(today)) { d.todayIndex = i; return; }
+            if (today.equals(d.dates[i])) { d.todayIndex = i; return; }
         }
-        d.todayIndex = 0;
+        // Bugün yoksa: ilk ileri tarihi kullan (saat kayması), yoksa son günü kullan.
+        // Son günü kullanmak "sessizce 1. güne dönüp 3 gün önceki vakti gösterme"
+        // hatasını önler; bayat olduğu `stale` ile işaretlenir.
+        for (int i = 0; i < d.decoded; i++) {
+            if (d.dates[i] != null && d.dates[i].compareTo(today) > 0) {
+                d.todayIndex = i;
+                return;
+            }
+        }
+        d.todayIndex = d.decoded - 1;
+        d.stale = true;
     }
 
-    public static PrayTime[] today(Data d) { return d.days[d.todayIndex]; }
+    public static PrayTime[] today(Data d) {
+        if (d == null || d.todayIndex < 0 || d.todayIndex >= d.decoded
+                || d.days[d.todayIndex] == null) return new PrayTime[6];
+        return d.days[d.todayIndex];
+    }
     public static PrayTime[] tomorrow(Data d) {
-        int idx = Math.min(d.todayIndex + 1, d.decoded - 1);
-        return d.days[idx];
+        int idx = d.todayIndex + 1;
+        return idx >= 0 && idx < d.decoded && d.days[idx] != null ? d.days[idx] : null;
     }
 
     public static int toMinutes(String hhmm) {
@@ -213,7 +339,7 @@ public final class WidgetCore {
         return t;
     }
 
-    /** Sonraki vakit indeksi: bugün içindeki ilk geçmemiş vakit; yoksa 0 (yarına sarar). */
+    /** Sonraki vakit indeksi: bugün içindeki ilk geçmemiş vakit; yoksa 6 (yarının imsakı). */
     public static int nextIndex(Data d) {
         int now = nowMins(d.tz);
         PrayTime[] today = today(d);
@@ -222,23 +348,26 @@ public final class WidgetCore {
             if (pt == null) continue;
             if (pt.mins > now) return i;
         }
-        return 0;
+        return 6;
     }
 
-    /** Sonraki vaktin adı (bugünün ya da yarının ilk vakti). */
+    /** Sonraki vaktin adı (bugünün ya da yarının ilk vakti). Veri yoksa null. */
     public static PrayTime nextPrayer(Data d, int idx) {
-        if (idx < 6 && today(d)[idx] != null) return today(d)[idx];
-        return tomorrow(d)[0];
+        if (idx >= 0 && idx < 6 && today(d)[idx] != null) return today(d)[idx];
+        PrayTime[] t = tomorrow(d);
+        return t != null && t[0] != null ? t[0] : null;
     }
 
     /** Kalan süre (dakika): pozitif, sarmalı dikkate alır. */
     public static long remainingMinutes(Data d, int idx) {
         int now = nowMins(d.tz);
-        if (idx < 6 && today(d)[idx] != null) {
+        if (idx >= 0 && idx < 6 && today(d)[idx] != null) {
             long r = today(d)[idx].mins - now;
             return r > 0 ? r : r + 1440;
         }
-        long r = tomorrow(d)[0].mins - now;
+        PrayTime[] t = tomorrow(d);
+        if (t == null || t[0] == null) return 0;
+        long r = t[0].mins - now;
         return r > 0 ? r : r + 1440;
     }
 
@@ -264,39 +393,73 @@ public final class WidgetCore {
      */
     public static void scheduleRefreshAlarms(Context c) {
         Data d = loadData(c);
-        if (d == null) return;
+        if (d == null || d.decoded <= 0) return;
         try {
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return;
             TimeZone tz = tzOf(d);
             long now = System.currentTimeMillis();
+            boolean exact = canExact(am);
 
             // bugünkü 6 vakit
+            PrayTime[] today = today(d);
             for (int i = 0; i < 6; i++) {
-                PrayTime pt = today(d)[i];
+                PrayTime pt = today[i];
                 if (pt == null) continue;
                 long trig = triggerMs(d, tz, pt.mins);
                 if (trig <= now) continue;
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trig, alarmIntent(c, ALARM_REQ_BASE + i));
+                setAlarm(am, exact, trig, alarmIntent(c, ALARM_REQ_BASE + i));
             }
             // gece yarısı (yarın 00:00) — yeni gün verilerine geçiş
             long midnight = triggerMs(d, tz, 1440);
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, midnight, alarmIntent(c, ALARM_REQ_BASE + 6));
+            if (midnight > now) {
+                setAlarm(am, exact, midnight, alarmIntent(c, ALARM_REQ_BASE + 6));
+            }
 
-            // Büyük saat widget'ı yerleşikse HER DAKİKA tazele (canlı saat). Saat widget'ı
-            // launcher'dan kaldırılınca alarm iptal edilir (pil dostu).
+            // Saat ve yay widget'ı her dakika tazelenir (canlı saat / ibre).
+            // Sayısal ve kart widget'ları yalnızca vakit geçişlerinde güncellenir;
+            // gereksiz dakika uyanmaları pili tüketmesin.
             PendingIntent tick = PendingIntent.getBroadcast(c, ALARM_REQ_CLOCK,
                     new Intent(ACTION_REFRESH).setPackage(c.getPackageName()),
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            if (hasAppWidgets(c, PrayerClockWidgetProvider.class)) {
+            if (hasClockOrArc(c)) {
                 long nowMs = System.currentTimeMillis();
                 long nextMin = nowMs - (nowMs % 60000) + 60000;
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextMin, tick);
+                setAlarm(am, exact, nextMin, tick);
             } else {
                 am.cancel(tick);
             }
         } catch (Exception ignored) {
-            // exact izni yoksa sessiz geç; widget 30 dk / boot ile yenilenir
+            // AlarmManager erişimi kapalıysa sessiz geç; 30 dk updatePeriod yedek.
+        }
+    }
+
+    /** Android 12+ exact alarm izni yoksa inexact alarmlara düşeriz; zincir kopmaz. */
+    private static boolean canExact(AlarmManager am) {
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                return am.canScheduleExactAlarms();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void setAlarm(AlarmManager am, boolean exact, long trigger, PendingIntent pi) {
+        try {
+            if (exact) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
+            } else {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
+            }
+        } catch (SecurityException se) {
+            try {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
+            } catch (Exception ignored) {
+            }
+        } catch (Exception ignored) {
+            // tek alarm kurulamazsa diğerleri kurulmaya devam etsin
         }
     }
 
@@ -304,6 +467,13 @@ public final class WidgetCore {
     public static boolean hasAppWidgets(Context c, Class<?> provider) {
         AppWidgetManager mgr = AppWidgetManager.getInstance(c);
         return mgr.getAppWidgetIds(new ComponentName(c, provider)).length > 0;
+    }
+
+    /** Canlı saati olan widget'lardan biri launcher'da yerleşik mi? (dakika tazelemesi) */
+    public static boolean hasClockOrArc(Context c) {
+        return hasAppWidgets(c, PrayerClockWidgetProvider.class)
+                || hasAppWidgets(c, PrayerArcWidgetProvider.class)
+                || hasAppWidgets(c, PrayerAnalogWidgetProvider.class);
     }
 
     public static PendingIntent alarmIntent(Context c, int reqCode) {
