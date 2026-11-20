@@ -20,7 +20,7 @@
 - **Stack:** React 19 + Vite 6 + TypeScript 5.8 + Tailwind CSS v4 + Capacitor 6.
 - **appId:** `meccanen.namaz.vakti.v1` · **Play:** `meccanen.namaz.vakti.v1`
 - **Diller:** 11 (tr, en, de, es, fr, pt, ru, ar, ur, ja, fa) — ar/ur/fa RTL.
-- **Son build:** `2.3.2026112000` (20 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
+- **Son build:** `2.3.2026112001` (20 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
 - **Build:** Yerel `./build-local.sh` (GitHub Actions kotası nedeniyle tercih edilir).
 - **Güncelleme:** Play In-App Updates, sessiz indirme + "Yeniden başlat" satırı — §16.
 - **Kritik kural:** `versionCode` **10 haneli** `YYYYMMDDCC` olmalı ve Play'deki en yüksekten büyük olmalı.
@@ -35,13 +35,13 @@
 
 | Öğe | Değer | Doğrulama |
 |---|---|---|
-| Son üretilen sürüm | `2.3.2026112000` / versionCode `2026112000` | `aapt2 dump badging` |
-| AAB | `dist/meccanen-release-v2.3.2026112000.aab` (~25,8 MB) | `jarsigner -verify` → exit 0 |
-| APK | `dist/meccanen-release-v2.3.2026112000.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
+| Son üretilen sürüm | `2.3.2026112001` / versionCode `2026112001` | `aapt2 dump badging` |
+| AAB | `dist/meccanen-release-v2.3.2026112001.aab` (~25,8 MB) | `jarsigner -verify` → exit 0 |
+| APK | `dist/meccanen-release-v2.3.2026112001.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
 | AAB sertifikası | SHA-256 `A9:6E:58:...:13:F4`, geçerlilik 2054 | `keytool -printcert -jarfile` |
 | minSdk / target | 24 / 36 (compile 36) | `aapt2 dump badging` |
 | Önceki yayınlanan | `2.3.2026111200` | `Ozet.md` |
-| `apk/` kalıcı yedek | `2026111100`, `2026111200`, `2026111800`, `2026112000` (AAB+APK) | `ls apk/` |
+| `apk/` kalıcı yedek | `2026111100`, `2026111200`, `2026111800`, `2026112000`, `2026112001` (AAB+APK) | `ls apk/` |
 
 > Keystore: `Play/keys/meccanen-namaz-upload.keystore`, alias `meccanen-namaz-upload`.
 > Parola `Play/keys/meccanen_namaz_release_secrets.txt` içinde (`PAROLA: ...`); yazdırma.
@@ -516,13 +516,13 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 
 ## 13. Teknik Borç / Yapılacaklar (öncelik sırası)
 
-1. **`2026112000`'ü Play Console'a yükle** — AAB `apk/meccanen-release-v2.3.2026112000.aab`
-   (imza doğrulandı, versionCode `2026112000`). Play'deki en yüksekten büyük olduğundan emin ol;
+1. **`2026112001`'i Play Console'a yükle** — AAB `apk/meccanen-release-v2.3.2026112001.aab`
+   (imza doğrulandı, versionCode `2026112001`). Play'deki en yüksekten büyük olduğundan emin ol;
    daha yüksek bir sürüm yayınlandıysa yeni versionCode ile yeniden derle.
-2. **Uygulama içi güncellemeyi gerçek cihazda doğrula** — internal testing track'e yükle, Play'den
-   kur, güncelleme akışını gör (§16). Yerel APK ile test edilemez.
-3. **Cihaz testi bekleyen kıble değişiklikleri** — 20 Kasım'da telefonda test edilemedi
-   (cihaz bağlı değildi): girişim uyarısı (yatay eşik) ve kalibrasyon notu görünürlüğü.
+2. **Uygulama içi güncellemeyi gerçek cihazda gör** — akışın görünmesi için **iki yayın** gerekir:
+   `X`'i Play'den kur, ardından `X+1`'i yayınla (§16). Yerel APK ile test edilemez.
+3. **Cihaz testi bekleyen kıble değişiklikleri** — başlık şeridi web'de doğrulandı; girişim uyarısı
+   (yatay eşik) ve kalibrasyon notu görünürlüğü hâlâ gerçek cihazda test edilmedi.
 4. **i18n eksiklerini kapat:** `de` 28, `ur` 29 eksik anahtar; fazla anahtarları temizle.
 5. **`native.json`'a es/fr/pt/ru/ja ekle** (Android etiketleri İngilizce kalmasın).
 6. **`server.ts` temizliği** — kullanılmıyorsa sil veya `express`/`@google/genai`/`dotenv`
@@ -577,15 +577,17 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 - **Akış** (`src/utils/appUpdate.ts` → `watchAppUpdate()`):
   1. Açılıştan **6 sn sonra** `getAppUpdateInfo()` (onboarding/konum/pil pencereleriyle çakışmasın).
   2. `installStatus === DOWNLOADED` ise (önceki oturumda inmiş) doğrudan satır gösterilir.
-  3. `updateAvailability === UPDATE_AVAILABLE` **ve** `flexibleUpdateAllowed` **ve**
-     `clientVersionStalenessDays >= 3` ise `startFlexibleUpdate()` çağrılır.
-     Play kendi onay penceresini gösterir (Play Core kuralı: indirme onayı kullanıcıdan alınır).
+  3. `updateAvailability === UPDATE_AVAILABLE` **ve** `flexibleUpdateAllowed` ise
+     `startFlexibleUpdate()` çağrılır. Play kendi onay penceresini gösterir
+     (Play Core kuralı: indirme onayı kullanıcıdan alınır).
   4. İndirme arka planda sürer; `onFlexibleUpdateStateChange` → `DOWNLOADED` olunca
      arayüzde tek satır: `updateReady` + düğme `updateRestart` → `restartForUpdate()`
      (`completeFlexibleUpdate()` uygulamayı yeni sürümle başlatır).
-- **3 gün kuralı (`STALE_DAYS = 3`):** taze yayında kullanıcıyı dürtmemek için bilinçli.
-  Kritik sürüm gerekiyorsa Play Console'da *in-app update priority* ile ayrıca ele alınır
-  (şu an yalnızca flexible akış kodlu; `performImmediateUpdate()` **kullanılmıyor**).
+- **Bekleme yok (20 Kasım 2026):** eskiden `clientVersionStalenessDays >= 3`
+  (`STALE_DAYS`) eşiği vardı; "yeni sürüm çıkınca kullanıcı haberdar olsun" amacıyla
+  kaldırıldı. Tekrar geciktirmek istenirse `clientVersionStalenessDays` ile geri eklenir.
+  Kritik sürüm ayrımı Play Console'daki *in-app update priority* ile yapılır (şu an
+  yalnızca flexible akış kodlu; `performImmediateUpdate()` **kullanılmıyor**).
 - **Arayüz:** Header'ın hemen altında, `max-w-2xl` kapsayıcı içinde; `updateReady` false ise
   hiçbir şey çizilmez (sade kart kuralı korunur). Yer: `src/App.tsx` (`updateReady` state +
   `Download` ikonu).
@@ -594,7 +596,8 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
     ile sessizce devre dışı kalır (test bu yüzden yerel APK ile yapılamaz).
   - Play'de daha yüksek `versionCode` yayınlanmış olması gerekir; kademeli yayında görünmesi
     saatler sürebilir. Test: Play **internal testing** track + Play'den kurulum.
-  - `clientVersionStalenessDays` ilk gün 0 olduğu için taze yayında akış hemen tetiklenmez.
+  - **Görmek için iki yayın gerekir:** kurulu sürümden daha yüksek bir versionCode Play'de
+    olmalı. Yani `X`'i kurup ardından `X+1`'i yayınlayınca akış görünür.
   - Play zaten varsayılan olarak otomatik günceller; bu akış otomatik güncellemeyi kapatmış
     veya güncellemesi bekleyen kullanıcılar içindir.
 

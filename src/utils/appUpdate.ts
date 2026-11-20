@@ -9,23 +9,24 @@ import {
  * Play In-App Updates (flexible) — sessiz indirme.
  *
  * Akış:
- *  1. Uygulama açılışında (gecikmeli) Play'e "yeni sürüm var mı?" sorulur.
- *  2. Varsa ve güncelleme `STALE_DAYS` gündür bekliyorsa Play'in kendi onay
- *     penceresi gösterilir (Play Core kuralı: indirme onayı kullanıcıdan alınır).
+ *  1. Uygulama açılışında (6 sn gecikmeli) Play'e "yeni sürüm var mı?" sorulur.
+ *  2. Varsa Play'in kendi onay penceresi gösterilir (Play Core kuralı: indirme
+ *     onayı kullanıcıdan alınır; uygulama bunu atlayamaz).
  *  3. Kullanıcı onaylarsa indirme **arka planda** yapılır; uygulama kullanılmaya
  *     devam eder.
  *  4. İndirme bitince `onReady(true)` çağrılır; arayüz "Güncelleme hazır —
  *     yeniden başlat" satırını gösterir, dokununca `restartForUpdate()` uygulamayı
  *     yeni sürümle başlatır.
  *
- * Neden `STALE_DAYS` var: uygulama Play'de yayınlandığı an kullanıcıyı dürtmek
- * rahatsız edici. 3 gün beklemek "acele yok" hissini korur; kritik sürüm
- * gerekirse Play Console'daki "in-app update priority" ile ayrıca ele alınır.
+ * **Bekleme yok (20 Kasım 2026):** eskiden `STALE_DAYS = 3` vardı; taze yayında
+ * kullanıcıyı dürtmemek içindi. Ancak amaç "yeni sürüm çıktığında kullanıcı
+ * uygulamadan haberdar olsun" olduğu için eşik kaldırıldı: Play'de daha yüksek bir
+ * versionCode yayınlanmışsa akış hemen çalışır. Tekrar beklemek isterseniz
+ * `info.clientVersionStalenessDays` ile bir eşik geri eklenebilir.
  *
  * Sınırlar (AGENTS.md §16): yalnızca Play'den kurulmuş uygulamada çalışır;
  * elle kurulan APK'da ve web'de sessizce devre dışı kalır.
  */
-const STALE_DAYS = 3;
 
 /** Yeni sürüm indirildiğinde `onReady(true)` çağırır; durdurmak için fonksiyon döner. */
 export function watchAppUpdate(onReady: (ready: boolean) => void): () => void {
@@ -46,8 +47,6 @@ export function watchAppUpdate(onReady: (ready: boolean) => void): () => void {
       }
       if (info.updateAvailability !== AppUpdateAvailability.UPDATE_AVAILABLE) return;
       if (!info.flexibleUpdateAllowed) return;
-      // Güncelleme birkaç gündür bekliyorsa sor (taze yayında kullanıcıyı dürtme).
-      if ((info.clientVersionStalenessDays ?? 0) < STALE_DAYS) return;
 
       listener = await AppUpdate.addListener("onFlexibleUpdateStateChange", (state) => {
         if (disposed) return;
