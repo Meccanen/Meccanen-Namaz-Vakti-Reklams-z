@@ -22,6 +22,7 @@
 - **Diller:** 11 (tr, en, de, es, fr, pt, ru, ar, ur, ja, fa) — ar/ur/fa RTL.
 - **Son build:** `2.3.2026111800` (18 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
 - **Build:** Yerel `./build-local.sh` (GitHub Actions kotası nedeniyle tercih edilir).
+- **Güncelleme:** Play In-App Updates, sessiz indirme + "Yeniden başlat" satırı — §16.
 - **Kritik kural:** `versionCode` **10 haneli** `YYYYMMDDCC` olmalı ve Play'deki en yüksekten büyük olmalı.
 - **Kritik kural:** `dist/` hem Vite `webDir`'idir hem build çıktılarının kopyalandığı yerdir; her `npm run build` onu **siler**.
 - **Durum:** Çalışma ağacı temiz; son commit 18 Kasım 2026 (`0cff035`). TypeScript'te 4 bilinen hata var (aşağıda).
@@ -548,7 +549,42 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 [ ] npm run i18n:check — yeni eksik/fazla anahtar var mı?
 [ ] Değişiklik native/widget veya scripts/local-build'e mi ait? android/ içinde bırakma.
 [ ] Release çıktısını apk/ klasörüne kopyaladın mı?
+[ ] Uygulama içi güncelleme değiştiyse: plugin major'ı Capacitor sürümüyle uyumlu mu? (§16)
 ```
+
+---
+
+## 16. Uygulama İçi Güncelleme (Play In-App Updates)
+
+- **Amaç:** Yeni sürüm Play'de yayınlandığında kullanıcıyı uygulamadan çıkmadan, sessizce
+  güncellemek; yaşlı kullanıcıyı dürtmeden.
+- **Paket:** `@capawesome/capacitor-app-update@^6.1.0` — Capacitor **6** ile uyumlu olan sürüm.
+  Capacitor yükseltilmeden plugin 7/8'e **çıkılmaz** (peer dep `@capacitor/core >= 7/8`).
+  Play Core bağımlılığı (`com.google.android.play:app-update:2.1.0`) plugin modülünden gelir;
+  `build-local.sh` yeniden ürettiği için ayrıca `android/` yaması **gerekmez**.
+- **Akış** (`src/utils/appUpdate.ts` → `watchAppUpdate()`):
+  1. Açılıştan **6 sn sonra** `getAppUpdateInfo()` (onboarding/konum/pil pencereleriyle çakışmasın).
+  2. `installStatus === DOWNLOADED` ise (önceki oturumda inmiş) doğrudan satır gösterilir.
+  3. `updateAvailability === UPDATE_AVAILABLE` **ve** `flexibleUpdateAllowed` **ve**
+     `clientVersionStalenessDays >= 3` ise `startFlexibleUpdate()` çağrılır.
+     Play kendi onay penceresini gösterir (Play Core kuralı: indirme onayı kullanıcıdan alınır).
+  4. İndirme arka planda sürer; `onFlexibleUpdateStateChange` → `DOWNLOADED` olunca
+     arayüzde tek satır: `updateReady` + düğme `updateRestart` → `restartForUpdate()`
+     (`completeFlexibleUpdate()` uygulamayı yeni sürümle başlatır).
+- **3 gün kuralı (`STALE_DAYS = 3`):** taze yayında kullanıcıyı dürtmemek için bilinçli.
+  Kritik sürüm gerekiyorsa Play Console'da *in-app update priority* ile ayrıca ele alınır
+  (şu an yalnızca flexible akış kodlu; `performImmediateUpdate()` **kullanılmıyor**).
+- **Arayüz:** Header'ın hemen altında, `max-w-2xl` kapsayıcı içinde; `updateReady` false ise
+  hiçbir şey çizilmez (sade kart kuralı korunur). Yer: `src/App.tsx` (`updateReady` state +
+  `Download` ikonu).
+- **Bilinen sınırlar:**
+  - Yalnızca **Play'den kurulan** uygulamada çalışır; elle kurulan APK'da/web'de `try/catch`
+    ile sessizce devre dışı kalır (test bu yüzden yerel APK ile yapılamaz).
+  - Play'de daha yüksek `versionCode` yayınlanmış olması gerekir; kademeli yayında görünmesi
+    saatler sürebilir. Test: Play **internal testing** track + Play'den kurulum.
+  - `clientVersionStalenessDays` ilk gün 0 olduğu için taze yayında akış hemen tetiklenmez.
+  - Play zaten varsayılan olarak otomatik günceller; bu akış otomatik güncellemeyi kapatmış
+    veya güncellemesi bekleyen kullanıcılar içindir.
 
 ---
 

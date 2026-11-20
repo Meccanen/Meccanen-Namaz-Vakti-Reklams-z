@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "Magnetic interference — move the phone away from metal",
     "qiblaCalibrate": "Compass calibration",
     "qiblaCalibrateHow": "Move the phone in a figure-8, 3–4 times",
+    "updateReady": "New version ready",
+    "updateRestart": "Restart",
     "compassNoSensor": "No compass sensor detected on this device. The angle above shows the Qibla direction measured from true north.",
     "moonPhase": "Moon Phase",
     "newMoon": "New Moon",

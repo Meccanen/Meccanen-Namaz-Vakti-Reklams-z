@@ -89,6 +89,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "مقناطیسی مداخلت — فون کو دھات سے دور رکھیں",
     "qiblaCalibrate": "قطبنما کیلیبریشن",
     "qiblaCalibrateHow": "فون کو 8 کی شکل میں 3–4 بار گھمائیں",
+    "updateReady": "نیا ورژن تیار ہے",
+    "updateRestart": "دوبارہ شروع کریں",
     "compassNoSensor": "اس آلے میں قبلہ نما سینسر نہیں ملا۔ اوپر دی گئی زاویہ قبلہ کی سمت شمال سے ظاہر کرتا ہے۔",
     "nextPrayer": "اگلی نماز",
     "in": "میں",

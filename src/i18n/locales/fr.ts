@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "Interférence magnétique — éloignez le téléphone du métal",
     "qiblaCalibrate": "Calibrage de la boussole",
     "qiblaCalibrateHow": "Faites un 8 avec le téléphone, 3–4 fois",
+    "updateReady": "Nouvelle version prête",
+    "updateRestart": "Redémarrer",
     "compassNoSensor": "Aucun capteur de boussole détecté sur cet appareil. L'angle ci-dessus indique la direction de la qibla mesurée depuis le nord vrai.",
     "moonPhase": "Phase de la lune",
     "newMoon": "Nouvelle lune",

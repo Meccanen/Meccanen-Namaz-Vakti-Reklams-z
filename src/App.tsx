@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallba
 import {
   MapPin, Calendar, Sparkles, Compass, CircleDot,
   RefreshCw, ChevronsDown, Globe,
-  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock, ExternalLink, BatteryCharging, WifiOff, Smartphone, Magnet
+  X, Settings, Palette, Check, Plus, Trash2, Star, Coffee, Bell, BellOff, Navigation, BookOpen, Heart, Play, Square, Sun, Sunrise, Sunset, Ban, Clock, ExternalLink, BatteryCharging, WifiOff, Smartphone, Magnet, Download
 } from "lucide-react";
 import appNamazIcon from "./assets/app-namaz.png";
 import appHabitIcon from "./assets/app-habit.png";
@@ -25,6 +25,7 @@ import {
 } from "./utils/notificationHelper";
 import { t, detectLanguage, LangCode, LANGUAGE_LIST, isRTL, getLocale, getHijriMonths } from "./utils/i18n";
 import { calcQiblaDirection, requestCompassPermission, attachCompassListener } from "./utils/qiblaHelper";
+import { watchAppUpdate, restartForUpdate } from "./utils/appUpdate";
 import { magneticDeclination, magneticFieldIntensity, magneticFieldHorizontal } from "./utils/geomag";
 import { isLikelyXiaomi, promptBatteryWhitelist, promptXiaomiAutostart, exactAlarmsAllowed, openExactAlarmSettings } from "./utils/batteryHelper";
 import { getCurrentEsmaSaati, PLANET_LABELS, SEGMENT_LABELS } from "./utils/esmaHelper";
@@ -1147,6 +1148,8 @@ export default function App() {
     return () => window.removeEventListener("deviceorientation", onOrientation as EventListener);
   }, []);
   const [compassUnsupported, setCompassUnsupported] = useState(false);
+  // Play'den indirilen yeni sürüm hazır: "Güncelleme hazır — yeniden başlat" satırı.
+  const [updateReady, setUpdateReady] = useState(false);
   // Bulunulan noktanın beklenen manyetik alan şiddeti (μT). Girişim uyarısı mutlak
   // bir μT eşiği yerine buna göre oransal hesaplanır: alan Brezilya'da ~23,
   // Almanya'da ~48 μT olabilir; tek bir sabit sayı global uygulamada yanıltıcı.
@@ -1244,6 +1247,15 @@ export default function App() {
   const setPrayerMethod = (m: number) => { setPrayerMethodState(m); localStorage.setItem("mnv_prayer_method", String(m)); };
 
   useEffect(() => { const i = setInterval(() => setDate(new Date()), 1000); return () => clearInterval(i); }, []);
+
+  // ─── Play güncellemesi (sessiz indirme) ───────────────────────────────────
+  // Açılıştan 6 sn sonra sorulur: onboarding/konum/pil pencereleriyle çakışmasın.
+  // Güncelleme indirilince satır çıkar, kullanıcı dokununca uygulama yeniden başlar.
+  useEffect(() => {
+    let stop = () => {};
+    const id = setTimeout(() => { stop = watchAppUpdate(setUpdateReady); }, 6000);
+    return () => { clearTimeout(id); stop(); };
+  }, []);
 
   const lastFetchKey = useRef("");
   const wasOfflineRef = useRef(false);
@@ -1953,6 +1965,19 @@ useEffect(() => {
             {!iconsInHeader && headerIcons}
           </div>
         </header>
+
+        {/* Play'den yeni sürüm sessizce indirildi: tek satır, tek dokunuş.
+            (Güncelleme yoksa/elle kurulmuş APK'da hiç görünmez — §16) */}
+        {updateReady && (
+          <div className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl border text-base sm:text-lg font-semibold ${isLight ? "bg-sky-500/10 border-sky-500/40 text-sky-800" : "bg-sky-500/10 border-sky-500/35 text-sky-200"}`}>
+            <Download className="w-5 h-5 shrink-0" />
+            <span className="min-w-0 flex-1 leading-snug">{t("updateReady", lang)}</span>
+            <button onClick={() => { void restartForUpdate(); }}
+              className={`shrink-0 px-4 py-2 rounded-xl text-base font-bold cursor-pointer transition-colors ${isLight ? "bg-sky-600 text-white hover:bg-sky-700" : "bg-sky-500 text-slate-900 hover:bg-sky-400"}`}>
+              {t("updateRestart", lang)}
+            </button>
+          </div>
+        )}
 
         <section className={`${tTheme.card} border rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-2xl`}>
           <div className={`flex items-center justify-center gap-1.5 mb-2 ${tTheme.accent}`}>

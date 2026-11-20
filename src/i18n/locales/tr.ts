@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "Manyetik girişim — telefonu metalden uzaklaştır",
     "qiblaCalibrate": "Pusula kalibrasyonu",
     "qiblaCalibrateHow": "Telefonu havada 8 çizerek 3–4 kez çevir",
+    "updateReady": "Yeni sürüm hazır",
+    "updateRestart": "Yeniden başlat",
     "compassNoSensor": "Bu cihazda pusula sensörü bulunamadı. Yukarıdaki açı, kıblenin kuzeyden kaç derece olduğunu gösterir.",
     "moonPhase": "Ayın Fazı",
     "newMoon": "Yeni Ay",

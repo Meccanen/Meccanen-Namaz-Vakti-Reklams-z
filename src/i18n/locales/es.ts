@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "Interferencia magnética — aleja el teléfono del metal",
     "qiblaCalibrate": "Calibración de la brújula",
     "qiblaCalibrateHow": "Mueve el teléfono en forma de 8, 3–4 veces",
+    "updateReady": "Nueva versión lista",
+    "updateRestart": "Reiniciar",
     "compassNoSensor": "No se detectó sensor de brújula en este dispositivo. El ángulo de arriba muestra la dirección de la alquibla medida desde el norte verdadero.",
     "moonPhase": "Fase lunar",
     "newMoon": "Luna nueva",

@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "تداخل مغناطيسي — أبعد الهاتف عن المعدن",
     "qiblaCalibrate": "معايرة البوصلة",
     "qiblaCalibrateHow": "حرّك الهاتف على شكل رقم 8 ثلاث أو أربع مرات",
+    "updateReady": "الإصدار الجديد جاهز",
+    "updateRestart": "إعادة التشغيل",
     "compassNoSensor": "لم يتم العثور على مستشعر بوصلة في هذا الجهاز. الزاوية أعلاه توضح اتجاه القبلة من الشمال.",
     "moonPhase": "مرحلة القمر",
     "newMoon": "محاق",

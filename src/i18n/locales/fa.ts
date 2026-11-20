@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "تداخل مغناطیسی — گوشی را از فلز دور کنید",
     "qiblaCalibrate": "کالیبراسیون قطبنما",
     "qiblaCalibrateHow": "گوشی را ۳–۴ بار به شکل ۸ حرکت دهید",
+    "updateReady": "نسخه جدید آماده است",
+    "updateRestart": "راه‌اندازی مجدد",
     "compassNoSensor": "در این دستگاه حسگر قطب‌نما یافت نشد. زاویهٔ نمایش‌داده‌شده در بالا، جهت قبله را نسبت به شمال حقیقی نشان می‌دهد.",
     "moonPhase": "فاز ماه",
     "newMoon": "ماه نو",

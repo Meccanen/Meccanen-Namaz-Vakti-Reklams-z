@@ -89,6 +89,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "Magnetische Störung — halte das Telefon von Metall fern",
     "qiblaCalibrate": "Kompass kalibrieren",
     "qiblaCalibrateHow": "Bewege das Telefon 3–4 Mal in einer Acht",
+    "updateReady": "Neue Version bereit",
+    "updateRestart": "Neu starten",
     "compassNoSensor": "Auf diesem Gerät wurde kein Kompasssensor erkannt. Der obige Winkel zeigt die Qibla-Richtung von Norden aus.",
     "nextPrayer": "Nächstes Gebet",
     "in": "in",

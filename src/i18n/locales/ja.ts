@@ -109,6 +109,8 @@ const locale: LocaleModule = {
     "qiblaMagnetic": "磁気干渉 — スマートフォンを金属から離してください",
     "qiblaCalibrate": "コンパスの調整",
     "qiblaCalibrateHow": "スマートフォンで8の字を3〜4回描く",
+    "updateReady": "新しいバージョンの準備ができました",
+    "updateRestart": "再起動",
     "compassNoSensor": "この端末にはコンパスセンサーが検出されませんでした。上の角度は真北から測ったキブラの方角を示します。",
     "moonPhase": "月相",
     "newMoon": "新月",
