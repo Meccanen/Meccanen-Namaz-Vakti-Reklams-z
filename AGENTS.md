@@ -5,8 +5,9 @@
 > build/release akışı, bildirim tuzakları, i18n, güvenlik ve bilinen hatalar.
 > `Ozet.md` yalnızca tarihsel kayıttır; çelişki olursa **bu dosya + kod** esastır.
 >
-> **Son doğrulama:** 18 Kasım 2026 — kod, build çıktıları, `git status`, imza, `i18n:check` ve
-> `tsc --noEmit` yeniden çalıştırılarak kontrol edildi.
+> **Son doğrulama:** 20 Kasım 2026 — kod, build çıktıları, `git status`, imza, `i18n:check` ve
+> `tsc --noEmit` yeniden çalıştırılarak kontrol edildi. Son işler: kıble başlık şeridi (§8),
+> uygulama içi güncelleme beklemesiz (§16), release `2.3.2026112001` (§2.1).
 >
 > **Kaynaklar:** `Ozet.md` (tarihsel), `docs/notification-system-findings.md`,
 > `docs/growth-roadmap.md`, `src/i18n/README.md`, `README.md`, kod ve build çıktıları.
@@ -51,7 +52,7 @@
 | Kontrol | Sonuç |
 |---|---|
 | `git branch` | `main`, remote `github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z` |
-| Son commit | `43ef32d` · 20 Kasım 2026 · "release: 2.3.2026112001 + güncelleme bildirimi beklemesiz" |
+| Son commit | 20 Kasım 2026 · release `43ef32d` ("2.3.2026112001 + güncelleme bildirimi beklemesiz"), ardından docs commit'leri (bu dosya dahil) |
 | Commit edilmemiş | **yok** (bu docs commit'i hariç) |
 | `npm run i18n:check` | 11 dil, **hata yok**; uyarılar aşağıda |
 | `npx tsc --noEmit` | **4 hata** (hepsi bilinen/zararsız, aşağıda) |
@@ -136,7 +137,7 @@ VERSION_NAME=2.3.2026111800 \
 ```
 Namazvakti/
 ├── src/
-│   ├── App.tsx                  # ~2415 satır; ana ekran + SettingsPanel + modallerin tetikleyicileri
+│   ├── App.tsx                  # ~2440 satır; ana ekran + SettingsPanel + modallerin tetikleyicileri
 │   ├── main.tsx                 # React kök
 │   ├── index.css                # Tailwind v4 + tema token'ları + --afs yazı boyutu + animasyonlar
 │   ├── types.ts                 # Location vb.
@@ -161,6 +162,7 @@ Namazvakti/
 │       ├── qiblaHelper.ts       # Kıble yönü + pusula + native poll
 │       ├── geomag.ts            # WMM-2025 manyetik sapma (çevrimdışı)
 │       ├── nativeCompass.ts     # Native QiblaSensor köprüsü
+│       ├── appUpdate.ts         # Play In-App Updates (sessiz indirme) — §16
 │       ├── astronomyHelper.ts   # Ay fazı, güneş saatleri
 │       ├── esmaHelper.ts        # Esma saati, gezegen/segment etiketleri
 │       ├── esmaData.ts          # 101 Esmâ (yalnız Arapça yazılış/okunuş)
@@ -503,7 +505,8 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 | Yeni metin / çeviri | `src/i18n/locales/*.ts`, gerekirse `src/i18n/native.json` |
 | Vakit hesabı / yöntem | `src/utils/prayerHelper.ts` |
 | Bildirim | `src/utils/notificationHelper.ts`, `scripts/local-build/patch_notif.py` |
-| Kıble | `src/utils/qiblaHelper.ts`, `geomag.ts`, `nativeCompass.ts`, `scripts/local-build/add_qibla_plugin.py`, App.tsx kıble kartı |
+| Kıble | `src/utils/qiblaHelper.ts`, `geomag.ts`, `nativeCompass.ts`, `scripts/local-build/add_qibla_plugin.py`, App.tsx kıble kartı (başlık şeridi §8) |
+| Uygulama içi güncelleme | `src/utils/appUpdate.ts`, `package.json` (`@capawesome/capacitor-app-update`), App.tsx `updateReady` satırı, AGENTS.md §16 |
 | Widget | `native/widget/**`, `src/utils/widgetBridge.ts`, `scripts/local-build/add_widgets.py` |
 | Konum | `src/utils/locationHelper.ts`, `src/components/AddLocationModal.tsx` |
 | Dini günler | `src/utils/religiousHelper.ts`, `src/components/ReligiousCalendarModal.tsx` |
@@ -562,6 +565,7 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 [ ] Değişiklik native/widget veya scripts/local-build'e mi ait? android/ içinde bırakma.
 [ ] Release çıktısını apk/ klasörüne kopyaladın mı?
 [ ] Uygulama içi güncelleme değiştiyse: plugin major'ı Capacitor sürümüyle uyumlu mu? (§16)
+[ ] Güncelleme bildirimini test edeceksen: kurulu sürümden yüksek bir versionCode Play'de yayınlandı mı? (iki yayın gerekir, §16)
 ```
 
 ---
