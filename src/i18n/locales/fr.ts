@@ -104,6 +104,8 @@ const locale: LocaleModule = {
     "noSubscription": "Sans abonnement",
     "singlePayment": "Paiement unique",
     "qibla": "Qibla",
+    "qiblaTitle": "Direction de la qibla",
+    "qiblaSubtitle": "Direction de la Kaaba",
     "qiblaHoldFlat": "Tenez le téléphone à plat",
     "qiblaAhead": "La Kaaba est droit devant ✓",
     "qiblaMagnetic": "Interférence magnétique — éloignez le téléphone du métal",

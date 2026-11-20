@@ -104,6 +104,8 @@ const locale: LocaleModule = {
     "noSubscription": "サブスクなし",
     "singlePayment": "一回払い",
     "qibla": "キブラ",
+    "qiblaTitle": "キブラの方向",
+    "qiblaSubtitle": "カアバの方向",
     "qiblaHoldFlat": "スマートフォンを水平に持ってください",
     "qiblaAhead": "カアバは真正面です ✓",
     "qiblaMagnetic": "磁気干渉 — スマートフォンを金属から離してください",

@@ -2236,8 +2236,15 @@ useEffect(() => {
         )}
 
         <section className={`${tTheme.card} border rounded-xl p-6 sm:p-7 transition-all duration-300 shadow-md`}>
-          <div className="text-base sm:text-lg font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
-            <Compass className={`w-6 h-6 sm:w-7 sm:h-7 ${tTheme.accent}`} />{t("qibla", lang)}
+          {/* Başlık şeridi (20 Kasım 2026): "Kıble" tek başına belirsizdi ve 16–18 px
+              gri kalıyordu. Artık temanın kendi vurgu renginde bir şerit içinde büyük
+              başlık + altyazı; yaşlı kullanıcı ilk bakışta ne olduğunu anlar. Şerit
+              `currentColor` ile boyanır, böylece 16 temanın hepsinde uyumlu kalır.
+              Pusula ve ok aynen kalır. */}
+          <div className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3.5 py-2.5 rounded-xl border mb-4 bg-current/10 border-current/25 ${tTheme.accent}`}>
+            <Compass className="w-5 h-5 shrink-0" />
+            <div className={`text-xl sm:text-2xl font-extrabold tracking-tight ${tTheme.textPrimary}`}>{t("qiblaTitle", lang)}</div>
+            <div className="ml-auto text-[11px] sm:text-xs font-semibold opacity-70">{t("qiblaSubtitle", lang)}</div>
           </div>
           <div className="flex flex-col items-center gap-3">
             {/* Pusula her zaman açık: ok kıbleye döner, üstü gösterdiğinde yön doğrudur.

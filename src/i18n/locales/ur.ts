@@ -84,6 +84,8 @@ const locale: LocaleModule = {
     "kerahatStartsIn": "{time} تک مکروہ وقت",
     "hijri": "ہجری",
     "qibla": "قبلہ",
+    "qiblaTitle": "قبلہ کی سمت",
+    "qiblaSubtitle": "کعبہ کی سمت",
     "qiblaHoldFlat": "فون کو افقی رکھیں",
     "qiblaAhead": "کعبہ ٹھیک سامنے ہے ✓",
     "qiblaMagnetic": "مقناطیسی مداخلت — فون کو دھات سے دور رکھیں",

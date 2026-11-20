@@ -104,6 +104,8 @@ const locale: LocaleModule = {
     "noSubscription": "Без подписки",
     "singlePayment": "Единовременный платёж",
     "qibla": "Кибла",
+    "qiblaTitle": "Направление киблы",
+    "qiblaSubtitle": "Направление на Каабу",
     "qiblaHoldFlat": "Держите телефон горизонтально",
     "qiblaAhead": "Кааба прямо перед вами ✓",
     "qiblaMagnetic": "Магнитные помехи — отодвиньте телефон от металла",

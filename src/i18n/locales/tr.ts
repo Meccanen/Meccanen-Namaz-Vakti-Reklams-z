@@ -104,6 +104,8 @@ const locale: LocaleModule = {
     "noSubscription": "Abonelik yok",
     "singlePayment": "Tek ödeme",
     "qibla": "Kıble",
+    "qiblaTitle": "Kıble Yönü",
+    "qiblaSubtitle": "Kâbe'nin yönü",
     "qiblaHoldFlat": "Telefonu yere paralel tut",
     "qiblaAhead": "Kâbe tam önünde ✓",
     "qiblaMagnetic": "Manyetik girişim — telefonu metalden uzaklaştır",

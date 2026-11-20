@@ -55,7 +55,7 @@
 | Commit edilmemiş | **yok** (bu docs commit'i hariç) |
 | `npm run i18n:check` | 11 dil, **hata yok**; uyarılar aşağıda |
 | `npx tsc --noEmit` | **4 hata** (hepsi bilinen/zararsız, aşağıda) |
-| `src/App.tsx` | **2433 satır** |
+| `src/App.tsx` | **2440 satır** |
 | Tema sayısı | **16** (`THEMES`, App.tsx) |
 | Widget sayısı | **4** (Arc, Clock, Analog, Grid) |
 
@@ -72,7 +72,8 @@
 - `de`: 28 eksik mesaj anahtarı + 5 fazla anahtar (`country`, `timezone`, `searching`, `adFreeTag`, `months`).
 - `ur`: 29 eksik mesaj anahtarı + 4 fazla anahtar (`country`, `timezone`, `searching`, `months`).
 - Kıble anahtarları **11 dilde tam** (18 Kasım 2026'da eski `qiblaTurn*`/`qiblaBehind` kaldırıldı,
-  yerine `qiblaHoldFlat`, `qiblaAhead`, `qiblaMagnetic`, `qiblaCalibrate`, `qiblaCalibrateHow` geldi).
+  yerine `qiblaHoldFlat`, `qiblaAhead`, `qiblaMagnetic`, `qiblaCalibrate`, `qiblaCalibrateHow` geldi;
+  20 Kasım 2026'da kart başlığı için `qiblaTitle` + `qiblaSubtitle` eklendi).
 - `ja.in`: boş metin (bilinçli olabilir).
 - `strict` modda bunlar hata sayılır: `npm run i18n:check:strict`.
 
@@ -344,6 +345,13 @@ Kaynak: `docs/notification-system-findings.md` (Eylül 2026, cihazda doğrulanm�
   "Göster" butonu, "pusula açık" etiketi, derece metni ve Kâbe ikonu **yok**; pusula uygulama
   açılır açılmaz çalışır. Uygulama arka plana atılınca dinleyiciler bırakılır (native poll
   250 ms), öne gelince yeniden bağlanır (`visibilitychange`).
+- **Başlık şeridi (20 Kasım 2026):** eski başlık tek kelime "Kıble" ve 16–18 px gri olduğu için
+  belirsiz kalıyordu. Yerine temanın vurgu renginde yuvarlak köşeli bir şerit geldi. Renk
+  `currentColor` ile boyanır (`bg-current/10 border-current/25` + `tTheme.accent`) → 16 temanın
+  hepsinde uyumlu; şerit yalnızca vurgu, başlık `tTheme.textPrimary`. İçerik: pusula ikonu +
+  `qiblaTitle` (büyük, `text-xl sm:text-2xl` extrabold) + sağda `qiblaSubtitle` altyazısı.
+  İki anahtar da 11 dilde; uzun dillerde (de: "Gebetsrichtung") `flex-wrap` ile alt satıra kayar.
+  Pusula, ok ve kalite mantığı **değişmedi**.
 - **Ok:** göbekten çıkan gövde + ok başı (`rect x=94 y=50 w=12 h=44 rx=4`,
   `polygon 100,10 119,58 100,48 81,58`). `needle = qiblaDir − declination − compassHeading`.
 - **Kilit:** `QIBLA_LOCK_DEG = 5°`; halka kalınlaşıp yeşile döner, `navigator.vibrate(60)`,

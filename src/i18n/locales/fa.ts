@@ -104,6 +104,8 @@ const locale: LocaleModule = {
     "noSubscription": "بدون اشتراک",
     "singlePayment": "پرداخت یک‌باره",
     "qibla": "قبله",
+    "qiblaTitle": "جهت قبله",
+    "qiblaSubtitle": "جهت کعبه",
     "qiblaHoldFlat": "گوشی را افقی نگه دارید",
     "qiblaAhead": "کعبه دقیقاً روبه‌روی شماست ✓",
     "qiblaMagnetic": "تداخل مغناطیسی — گوشی را از فلز دور کنید",

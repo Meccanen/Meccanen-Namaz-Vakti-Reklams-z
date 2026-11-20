@@ -84,6 +84,8 @@ const locale: LocaleModule = {
     "kerahatStartsIn": "{time} bis zur verbotenen Zeit",
     "hijri": "Hijri",
     "qibla": "Qibla",
+    "qiblaTitle": "Gebetsrichtung",
+    "qiblaSubtitle": "Richtung der Kaaba",
     "qiblaHoldFlat": "Halte das Telefon flach",
     "qiblaAhead": "Die Kaaba ist direkt vor Ihnen ✓",
     "qiblaMagnetic": "Magnetische Störung — halte das Telefon von Metall fern",
