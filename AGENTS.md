@@ -25,7 +25,7 @@
 - **Güncelleme:** Play In-App Updates, sessiz indirme + "Yeniden başlat" satırı — §16.
 - **Kritik kural:** `versionCode` **10 haneli** `YYYYMMDDCC` olmalı ve Play'deki en yüksekten büyük olmalı.
 - **Kritik kural:** `dist/` hem Vite `webDir`'idir hem build çıktılarının kopyalandığı yerdir; her `npm run build` onu **siler**.
-- **Durum:** Çalışma ağacı temiz; son commit 20 Kasım 2026 (`558635e`). TypeScript'te 4 bilinen hata var (aşağıda).
+- **Durum:** Çalışma ağacı temiz; son commit 20 Kasım 2026 (`43ef32d`). TypeScript'te 4 bilinen hata var (aşağıda).
 
 ---
 
@@ -51,7 +51,7 @@
 | Kontrol | Sonuç |
 |---|---|
 | `git branch` | `main`, remote `github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z` |
-| Son commit | `558635e` · 20 Kasım 2026 · "feat(update): Play In-App Updates ile sessiz güncelleme" |
+| Son commit | `43ef32d` · 20 Kasım 2026 · "release: 2.3.2026112001 + güncelleme bildirimi beklemesiz" |
 | Commit edilmemiş | **yok** (bu docs commit'i hariç) |
 | `npm run i18n:check` | 11 dil, **hata yok**; uyarılar aşağıda |
 | `npx tsc --noEmit` | **4 hata** (hepsi bilinen/zararsız, aşağıda) |
