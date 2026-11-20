@@ -20,28 +20,28 @@
 - **Stack:** React 19 + Vite 6 + TypeScript 5.8 + Tailwind CSS v4 + Capacitor 6.
 - **appId:** `meccanen.namaz.vakti.v1` · **Play:** `meccanen.namaz.vakti.v1`
 - **Diller:** 11 (tr, en, de, es, fr, pt, ru, ar, ur, ja, fa) — ar/ur/fa RTL.
-- **Son build:** `2.3.2026111800` (18 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
+- **Son build:** `2.3.2026112000` (20 Kasım 2026) — imzası doğrulandı (`jarsigner` 0, `apksigner` v2 true), Play'e yüklenmedi.
 - **Build:** Yerel `./build-local.sh` (GitHub Actions kotası nedeniyle tercih edilir).
 - **Güncelleme:** Play In-App Updates, sessiz indirme + "Yeniden başlat" satırı — §16.
 - **Kritik kural:** `versionCode` **10 haneli** `YYYYMMDDCC` olmalı ve Play'deki en yüksekten büyük olmalı.
 - **Kritik kural:** `dist/` hem Vite `webDir`'idir hem build çıktılarının kopyalandığı yerdir; her `npm run build` onu **siler**.
-- **Durum:** Çalışma ağacı temiz; son commit 18 Kasım 2026 (`0cff035`). TypeScript'te 4 bilinen hata var (aşağıda).
+- **Durum:** Çalışma ağacı temiz; son commit 20 Kasım 2026 (`558635e`). TypeScript'te 4 bilinen hata var (aşağıda).
 
 ---
 
-## 2. Güncel Durum (18 Kasım 2026 — doğrulanmış)
+## 2. Güncel Durum (20 Kasım 2026 — doğrulanmış)
 
 ### 2.1 Sürüm ve çıktılar
 
 | Öğe | Değer | Doğrulama |
 |---|---|---|
-| Son üretilen sürüm | `2.3.2026111800` / versionCode `2026111800` | `aapt2 dump badging` |
-| AAB | `dist/meccanen-release-v2.3.2026111800.aab` (~25,7 MB) | `jarsigner -verify` → exit 0 |
-| APK | `dist/meccanen-release-v2.3.2026111800.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
+| Son üretilen sürüm | `2.3.2026112000` / versionCode `2026112000` | `aapt2 dump badging` |
+| AAB | `dist/meccanen-release-v2.3.2026112000.aab` (~25,8 MB) | `jarsigner -verify` → exit 0 |
+| APK | `dist/meccanen-release-v2.3.2026112000.apk` (~26,7 MB) | `apksigner verify -v` → v2 true |
 | AAB sertifikası | SHA-256 `A9:6E:58:...:13:F4`, geçerlilik 2054 | `keytool -printcert -jarfile` |
 | minSdk / target | 24 / 36 (compile 36) | `aapt2 dump badging` |
 | Önceki yayınlanan | `2.3.2026111200` | `Ozet.md` |
-| `apk/` kalıcı yedek | `2026111100`, `2026111200`, `2026111800` (AAB+APK) | `ls apk/` |
+| `apk/` kalıcı yedek | `2026111100`, `2026111200`, `2026111800`, `2026112000` (AAB+APK) | `ls apk/` |
 
 > Keystore: `Play/keys/meccanen-namaz-upload.keystore`, alias `meccanen-namaz-upload`.
 > Parola `Play/keys/meccanen_namaz_release_secrets.txt` içinde (`PAROLA: ...`); yazdırma.
@@ -51,11 +51,11 @@
 | Kontrol | Sonuç |
 |---|---|
 | `git branch` | `main`, remote `github.com/Meccanen/Meccanen-Namaz-Vakti-Reklams-z` |
-| Son commit | `0cff035` · 18 Kasım 2026 · "feat(qibla): location-aware interference..." |
+| Son commit | `558635e` · 20 Kasım 2026 · "feat(update): Play In-App Updates ile sessiz güncelleme" |
 | Commit edilmemiş | **yok** (bu docs commit'i hariç) |
 | `npm run i18n:check` | 11 dil, **hata yok**; uyarılar aşağıda |
 | `npx tsc --noEmit` | **4 hata** (hepsi bilinen/zararsız, aşağıda) |
-| `src/App.tsx` | **2408 satır** |
+| `src/App.tsx` | **2433 satır** |
 | Tema sayısı | **16** (`THEMES`, App.tsx) |
 | Widget sayısı | **4** (Arc, Clock, Analog, Grid) |
 
@@ -508,10 +508,14 @@ curl -s http://localhost:9222/json    # webSocketDebuggerUrl
 
 ## 13. Teknik Borç / Yapılacaklar (öncelik sırası)
 
-1. **Play yükleme durumunu doğrula** — `2026111200` yüklendi mi? Yüklenmediyse Play Console'a manuel yükle.
-2. **`2026111800`'ü Play Console'a yükle** (AAB `apk/` ve `dist/` içinde hazır, imza doğrulandı).
-3. **Commit borcu kapandı** — 18 Kasım 2026: `0cff035` (kıble kalite/on-demand not) + bu docs commit'i.
-4. **i18n eksiklerini kapat:** `de` 28, `ur` 33, 8 dilde 4 kıble anahtarı; fazla anahtarları temizle.
+1. **`2026112000`'ü Play Console'a yükle** — AAB `apk/meccanen-release-v2.3.2026112000.aab`
+   (imza doğrulandı, versionCode `2026112000`). Play'deki en yüksekten büyük olduğundan emin ol;
+   daha yüksek bir sürüm yayınlandıysa yeni versionCode ile yeniden derle.
+2. **Uygulama içi güncellemeyi gerçek cihazda doğrula** — internal testing track'e yükle, Play'den
+   kur, güncelleme akışını gör (§16). Yerel APK ile test edilemez.
+3. **Cihaz testi bekleyen kıble değişiklikleri** — 20 Kasım'da telefonda test edilemedi
+   (cihaz bağlı değildi): girişim uyarısı (yatay eşik) ve kalibrasyon notu görünürlüğü.
+4. **i18n eksiklerini kapat:** `de` 28, `ur` 29 eksik anahtar; fazla anahtarları temizle.
 5. **`native.json`'a es/fr/pt/ru/ja ekle** (Android etiketleri İngilizce kalmasın).
 6. **`server.ts` temizliği** — kullanılmıyorsa sil veya `express`/`@google/genai`/`dotenv`
    bağımlılıklarını ekle; TS hatalarını sıfırla.
